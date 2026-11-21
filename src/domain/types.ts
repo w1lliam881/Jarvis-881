@@ -219,6 +219,8 @@ export interface GameState {
   completed: Record<string, { at: string; xp: number; title: string }>;
   badgeBaseline: Record<string, number>;
   bossesBeaten: Record<string, string>;
+  /** Dagar då bossens mål var uppfyllt. Tre olika dagar besegrar bossen. */
+  bossHits?: Record<string, string[]>;
   title: string | null;
   seenLevel: number;
   updatedAt: string;

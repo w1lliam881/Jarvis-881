@@ -38,10 +38,13 @@ function settle(s: Store) {
   if (g) {
     const fresh = Object.entries(g.completed).filter(([k]) => !ds.game.completed[k]);
     const bosses = Object.keys(g.bossesBeaten).filter((k) => !ds.game.bossesBeaten[k]);
+    const hits = Object.entries(g.bossHits ?? {}).filter(([k, v]) => v.length > (ds.game.bossHits?.[k]?.length ?? 0) && !g.bossesBeaten[k]);
     void s.save('Uppdrag klart', () => [{ game: g }], { undoable: false }).then((ok) => {
       if (!ok) return;
       for (const [, c] of fresh) toast(`+${c.xp} XP · ${c.title}`, 'xp');
       if (bosses.length) toast('Boss besegrad! +300 XP', 'xp');
+      else if (hits.length) toast(`Träff på bossen! ${hits[0][1].length} av 3`, 'xp');
+      if (ds.settings.gameSound) void import('../game/pixel').then((m) => m.chime(bosses.length ? 'level' : 'quest'));
     });
   }
   const active = new Set(openQuests.filter((q) => !q.done).map((q) => q.id));

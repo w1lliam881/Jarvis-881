@@ -30,7 +30,7 @@ export function defaultSettings(): Settings {
 }
 
 export function defaultGame(): GameState {
-  return { id: 'main', version: 1, completed: {}, badgeBaseline: {}, bossesBeaten: {}, title: null, seenLevel: 1, updatedAt: new Date(0).toISOString() };
+  return { id: 'main', version: 1, completed: {}, badgeBaseline: {}, bossesBeaten: {}, bossHits: {}, title: null, seenLevel: 1, updatedAt: new Date(0).toISOString() };
 }
 
 export function emptyDataset(): Dataset {

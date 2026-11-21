@@ -3,7 +3,7 @@ import { Flame, Lock, Swords, Trophy } from 'lucide-react';
 import { store, useData } from '../../data/store';
 import { updateSettings } from '../../data/actions';
 import { todayISO } from '../../domain/dates';
-import { BOSS_XP, TIER_NAMES, WORLDS, badges, bossStatus, generateQuests, questBoard, startGame, tierOf, xpInfo, type Quest } from '../../game/engine';
+import { BOSS_HP, BOSS_XP, TIER_NAMES, WORLDS, badges, bossStatus, generateQuests, questBoard, startGame, tierOf, xpInfo, type Quest } from '../../game/engine';
 import { Hero, Island, chime } from '../../game/pixel';
 import { Page, Toggle, cx } from '../components/ui';
 
@@ -120,13 +120,20 @@ export function Spelet() {
               <div className="font-pixel text-[12px] text-[#9EDBB8]">Besegrad!</div>
             ) : (
               <>
-                <div className="h-4 overflow-hidden border-2 border-[#F28B82]/70 bg-black/40">
-                  <i className="block h-full" style={{ width: `${(1 - boss.progress) * 100}%`, background: '#F28B82' }} />
+                <div className="flex items-center gap-2">
+                  <span className="text-[12px] text-[#A9B5AE]">Liv</span>
+                  {Array.from({ length: BOSS_HP }, (_, i) => (
+                    <span key={i} className={cx('h-4 w-6 border-2', i < BOSS_HP - (ds.game.bossHits?.[xp.world.boss.id]?.length ?? 0) ? 'border-[#F28B82] bg-[#F28B82]' : 'border-[#F28B82]/40')} aria-hidden />
+                  ))}
                 </div>
-                <div className="mt-1.5 flex justify-between text-[12px] text-[#A9B5AE]">
+                <div className="mt-2 h-2 overflow-hidden bg-black/50">
+                  <i className="block h-full" style={{ width: `${boss.progress * 100}%`, background: '#9EDBB8' }} />
+                </div>
+                <div className="mt-1.5 flex justify-between gap-2 text-[12px] text-[#A9B5AE]">
                   <span>{boss.label}</span>
-                  <span>+{BOSS_XP} XP</span>
+                  <span className="shrink-0">+{BOSS_XP} XP</span>
                 </div>
+                <p className="m-0 mt-1 text-[11px] text-[#A9B5AE]">Uppfyll målet tre olika dagar för att besegra bossen. Ett slag per dag.</p>
               </>
             )}
           </div>

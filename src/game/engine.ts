@@ -332,6 +332,7 @@ export interface XpBreakdown {
 }
 
 export const BOSS_XP = 300;
+export const BOSS_HP = 3;
 
 export function xpInfo(ds: Dataset, today: ISODate = todayISO()): XpBreakdown {
   const start = ds.settings.gameStartedAt?.slice(0, 10) ?? today;
@@ -376,15 +377,19 @@ export function settleGame(ds: Dataset, before: Quest[], today: ISODate = todayI
   }
   const level = levelOf(xpInfo({ ...ds, game: { ...ds.game, completed } }, today).xp);
   const bossesBeaten = { ...ds.game.bossesBeaten };
+  const bossHits = { ...(ds.game.bossHits ?? {}) };
   for (const w of WORLDS) {
     if (bossesBeaten[w.boss.id]) continue;
     const b = bossStatus(ds, w, level, today);
-    if (b.unlocked && b.progress >= 1) {
-      bossesBeaten[w.boss.id] = now;
+    const hits = bossHits[w.boss.id] ?? [];
+    // Ett slag per dag när målet är uppfyllt. Tre slag (tre olika dagar) besegrar bossen.
+    if (b.unlocked && b.progress >= 1 && !hits.includes(today)) {
+      bossHits[w.boss.id] = [...hits, today];
+      if (bossHits[w.boss.id].length >= BOSS_HP) bossesBeaten[w.boss.id] = now;
       changed = true;
     }
   }
-  return changed ? { ...ds.game, completed, bossesBeaten } : null;
+  return changed ? { ...ds.game, completed, bossesBeaten, bossHits } : null;
 }
 
 /** Startläge när spelet slås på: historiska badges ger ingen XP, bara det du gör från och med nu. */

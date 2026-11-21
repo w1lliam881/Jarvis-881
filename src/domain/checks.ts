@@ -139,7 +139,7 @@ export function runChecks(ds: Dataset, today: ISODate): IssueGroup[] {
       hint: 'Bifoga kvitto, orderbekräftelse eller tullfaktura. Gäller verifikat skapade i Jarvis 2.0.',
       refs: vouchers
         .filter((v) => v.source !== 'v14' && v.updatedBy !== 'import' && v.createdAt > since && !withAtt.has(v.id))
-        .filter((v) => !(v.source === 'auto' && v.key?.includes(':sales:')))
+        .filter((v) => !(v.source === 'auto' && (v.key?.includes(':sales:') || v.key?.startsWith('item:'))))
         .map((v) => ({ kind: 'voucher', id: v.id, label: `V${v.nr} · ${v.date} · ${v.text}` })),
     });
   }

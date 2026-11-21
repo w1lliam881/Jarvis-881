@@ -89,6 +89,8 @@ export function updateItem(id: string, patch: Partial<Item>, label = 'Plagg spar
     const i = find(ds.items, id);
     if (!i) return [];
     const next = { ...i, ...patch };
+    // En ny försäljning i Jarvis 2.0 får alltid ett eget verifikat
+    if (!(i.salePrice > 0) && next.salePrice > 0) next.saleBooking = 'individual';
     if (next.salePrice > 0 && !next.saleDate) next.saleDate = todayISO();
     if (!(next.salePrice > 0)) next.saleDate = null;
     return [{ collection: 'items', record: next as never }];
@@ -102,7 +104,7 @@ export function sellItem(id: string, price: Ore, date: string, platform: Platfor
     return [
       {
         collection: 'items',
-        record: { ...i, salePrice: price, saleDate: date, platform, comment: comment ?? i.comment, returnedAt: null, saleBooking: i.saleBooking } as never,
+        record: { ...i, salePrice: price, saleDate: date, platform, comment: comment ?? i.comment, returnedAt: null, saleBooking: 'individual' } as never,
         summary: `Sålt: ${i.name} för ${Math.round(price / 100)} kr`,
       },
     ];

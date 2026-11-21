@@ -99,7 +99,8 @@ export function importV14(src: V14Export, by = 'import'): ImportResult {
         platform: null,
         comment: x.cm ?? '',
         ok: ok(x.ok),
-        saleBooking: x.bk ? 'aggregate' : 'individual',
+        // bk = 1 i v14 betyder att försäljningen ingår i dropens samlade verifikat. Gäller bara sålda plagg.
+        saleBooking: sold && x.bk ? 'aggregate' : 'individual',
         location: '',
         listedAt: null,
         returnedAt: null,

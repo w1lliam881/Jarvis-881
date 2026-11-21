@@ -106,13 +106,13 @@ export function Importer({ onDone }: { onDone?: () => void }) {
     const d = result.ds;
     d.settings.gameStartedAt = new Date().toISOString();
     d.game.badgeBaseline = startGame(d).baseline;
+    location.hash = '#/idag';
     await store().replaceAll(d, 'Import från v14');
     // Räkna om automatiska verifikat direkt (exakt ett per händelse)
     await store().save('Bokföringen avstämd efter import', () => [{ settings: store().ds!.settings }], { undoable: false });
     setBusy(false);
     toast('Importen är klar');
     onDone?.();
-    location.hash = '#/idag';
   };
 
   if (!src)

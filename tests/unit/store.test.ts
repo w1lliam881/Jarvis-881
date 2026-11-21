@@ -100,3 +100,14 @@ describe('store', () => {
     expect(new Set(nrs).size).toBe(nrs.length);
   });
 });
+
+describe('försäljning av gamla plagg', () => {
+  it('ett osålt plagg från en gammal drop får eget verifikat när det säljs', async () => {
+    await createDrop({ name: 'Gammal', date: '2026-01-01' }, parseLines('Jeans 100'));
+    const id = s.ds!.items[0].id;
+    await s.save('test', (ds) => [{ collection: 'items', record: { ...ds.items[0], saleBooking: 'aggregate' } as never }]);
+    await sellItem(id, 50000, '2026-11-20', 'Vinted');
+    expect(s.ds!.items[0].saleBooking).toBe('individual');
+    expect(live(s.ds!.vouchers).some((v) => v.key === `item:${id}:sale`)).toBe(true);
+  });
+});

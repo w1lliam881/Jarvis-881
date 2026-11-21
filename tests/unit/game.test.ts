@@ -64,3 +64,17 @@ describe('uppdrag från riktig data', () => {
     expect(xpInfo(data, today).xp).toBe(0);
   });
 });
+
+describe('bossar', () => {
+  it('kräver att målet uppfylls tre olika dagar', () => {
+    const data = mk([mkDrop({ id: 'd1' })], [mkItem({ dropId: 'd1', weightKg: 1, cost: 100 })]);
+    data.settings = { ...data.settings, gameStartedAt: '2026-11-01T00:00:00Z' };
+    let g = settleGame(data, [], '2026-11-20')!;
+    expect(g.bossHits?.['boss-skog']).toEqual(['2026-11-20']);
+    expect(g.bossesBeaten['boss-skog']).toBeUndefined();
+    expect(settleGame({ ...data, game: g }, [], '2026-11-20')).toBeNull(); // samma dag räknas inte igen
+    g = settleGame({ ...data, game: g }, [], '2026-11-21')!;
+    g = settleGame({ ...data, game: g }, [], '2026-11-23')!;
+    expect(g.bossesBeaten['boss-skog']).toBeTruthy();
+  });
+});
