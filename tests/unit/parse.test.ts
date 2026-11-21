@@ -11,6 +11,11 @@ describe('inklistring av drops', () => {
     const r = parseLines('A&F tröja; Tröjor; 150\nBurberry t-shirt 215\nBarbour jacka 224,90 kr');
     expect(r.map((x) => [x.category, x.cost])).toEqual([['Tröjor', 15000], ['T-shirts', 21500], ['Jackor', 22490]]);
   });
+  it('skiljer modellnummer från pris och klarar tusental', () => {
+    expect(parseLines("Levi's 501 150")[0]).toMatchObject({ name: "Levi's 501", cost: 15000 });
+    expect(parseLines('Vintage jacka 1 300 kr')[0]).toMatchObject({ name: 'Vintage jacka', cost: 130000 });
+    expect(parseLines('Nudie 32 450')[0]).toMatchObject({ name: 'Nudie 32', cost: 45000 });
+  });
   it('gissar kategori', () => {
     expect(guessCategory('Levi\'s 501')).toBe('Jeans');
     expect(guessCategory('Cable knit')).toBe('Tröjor');

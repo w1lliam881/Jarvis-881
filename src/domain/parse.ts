@@ -53,10 +53,12 @@ export function parseLines(text: string): ParsedRow[] {
         else if (/^\d[\d\s.,]*(kr|:-|sek)?$/i.test(c)) price = parseKr(c);
       }
     } else {
-      const pm = line.match(/^(.*?)[\s:,-]+(\d[\d\s.,]*)\s*(kr|:-|sek)?$/i);
+      // Priset är sista talet på raden. "1 300" tolkas som tusental, men "501 150" som modell + pris.
+      const pm = line.match(/^(.*?)[\s:,-]+(?:(\d{1,2})\s)?(\d+(?:[.,]\d{1,2})?)\s*(kr|:-|sek)?$/i);
       if (pm) {
-        name = pm[1];
-        price = parseKr(pm[2]);
+        const thousands = !!pm[2] && pm[2].length === 1 && /^\d{3}([.,]|$)/.test(pm[3]);
+        name = thousands ? pm[1] : `${pm[1]}${pm[2] ? ` ${pm[2]}` : ''}`;
+        price = parseKr(thousands ? `${pm[2]}${pm[3]}` : pm[3]);
       } else name = line;
     }
     name = name.replace(/[\s,;:-]+$/, '');
