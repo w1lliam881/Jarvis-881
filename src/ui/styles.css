@@ -1,0 +1,399 @@
+@import 'tailwindcss';
+
+/* Designsystem: se DESIGN.md. Färger som tokens, mörkt läge följer telefonen eller valt tema. */
+:root {
+  --bg: #f2f4ef;
+  --surface: #ffffff;
+  --surface-2: #f7f8f5;
+  --line: #e2e6de;
+  --line-2: #eceee8;
+  --text: #17201b;
+  --muted: #5e6a62;
+  --forest: #173f31;
+  --forest-2: #21523f;
+  --on-forest: #f4f1e6;
+  --on-forest-muted: #b9cbbf;
+  --mint: #9edbb8;
+  --accent: #1f5a44;
+  --accent-soft: #e1eee6;
+  --sun: #e9b44c;
+  --sun-ink: #2b1f05;
+  --pos: #2c7a52;
+  --neg: #b5473a;
+  --hi-bg: #fbe3dc;
+  --hi: #a33a26;
+  --me-bg: #fbefd3;
+  --me: #8a5a0b;
+  --lo-bg: #e3f0e8;
+  --lo: #2c6b4a;
+  --c1: #1f5a44;
+  --c2: #e9b44c;
+  --c3: #8fb9a8;
+  --c4: #c97b5a;
+  --c5: #6d8fb3;
+  --shadow: 0 1px 2px rgba(23, 32, 27, 0.04), 0 2px 8px rgba(23, 32, 27, 0.05);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #0c1210;
+    --surface: #141c18;
+    --surface-2: #18211c;
+    --line: #22302a;
+    --line-2: #1a2520;
+    --text: #e9eeea;
+    --muted: #93a39a;
+    --forest: #183a2e;
+    --forest-2: #20493a;
+    --on-forest: #f4f1e6;
+    --on-forest-muted: #a9c1b3;
+    --accent: #9edbb8;
+    --accent-soft: #1c2e25;
+    --sun: #ebb955;
+    --pos: #86d5a9;
+    --neg: #f28b82;
+    --hi-bg: #3a1f19;
+    --hi: #f4a08f;
+    --me-bg: #36290f;
+    --me: #f0c46a;
+    --lo-bg: #16301f;
+    --lo: #8fd3ab;
+    --c1: #9edbb8;
+    --c2: #ebb955;
+    --c3: #4f7f6c;
+    --c4: #e09a7c;
+    --c5: #8fb0d6;
+    --shadow: none;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme='dark'] {
+  --bg: #0c1210;
+  --surface: #141c18;
+  --surface-2: #18211c;
+  --line: #22302a;
+  --line-2: #1a2520;
+  --text: #e9eeea;
+  --muted: #93a39a;
+  --forest: #183a2e;
+  --forest-2: #20493a;
+  --on-forest: #f4f1e6;
+  --on-forest-muted: #a9c1b3;
+  --accent: #9edbb8;
+  --accent-soft: #1c2e25;
+  --sun: #ebb955;
+  --pos: #86d5a9;
+  --neg: #f28b82;
+  --hi-bg: #3a1f19;
+  --hi: #f4a08f;
+  --me-bg: #36290f;
+  --me: #f0c46a;
+  --lo-bg: #16301f;
+  --lo: #8fd3ab;
+  --c1: #9edbb8;
+  --c2: #ebb955;
+  --c3: #4f7f6c;
+  --c4: #e09a7c;
+  --c5: #8fb0d6;
+  --shadow: none;
+  color-scheme: dark;
+}
+
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-serif: 'Fraunces', ui-serif, Georgia, serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-line-2: var(--line-2);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-forest: var(--forest);
+  --color-forest-2: var(--forest-2);
+  --color-on-forest: var(--on-forest);
+  --color-on-forest-muted: var(--on-forest-muted);
+  --color-mint: var(--mint);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-sun: var(--sun);
+  --color-sun-ink: var(--sun-ink);
+  --color-pos: var(--pos);
+  --color-neg: var(--neg);
+  --color-hi: var(--hi);
+  --color-hi-bg: var(--hi-bg);
+  --color-me: var(--me);
+  --color-me-bg: var(--me-bg);
+  --color-lo: var(--lo);
+  --color-lo-bg: var(--lo-bg);
+  --radius-card: 14px;
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.45;
+  overscroll-behavior-y: none;
+}
+
+#root {
+  min-height: 100dvh;
+}
+
+/* Minst 16 px i fält så att iPhone inte zoomar */
+input,
+select,
+textarea {
+  font-size: 16px;
+  font-family: inherit;
+}
+
+@layer components {
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.tabnum {
+  font-variant-numeric: tabular-nums;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+}
+
+.field {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.field:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 20%, transparent);
+}
+
+textarea.field {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 15px;
+  transition: transform 0.08s, background 0.15s, opacity 0.15s;
+  cursor: pointer;
+  user-select: none;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.btn-primary {
+  background: var(--forest);
+  color: var(--on-forest);
+}
+
+
+.btn-sun {
+  background: var(--sun);
+  color: var(--sun-ink);
+}
+
+.btn-soft {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--line);
+}
+
+.btn-danger {
+  background: var(--hi-bg);
+  color: var(--hi);
+}
+
+}
+
+.top-band {
+  background: var(--forest);
+  color: var(--on-forest);
+  border-radius: 0 0 24px 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.top-band::after {
+  content: '';
+  position: absolute;
+  right: -70px;
+  top: -50px;
+  width: 230px;
+  height: 230px;
+  border-radius: 50%;
+  border: 1px solid rgba(158, 219, 184, 0.18);
+  box-shadow: 0 0 0 28px rgba(158, 219, 184, 0.05), 0 0 0 56px rgba(158, 219, 184, 0.035);
+  pointer-events: none;
+}
+
+.safe-top {
+  padding-top: max(16px, env(safe-area-inset-top));
+}
+
+.safe-bottom {
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+}
+
+.sheet-enter {
+  animation: sheet-up 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fade 0.18s ease-out;
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.confetti {
+  position: fixed;
+  top: -12px;
+  width: 8px;
+  height: 14px;
+  z-index: 200;
+  border-radius: 2px;
+  animation: confetti-fall 1.8s ease-in forwards;
+  pointer-events: none;
+}
+
+@keyframes confetti-fall {
+  to {
+    transform: translateY(105vh) rotate(540deg);
+    opacity: 0.3;
+  }
+}
+
+.pixel {
+  image-rendering: pixelated;
+  shape-rendering: crispEdges;
+}
+
+.font-pixel {
+  font-family: 'Press Start 2P', var(--font-mono);
+}
+
+@keyframes bob {
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+.bob {
+  animation: bob 1.2s steps(2) infinite;
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.pop {
+  animation: pop 0.45s ease-out;
+}
+
+@keyframes twinkle {
+  50% {
+    opacity: 0.2;
+  }
+}
+
+.twinkle {
+  animation: twinkle 1.6s steps(2) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media print {
+  nav,
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #fff;
+    color: #000;
+  }
+  .card {
+    box-shadow: none;
+    break-inside: avoid;
+  }
+}

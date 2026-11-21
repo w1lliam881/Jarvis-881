@@ -82,7 +82,7 @@ const CP437: Record<string, number> = {
   ó: 0xa2, ú: 0xa3, ñ: 0xa4, Ñ: 0xa5, '§': 0x15, '–': 0x2d, '—': 0x2d, '’': 0x27, '‘': 0x27, '“': 0x22, '”': 0x22, '·': 0xfa, '×': 0x78,
 };
 
-export function encodeCp437(s: string): Uint8Array {
+export function encodeCp437(s: string): Uint8Array<ArrayBuffer> {
   const out: number[] = [];
   for (const ch of s) {
     const c = ch.charCodeAt(0);

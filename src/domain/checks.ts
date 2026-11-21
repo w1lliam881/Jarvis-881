@@ -79,7 +79,7 @@ export function runChecks(ds: Dataset, today: ISODate): IssueGroup[] {
     title: 'Frakt eller tull saknas',
     hint: 'Utan dem blir vinsten för hög. Gäller drops som är hemma.',
     refs: live(ds.drops)
-      .filter((d) => d.status === 'hemma' && d.date >= '2026-10-01' && ds.items.some((i) => i.dropId === d.id && !i.deletedAt) && (!d.shipping || !d.customs))
+      .filter((d) => d.status === 'hemma' && (((ds.settings.migratedAt ?? '') !== '' && d.createdAt > (ds.settings.migratedAt ?? '')) || daysBetween(d.date, today) <= 60) && ds.items.some((i) => i.dropId === d.id && !i.deletedAt) && (!d.shipping || !d.customs))
       .map((d) => ({ kind: 'drop', id: d.id, label: `${d.name} · frakt ${kr(d.shipping)} · tull ${kr(d.customs)}` })),
   });
 

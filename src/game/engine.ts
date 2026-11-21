@@ -132,8 +132,8 @@ export function generateQuests(ds: Dataset, today: ISODate, activeIds: Set<strin
   // --- Bokföring i fas ---
   for (const d of drops) {
     const hasItems = L.some((l) => l.drop.id === d.id);
-    if (!hasItems || d.status === 'beställd') continue;
-    if (d.date >= addDays(today, -120))
+    if (!hasItems || d.status === 'beställd' || !isRecentDrop(ds, d, today)) continue;
+    {
       add({
         id: `customs:${d.id}`,
         scope: 'dag',
@@ -146,7 +146,8 @@ export function generateQuests(ds: Dataset, today: ISODate, activeIds: Set<strin
         progress: { cur: d.customs > 0 ? 1 : 0, target: 1 },
         route: `#/lager/drop/${d.id}`,
       });
-    if (d.date >= addDays(today, -120))
+    }
+    {
       add({
         id: `shipping:${d.id}`,
         scope: 'dag',
@@ -159,6 +160,7 @@ export function generateQuests(ds: Dataset, today: ISODate, activeIds: Set<strin
         progress: { cur: d.shipping > 0 ? 1 : 0, target: 1 },
         route: `#/lager/drop/${d.id}`,
       });
+    }
   }
   const noCost = L.filter((l) => !(l.item.cost > 0)).length;
   if (noCost || activeIds.has(`nocost:${week}`))
@@ -218,6 +220,12 @@ export function generateQuests(ds: Dataset, today: ISODate, activeIds: Set<strin
     add({ id: `relist:${week}`, scope: 'vecka', category: 'Lager', title: `Du har ${old.length} plagg osålda över 60 dagar: publicera om minst ${target}`, detail: 'Du väljer själv vilka och om priset ska ändras.', benefit: `Frigör upp till ${Math.round(old.reduce((s, l) => s + l.landed, 0) / 100).toLocaleString('sv-SE')} kr`, priority: 2, minutes: 15, progress: { cur: Math.min(target, relisted), target }, route: '#/lager?f=old' });
   }
   return out.sort((a, b) => b.priority - a.priority || a.minutes - b.minutes);
+}
+
+/** Nya drops: skapade i Jarvis 2.0 eller daterade de senaste 45 dagarna. Gamla v14-drops bokförde frakt och tull i inköpet. */
+export function isRecentDrop(ds: Dataset, d: { createdAt: string; date: string }, today: ISODate): boolean {
+  const migrated = ds.settings.migratedAt ?? '';
+  return (!!migrated && d.createdAt > migrated) || daysBetween(d.date, today) <= 45;
 }
 
 function monthLabel(m: string) {
