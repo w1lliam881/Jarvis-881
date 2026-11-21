@@ -46,7 +46,7 @@ Jarvis 2.0 är ett eget affärssystem för 881: köp av second hand-/vintageklä
 - Mobile-first, optimerad för **iPhone**, fungerar fullt ut på dator.
 - Installerbar på hemskärmen (PWA).
 - **Läsa offline:** senaste datan syns utan nät. Nya registreringar kräver nät, så att inget kan skrivas över eller försvinna.
-- Fungerar på äldre iOS-versioner (testas på Safari från iOS 16).
+- Testas på Safari i iOS 18 (användarens iPhone har iOS 18.3.1).
 
 ## 6. Datakällor och automation
 
@@ -91,14 +91,18 @@ Jarvis föreslår **aldrig** försäljningspris på enskilda plagg. Användaren 
 
 ## 8. Design
 
-- **Riktning: A "Lugn och sober" som grund**, med inslag från B och C:
-  - **A (grund):** ljus, luftig, typsnittet Inter, mörkgrön accent (#2F5D50), stora tydliga siffror.
-  - **Från B:** riktigt mörkt läge, täta tabeller med siffror i monospace (IBM Plex Mono), ROI per rad, prioritet (HÖG/MED/LÅG) på uppgifter, tydlig "Sparat"-indikator.
-  - **Från C:** serif (Fraunces) för sidrubriker och de stora nyckeltalen.
-- Ljust/mörkt läge följer telefonen, kan väljas manuellt.
-- Bara svenska.
-- Ingen AI-estetik: inga gradienter, inga emojis som ikoner, enhetligt ikonset, bottensheets på mobil, minst 16 px text i fält.
-- Designen låses i `DESIGN.md`. Skiss: se bilden `jarvis-design-blandning.png` (skickas i chatten).
+- **Grund: A "Lugn och sober"**, men med mer färg och karaktär. Fortfarande ren och lätt att använda.
+- **Färger:**
+  - **Skogsgrönt (#173F31)** som bärande färg: toppen på varje huvudvy är ett mörkgrönt fält med rundade nederkanter, där de viktigaste siffrorna står.
+  - **Mintgrönt (#9EDBB8)** för grafer och positiva tecken på grön botten.
+  - **Solgult (#E9B44C)** som andra accent: snabbknappen "+ Ny", markeringar och kategorifärg.
+  - Ljus bakgrund med svag grön ton (#F2F4EF). Mörkt läge med grönsvart bakgrund (#0C1210).
+  - Färgade etiketter för prioritet (Hög = tegelröd, Medel = gul, Låg = grön) och färgade ROI-märken (grön/röd).
+- **Typsnitt:** Fraunces (serif) för sidrubriker och stora nyckeltal, Inter för text, IBM Plex Mono för siffror i tabeller.
+- **Detaljer:** liten stapelgraf över försäljningen per dag i toppen, förloppsmätare för månadsmålet, färgad stapel som visar lagrets fördelning per kategori, "Sparat"-indikator med grön prick, aktiv flik i menyn markerad med en mjuk grön bakgrund.
+- Ljust/mörkt läge följer telefonen och kan väljas manuellt. Bara svenska.
+- Ingen AI-estetik: inga lila/blå gradienter, inga emojis som ikoner, enhetligt ikonset, bottensheets på mobil, minst 16 px text i fält.
+- Designen låses i `DESIGN.md`. Skiss: `docs/design/jarvis-design-v2.png`.
 
 ## 9. Spelet
 
