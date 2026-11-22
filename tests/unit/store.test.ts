@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { MemoryBackend } from '../../src/data/memory';
 import { Store, setStore } from '../../src/data/store';
-import { bookEvent, createDrop, deleteDrop, saveManualVoucher, sellItem, undoSale, updateDrop, updateItem } from '../../src/data/actions';
+import { bookEvent, createDrop, linkSaleToItem, deleteDrop, saveManualVoucher, sellItem, undoSale, updateDrop, updateItem } from '../../src/data/actions';
 import { parseLines } from '../../src/domain/parse';
 import { isBalanced } from '../../src/domain/ledger';
 
@@ -122,5 +122,20 @@ describe('ändringslogg', () => {
     const e = log.find((x) => x.collection === 'items' && x.action === 'ändra')!;
     expect(e.by).toBe('Testare');
     expect(changeDetails(e)).toEqual(expect.arrayContaining(['Såld för: 0 kr → 800 kr', 'Säljdatum: tomt → 2026-11-10', 'Plattform: tomt → Vinted']));
+  });
+
+  it('en bokförd försäljning kan kopplas till ett plagg som redan är sålt utan att räknas två gånger', async () => {
+    await createDrop({ name: 'P', date: '2026-10-01' }, parseLines('average joe 100'));
+    const item = s.ds!.items[0];
+    await sellItem(item.id, 80000, '2026-11-19', 'Vinted');
+    await saveManualVoucher({ date: '2026-10-24', text: 'Nudie Jeans average joe. ID -TS-GAR-2026-170', lines: [{ account: 1930, debit: 80000, credit: 0 }, { account: 3001, debit: 0, credit: 80000 }] });
+    const manual = live(s.ds!.vouchers).find((v) => v.source !== 'auto')!;
+    expect(live(s.ds!.vouchers).filter((v) => v.lines.some((l) => l.account === 3001))).toHaveLength(2);
+    expect(await linkSaleToItem(manual.id, item.id, 80000)).toBe(true);
+    const sales = live(s.ds!.vouchers).filter((v) => v.lines.some((l) => l.account === 3001));
+    expect(sales).toHaveLength(1);
+    expect(sales[0].id).toBe(manual.id);
+    const it2 = s.ds!.items.find((i) => i.id === item.id)!;
+    expect(it2).toMatchObject({ saleDate: '2026-10-24', salePrice: 80000, productId: 'TS-GAR-2026-170' });
   });
 });

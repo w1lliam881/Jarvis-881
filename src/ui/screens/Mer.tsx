@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BookOpen, Calculator, CalendarClock, Clapperboard, Database, Gamepad2, History, Languages, LineChart, Settings as Cog, Upload, Wallet } from 'lucide-react';
+import { BookOpen, Calculator, CalendarClock, Clapperboard, Database, Eye, Gamepad2, History, Languages, LineChart, Settings as Cog, Upload, Wallet } from 'lucide-react';
 import { store, useData } from '../../data/store';
 import { updateSettings } from '../../data/actions';
 import type { BackupInfo } from '../../data/backend';
@@ -47,6 +47,7 @@ function Menu() {
             {item('#/planering/kalkyl', Calculator, 'Kalkyl', 'Räkna på Doorzo-plagg innan du köper')}
             {item('#/planering/framtid', Wallet, 'Framtid och budget', 'Maxpris per kategori, orderplan och mål')}
             {item('#/planering/doorzo', Languages, 'Doorzo-sökningar', 'Svenska till japanska söktermer')}
+            {item('#/planering/doorzo', Eye, 'Bevakningar', 'Sparade sökningar med maxpris (under Doorzo-sökningar)')}
             {item('#/planering/marknad', LineChart, 'Marknadsföring', 'Dina TikTok-klipp och vad som fungerar')}
             {item('#/planering/video', Clapperboard, 'Videoidéer', 'Idéer och bedömning av dina egna')}
           </Card>

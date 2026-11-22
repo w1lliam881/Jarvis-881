@@ -1,3 +1,4 @@
+import { productIdFrom } from '../domain/import-v14';
 import { baseRecord, newId } from '../domain/defaults';
 import { eventLines, EVENT_TYPES, nextVoucherNr } from '../domain/ledger';
 import { todayISO } from '../domain/dates';
@@ -237,7 +238,7 @@ export function linkSaleToItem(voucherId: string, itemId: string, amount: Ore): 
     const i = find(ds.items, itemId);
     if (!v || !i) return [];
     return [
-      { collection: 'items', record: { ...i, salePrice: amount, saleDate: v.date, saleBooking: 'individual' } as never },
+      { collection: 'items', record: { ...i, salePrice: amount, saleDate: v.date, saleBooking: 'individual', productId: i.productId || productIdFrom(v.text) } as never },
       { collection: 'vouchers', record: { ...v, itemId: i.id, dropId: i.dropId } as never },
     ];
   });
