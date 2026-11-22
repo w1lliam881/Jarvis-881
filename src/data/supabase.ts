@@ -5,7 +5,8 @@ import { ConflictError, datasetCounts, validateMutations, type Backend, type Bac
 
 let client: SupabaseClient | null = null;
 function sb(): SupabaseClient {
-  client ??= createClient(import.meta.env.VITE_SUPABASE_URL as string, import.meta.env.VITE_SUPABASE_ANON_KEY as string, {
+  // Tål adresser med snedstreck eller /rest/v1 på slutet
+  client ??= createClient(String(import.meta.env.VITE_SUPABASE_URL).trim().replace(/\/(rest\/v1\/?)?$/, '').replace(/\/+$/, ''), String(import.meta.env.VITE_SUPABASE_ANON_KEY).trim(), {
     auth: { persistSession: true, detectSessionInUrl: true },
   });
   return client;
