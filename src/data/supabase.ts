@@ -86,7 +86,7 @@ export class SupabaseBackend implements Backend {
     this.myWrites = Date.now();
     const { error } = await sb().rpc('commit_mutations', { muts, log });
     if (error) {
-      if (error.code === '40001' || /Konflikt/.test(error.message)) throw new ConflictError('samma post');
+      if (error.code === 'PT409' || error.code === '40001' || /Konflikt/.test(error.message)) throw new ConflictError('samma post');
       throw new Error(error.message);
     }
   }

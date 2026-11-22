@@ -14,7 +14,7 @@ import type { Dataset } from '../../domain/types';
 export function Welcome() {
   const ds = useData();
   const [name, setName] = useState(deviceUser());
-  const [named, setNamed] = useState(!!deviceUser());
+  const [named, setNamed] = useState(!!deviceUser() || !!store().backend.email);
   const hasData = ds.drops.length > 0 || ds.vouchers.length > 0;
 
   if (!named)
@@ -107,7 +107,13 @@ export function Importer({ onDone }: { onDone?: () => void }) {
     d.settings.gameStartedAt = new Date().toISOString();
     d.game.badgeBaseline = startGame(d).baseline;
     go('#/idag');
-    await store().replaceAll(d, 'Import från v14');
+    try {
+      await store().replaceAll(d, 'Import från v14');
+    } catch (e) {
+      setBusy(false);
+      setErr(`Importen misslyckades och ingenting ändrades: ${(e as Error).message}`);
+      return;
+    }
     // Räkna om automatiska verifikat direkt (exakt ett per händelse)
     await store().save('Bokföringen avstämd efter import', () => [{ settings: store().ds!.settings }], { undoable: false });
     setBusy(false);
@@ -131,6 +137,7 @@ export function Importer({ onDone }: { onDone?: () => void }) {
   return (
     <div className="flex flex-col gap-3">
       <MigrationReport recon={result.recon} warnings={result.warnings} />
+      {err && <p className="m-0 text-[14px] text-hi">{err}</p>}
       <div className="flex gap-2">
         <button className="btn btn-ghost flex-1" onClick={() => (setSrc(null), setResult(null))}>
           Avbryt

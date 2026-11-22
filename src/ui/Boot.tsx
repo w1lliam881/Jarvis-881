@@ -133,5 +133,5 @@ function LoginLazy() {
   useEffect(() => {
     import('./screens/Login').then((m) => setC(() => m.Login));
   }, []);
-  return C ? <>{C()}</> : null;
+  return C ? <C /> : null;
 }

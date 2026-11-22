@@ -31,7 +31,9 @@ Just nu sparas datan **på enheten** (i webbläsaren). När Supabase är uppsatt
 
 1. Gå till vercel.com och logga in med GitHub.
 2. **Add New → Project** och välj repot `Jarvis-881`.
-3. Under **Environment Variables**: lägg till `VITE_SUPABASE_URL` och `VITE_SUPABASE_ANON_KEY` med värdena från steg 1.
+3. Under **Environment Variables**: lägg till
+   - `VITE_SUPABASE_URL` = `https://vyvzsurwnjuiwdmdccir.supabase.co`
+   - `VITE_SUPABASE_ANON_KEY` = publishable-nyckeln (börjar med `sb_publishable_`)
 4. Tryck **Deploy**. Adressen du får öppnar du i Safari på iPhone → Dela → **Lägg till på hemskärmen**.
 
 Driftkostnad: 0 kr i månaden (se `ARCHITECTURE.md`).

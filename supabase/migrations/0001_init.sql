@@ -99,9 +99,9 @@ begin
     -- Inställningar och spelläge finns från början i version 1 även om raden inte skapats än
     if cur is null and coll = 'meta' then cur := 1; end if;
     if (m -> 'expectedVersion') = 'null'::jsonb then
-      if cur is not null then raise exception 'Konflikt: % % finns redan', coll, rid using errcode = '40001'; end if;
+      if cur is not null then raise exception 'Konflikt: % % finns redan', coll, rid using errcode = 'PT409'; end if;
     elsif cur is null or cur <> (m ->> 'expectedVersion')::integer then
-      raise exception 'Konflikt: % % har ändrats av någon annan', coll, rid using errcode = '40001';
+      raise exception 'Konflikt: % % har ändrats av någon annan', coll, rid using errcode = 'PT409';
     end if;
     insert into public.records (collection, id, data, version, updated_at, updated_by, deleted_at)
     values (coll, rid, m -> 'record', (m -> 'record' ->> 'version')::integer, now(), m -> 'record' ->> 'updatedBy', nullif(m -> 'record' ->> 'deletedAt', '')::timestamptz)
@@ -117,7 +117,7 @@ create or replace function public.replace_all(rows jsonb) returns void
 language plpgsql security invoker set search_path = public as $$
 begin
   if not public.is_allowed() then raise exception 'Inte behörig' using errcode = '42501'; end if;
-  delete from public.records;
+  delete from public.records where true;
   insert into public.records (collection, id, data, version, updated_at, updated_by, deleted_at)
   select r ->> 'collection', r ->> 'id', r -> 'data', (r ->> 'version')::integer, now(), r ->> 'updated_by', nullif(r ->> 'deleted_at', '')::timestamptz
   from jsonb_array_elements(rows) r;
@@ -158,3 +158,11 @@ alter table public.push_subscriptions enable row level security;
 create policy push_own on public.push_subscriptions for all
   using (public.is_allowed() and lower(email) = lower(auth.jwt() ->> 'email'))
   with check (public.is_allowed() and lower(email) = lower(auth.jwt() ->> 'email'));
+
+-- Behörigheter: bara inloggade (och sedan RLS) når tabellerna. Anonyma får ingenting.
+grant usage on schema public to authenticated;
+grant select, insert, update, delete on public.records, public.changelog, public.backups, public.presence, public.push_subscriptions to authenticated;
+grant select on public.allowed_users to authenticated;
+grant execute on function public.commit_mutations(jsonb, jsonb), public.replace_all(jsonb), public.is_allowed() to authenticated;
+revoke all on public.records, public.changelog, public.backups, public.presence, public.push_subscriptions, public.allowed_users from anon;
+revoke execute on function public.commit_mutations(jsonb, jsonb), public.replace_all(jsonb) from anon, public;

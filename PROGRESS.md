@@ -24,9 +24,17 @@ Jarvis 2.0 är byggd och fungerar lokalt (data sparas i webbläsaren). Alla fase
 2. **Paket 2:s vikt:** plaggen i v14 väger tillsammans 16,95 kg, specen säger 16,45 kg. Vilket är rätt?
 3. **average joe 19 november (800 kr)** var såld i v14 men saknade verifikat. Jarvis bokför den nu. Var den kanske samma försäljning som V22?
 
+## Supabase (klart 2026-11-22)
+
+- Projekt `vyvzsurwnjuiwdmdccir` i Stockholm (eu-north-1).
+- Schemat från `supabase/migrations/0001_init.sql` är kört: tabeller, RLS, behörigheter, debet = kredit-trigger, atomisk sparning (`commit_mutations`, konflikt = PT409), `replace_all`, närvaro, push-prenumerationer, daglig backup kl 03 (pg_cron).
+- Inloggning: e-postlänk, nya konton avstängda. Användare: william.wennstam@gmail.com (William). Kompisen läggs till senare (auth-användare + rad i `allowed_users`).
+- Testat i riktig webbläsare: inloggning, import av audit-filen, omladdning. Datan i databasen är audit-filen tills en färsk v14-export importeras.
+- Åtkomst från Claude: miljön "Jarvis-881" med Supabase access token (network secret för api.supabase.com).
+
 ## Nästa steg
 
-1. Supabase-konto → databas, inloggning, delning med kompisen, närvaro.
-2. Vercel-konto → publicering.
+1. Vercel: importera repot och sätt miljövariablerna (se README). Koden ligger på grenen `claude/vigilant-shannon-ay2mhz` tills den slås ihop med `main`.
+2. Lägg till kompisen.
 3. Färsk export från v14 → import och avstämning.
 4. Påminnelser (notiser) och Gmail-import.
