@@ -1,10 +1,11 @@
 // Supabase Edge Function: skickar påminnelser som webbnotiser. Körs varje timme av pg_cron (se README).
 // Hemligheter (sätts med `supabase secrets set`): VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT (mailto:din@mejl.se).
-// SUPABASE_URL och SUPABASE_SERVICE_ROLE_KEY finns automatiskt i funktionen.
+// SUPABASE_URL och SUPABASE_SERVICE_ROLE_KEY finns automatiskt i funktionen. Anropas av pg_cron med INGEST_TOKEN.
 import { createClient } from 'npm:@supabase/supabase-js@2.119.2';
 import webpush from 'npm:web-push@3.6.7';
 
-Deno.serve(async () => {
+Deno.serve(async (req) => {
+  if (req.headers.get('x-jarvis-token') !== Deno.env.get('INGEST_TOKEN')) return new Response('Inte behörig', { status: 401 });
   const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
   webpush.setVapidDetails(Deno.env.get('VAPID_SUBJECT')!, Deno.env.get('VAPID_PUBLIC_KEY')!, Deno.env.get('VAPID_PRIVATE_KEY')!);
 

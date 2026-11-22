@@ -8,6 +8,7 @@ import { ACCOUNTS, accountName, EVENT_TYPES, isBalanced, saleAmount, trialBalanc
 import { quarterLabel, quarterOf, quarterReport, type Group, type Quarter } from '../../domain/quarter';
 import { allLanded, brandStats, dropStats, isSold, live, periodPL } from '../../domain/metrics';
 import { kr, parseOre } from '../../domain/money';
+import { parseMail } from '../../domain/parse';
 import { backupJson, encodeCp437, itemsCsv, ledgerCsv, sie4, sourceLabel, sortedVouchers, vouchersCsv } from '../../domain/export';
 import type { Dataset, EventType, InboxDraft, Voucher, VoucherLine } from '../../domain/types';
 import { go } from '../router';
@@ -697,13 +698,15 @@ function Queue() {
 }
 
 function DraftCard({ d, ds }: { d: InboxDraft; ds: Dataset }) {
-  const [type, setType] = useState<EventType>(d.eventType);
-  const [amount, setAmount] = useState(d.amount);
-  const [date, setDate] = useState(d.date);
-  const [itemId, setItemId] = useState(d.itemId ?? '');
-  const [dropId, setDropId] = useState(d.dropId ?? '');
+  // Mejl från Gmail tolkas här (confidence 0 = inte tolkat än)
+  const parsed = useMemo(() => (d.confidence === 0 && d.rawText ? parseMail(d.rawText, d.date) : null), [d]);
   const unsold = allLanded(ds).filter((l) => !isSold(l.item));
-  const guess = d.rawText ? unsold.filter((l) => d.rawText.toLowerCase().includes(l.item.name.toLowerCase())).slice(0, 3) : [];
+  const guess = useMemo(() => (d.rawText ? matchItems(d.rawText, unsold) : []), [d, ds]);
+  const [type, setType] = useState<EventType>(parsed?.eventType ?? d.eventType);
+  const [amount, setAmount] = useState(parsed?.amount || d.amount);
+  const [date, setDate] = useState(parsed?.date ?? d.date);
+  const [itemId, setItemId] = useState(d.itemId ?? (guess.length === 1 ? guess[0].item.id : ''));
+  const [dropId, setDropId] = useState(d.dropId ?? (type === 'shipping' || type === 'customs' ? latestDropId(ds) : ''));
   return (
     <Card className="flex flex-col gap-3">
       <div className="flex items-start justify-between gap-2">
@@ -1000,4 +1003,27 @@ function GroupTable({ title, rows, keepOrder }: { title: string; rows: Group[]; 
       </Card>
     </Section>
   );
+}
+
+/** Hitta plagg som nämns i mejlet: produkt-ID först, annars namn (och märke). */
+function matchItems(text: string, unsold: ReturnType<typeof allLanded>) {
+  const t = text.toLowerCase();
+  const byId = unsold.filter((l) => l.item.productId && t.includes(l.item.productId.toLowerCase()));
+  if (byId.length) return byId.slice(0, 3);
+  return unsold
+    .map((l) => {
+      const name = l.item.name.toLowerCase();
+      const words = name.split(/\s+/).filter((w) => w.length >= 3);
+      let score = t.includes(name) ? 3 : words.filter((w) => t.includes(w)).length / Math.max(1, words.length);
+      if (l.item.brand && t.includes(l.item.brand.toLowerCase())) score += 0.5;
+      return { l, score };
+    })
+    .filter((x) => x.score >= 1)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3)
+    .map((x) => x.l);
+}
+
+function latestDropId(ds: Dataset): string {
+  return live(ds.drops).sort((a, b) => (a.date < b.date ? 1 : -1))[0]?.id ?? '';
 }

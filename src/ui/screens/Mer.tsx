@@ -7,11 +7,9 @@ import type { ChangeLogEntry, Dataset } from '../../domain/types';
 import { backupJson } from '../../domain/export';
 import { todayISO } from '../../domain/dates';
 import type { Route } from '../router';
-import { Stat, Card, Chips, ConfirmButton, Empty, Field, Page, Row, Section, Segmented, TextInput, Toggle, TopBand, cx } from '../components/ui';
+import { Card, Chips, ConfirmButton, Empty, Field, Page, Row, Section, Segmented, TextInput, Toggle, TopBand, cx } from '../components/ui';
 import { changeDetails, initial, isSystemChange } from '../../domain/changes';
-import { longDate, monthName } from '../../domain/dates';
-import { allLanded, isSold } from '../../domain/metrics';
-import { kr } from '../../domain/money';
+import { longDate } from '../../domain/dates';
 import { Importer } from './Welcome';
 import { deviceUser, setDeviceUser, toast } from '../Boot';
 import { Presence } from '../components/Presence';
@@ -24,7 +22,6 @@ export function Mer({ route }: { route: Route }) {
   if (sub === 'import') return <ImportPage />;
   if (sub === 'logg') return <Log />;
   if (sub === 'guide') return <Guide />;
-  if (sub === 'kvitto') return <AiReceipt />;
   return <Menu />;
 }
 
@@ -131,19 +128,6 @@ function Settings() {
             <Field label="Modellens vikt (kg)">
               <TextInput inputMode="numeric" value={String(s.adModelWeight ?? 0)} onCommit={(v) => void updateSettings({ adModelWeight: parseInt(v, 10) || 0 })} />
             </Field>
-          </Card>
-        </Section>
-        <Section title="Jarvis-chatten">
-          <Card className="flex flex-col">
-            <Toggle
-              label="Fråga Jarvis (Claude Sonnet 5.5)"
-              sub={store().backend.kind === 'supabase' ? 'Knappen syns uppe till höger på Idag. Tak 50 kr/månad, stängs av automatiskt.' : 'Kräver den publicerade appen.'}
-              checked={s.aiEnabled}
-              onChange={(v) => void updateSettings({ aiEnabled: v }, v ? 'Jarvis-chatten på' : 'Jarvis-chatten av')}
-            />
-            <a href="#/mer/kvitto" className="flex min-h-[44px] items-center text-[14px] font-semibold text-accent">
-              Visa kvitto: vad chatten kostar och vad den gett
-            </a>
           </Card>
         </Section>
         <Reminders />
@@ -386,60 +370,3 @@ function Reminders() {
   );
 }
 
-function AiReceipt() {
-  const ds = useData();
-  const [rows, setRows] = useState<Awaited<ReturnType<typeof import('../../data/supabase').aiUsage>> | null>(null);
-  const [err, setErr] = useState('');
-  useEffect(() => {
-    if (store().backend.kind !== 'supabase') return setErr('Kvittot finns i den publicerade appen.');
-    void import('../../data/supabase').then((m) => m.aiUsage()).then(setRows, () => setErr('Kunde inte hämta kvittot.'));
-  }, []);
-  const months = new Map<string, NonNullable<typeof rows>>();
-  for (const r of rows ?? []) months.set(r.at.slice(0, 7), [...(months.get(r.at.slice(0, 7)) ?? []), r]);
-  // Plagg som Jarvis föreslog en åtgärd för och som sålts inom 30 dagar efter förslaget
-  const L = allLanded(ds);
-  const soldAfter = (rs: NonNullable<typeof rows>) => {
-    const seen = new Set<string>();
-    let revenue = 0,
-      profit = 0;
-    for (const r of rs.filter((x) => x.kind === 'förslag'))
-      for (const id of r.item_ids) {
-        const l = L.find((x) => x.item.id === id);
-        if (!l || seen.has(id) || !isSold(l.item) || !l.item.saleDate) continue;
-        const d = (new Date(`${l.item.saleDate}T12:00:00`).getTime() - new Date(r.at).getTime()) / 86400000;
-        if (d >= -1 && d <= 30) {
-          seen.add(id);
-          revenue += l.item.salePrice;
-          profit += l.profit ?? 0;
-        }
-      }
-    return { count: seen.size, revenue, profit };
-  };
-  return (
-    <>
-      <TopBand title="Jarvis-kvitto" back="#/mer" sub="Vad chatten kostar och vad den har gett" />
-      <Page>
-        {err && <Empty title={err} />}
-        {[...months].map(([m, rs]) => {
-          const cost = rs.reduce((a, r) => a + r.cost_ore, 0);
-          const q = rs.filter((r) => r.kind === 'fråga').length;
-          const approved = rs.filter((r) => r.kind === 'godkänd').length;
-          const s = soldAfter(rs);
-          const worth = s.profit > cost;
-          return (
-            <Section key={m} title={<span className="first-letter:uppercase">{monthName(m)}</span>}>
-              <div className="grid grid-cols-2 gap-2.5">
-                <Stat label="Kostnad" value={kr(cost, { decimals: true })} sub={`${q} anrop till Claude`} />
-                <Stat label="Godkända åtgärder" value={approved} sub="försäljningar, kostnader, uppgifter" />
-                <Stat label="Föreslagna plagg som såldes" value={`${s.count} st`} sub={`inom 30 dagar · ${kr(s.revenue)}`} />
-                <Stat label="Vinst på dem" value={<span className={worth ? 'text-pos' : ''}>{kr(s.profit)}</span>} sub={worth ? 'mer än chatten kostade' : 'mindre än chatten kostade'} tone={worth ? 'pos' : undefined} />
-              </div>
-            </Section>
-          );
-        })}
-        {rows && !rows.length && <Empty title="Inget än" text="När du använder Jarvis-chatten syns kostnaden och resultatet här." />}
-        <p className="m-0 px-1 text-[12px] text-muted">Plagg räknas när Jarvis föreslagit en åtgärd för dem (t.ex. publicera om) och de sålts inom 30 dagar. En del hade kanske sålts ändå, så se det som en fingervisning. Kostnaden räknas med en hög växelkurs (11 kr per dollar) så att taket på 50 kr säkert hålls.</p>
-      </Page>
-    </>
-  );
-}

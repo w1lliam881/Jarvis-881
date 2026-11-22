@@ -167,20 +167,8 @@ grant execute on function public.commit_mutations(jsonb, jsonb), public.replace_
 revoke all on public.records, public.changelog, public.backups, public.presence, public.push_subscriptions, public.allowed_users from anon;
 revoke execute on function public.commit_mutations(jsonb, jsonb), public.replace_all(jsonb) from anon, public;
 
--- Jarvis-chatten: kostnad per fråga och godkända åtgärder (kvittot)
-create table if not exists public.ai_usage (
-  id bigint generated always as identity primary key,
-  at timestamptz not null default now(),
-  email text not null,
-  kind text not null,          -- 'fråga', 'godkänd', 'förslag'
-  cost_ore integer not null default 0,
-  input_tokens integer not null default 0,
-  output_tokens integer not null default 0,
-  item_ids text[] not null default '{}',
-  note text
-);
-alter table public.ai_usage enable row level security;
-create policy ai_usage_r on public.ai_usage for select using (public.is_allowed());
-create policy ai_usage_i on public.ai_usage for insert with check (public.is_allowed() and cost_ore = 0 and kind in ('godkänd', 'förslag'));
-grant select, insert on public.ai_usage to authenticated;
-revoke all on public.ai_usage from anon;
+
+-- Serverfunktionerna (Gmail-import, påminnelser, backup) kör som service_role
+grant usage on schema public to service_role;
+grant all on all tables in schema public to service_role;
+grant usage, select on all sequences in schema public to service_role;

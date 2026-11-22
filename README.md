@@ -38,22 +38,10 @@ Just nu sparas datan **på enheten** (i webbläsaren). När Supabase är uppsatt
 
 Driftkostnad: 0 kr i månaden (se `ARCHITECTURE.md`).
 
-### Steg 3: Påminnelser (valfritt, gratis)
+### Påminnelser och Gmail-import (uppsatt)
 
-Görs av Claude när Supabase finns:
-
-1. Skapa nycklar för notiser: `npx web-push generate-vapid-keys`.
-2. Publik nyckel → Vercel som `VITE_VAPID_PUBLIC_KEY`. Privat nyckel → `supabase secrets set VAPID_PRIVATE_KEY=… VAPID_PUBLIC_KEY=… VAPID_SUBJECT=mailto:din@mejl.se` (aldrig i koden).
-3. `supabase functions deploy daily-reminder`.
-4. Kör en gång i Supabase SQL Editor (byt adress och nyckel):
-   ```sql
-   create extension if not exists pg_net;
-   select cron.schedule('jarvis-reminders', '0 * * * *', $$
-     select net.http_post('https://<projekt>.supabase.co/functions/v1/daily-reminder',
-       headers := jsonb_build_object('Authorization', 'Bearer <service_role-nyckel>'));
-   $$);
-   ```
-5. På iPhone: öppna Jarvis från hemskärmen → Mer → Inställningar → Påminnelser.
+- **Påminnelser:** funktionen `daily-reminder` körs varje timme (pg_cron). Nycklarna för notiser ligger som hemligheter i Supabase. Slå på i appen: öppna Jarvis från hemskärmen → Mer → Inställningar → Påminnelser.
+- **Gmail:** skriptet `scripts/gmail-till-jarvis.gs` körs i ditt Google-konto på script.google.com och skickar mejl från Vinted, Plick och Doorzo till funktionen `ingest-mail`. De hamnar i godkännandekön. Nyckeln (`INGEST_TOKEN`) finns bara i Supabase och i ditt skript, aldrig i koden.
 
 ## Ändra i efterhand
 
