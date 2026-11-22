@@ -227,8 +227,6 @@ export interface Settings {
   adModelHeight: number;
   /** Ungefärlig växelkurs för bevakningar: yen per krona */
   yenPerSek: number;
-  /** Jarvis-chatten (Claude Sonnet 5.5) är påslagen */
-  aiEnabled: boolean;
   adModelWeight: number;
   updatedAt: string;
 }

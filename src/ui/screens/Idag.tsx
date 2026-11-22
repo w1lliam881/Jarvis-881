@@ -14,7 +14,6 @@ import type { Route } from '../router';
 import { Bars, Card, Money, Page, Pill, RoiPill, Section, Segmented, Spark, Stat, TopBand, cx } from '../components/ui';
 import { openQuick } from '../App';
 import { Presence } from '../components/Presence';
-import { JarvisChat, chatAvailable } from '../components/JarvisChat';
 import { toast } from '../Boot';
 
 export function Idag({ route }: { route: Route }) {
@@ -24,7 +23,6 @@ export function Idag({ route }: { route: Route }) {
   const view = route.query.get('v') === 'kalender' ? 'kalender' : 'oversikt';
   const o = useMemo(() => overview(ds, today), [ds, today]);
   const goal = live(ds.goals).find((g) => g.kind === 'monthRevenue');
-  const [chat, setChat] = useState(false);
   const daily = useMemo(() => dailySales(ds, o.month).slice(0, +today.slice(8, 10)), [ds, o.month, today]);
 
   return (
@@ -34,14 +32,7 @@ export function Idag({ route }: { route: Route }) {
         sub={longDate(today)}
         right={
           <div className="mt-1 flex flex-col items-end gap-2">
-          <div className="flex items-center gap-2">
-            {chatAvailable() && ds.settings.aiEnabled && (
-              <button type="button" onClick={() => setChat(true)} aria-label="Fråga Jarvis" className="grid h-8 w-8 place-items-center rounded-full bg-sun text-sun-ink">
-                <Sparkles size={16} aria-hidden />
-              </button>
-            )}
-            <Presence />
-          </div>
+          <Presence />
           <span className="flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 font-mono text-[11px] text-mint">
             <i className={cx('h-1.5 w-1.5 rounded-full', status.state === 'saving' ? 'bg-sun' : 'bg-mint')} />
             {status.state === 'saving' ? 'Sparar' : status.at ? `Sparat ${new Date(status.at).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}` : 'Synkad'}
@@ -89,7 +80,6 @@ export function Idag({ route }: { route: Route }) {
         </div>
       </TopBand>
       <Page>{view === 'kalender' ? <Calendar ds={ds} /> : <Overview ds={ds} o={o} />}</Page>
-      {chat && <JarvisChat open onClose={() => setChat(false)} />}
     </>
   );
 }

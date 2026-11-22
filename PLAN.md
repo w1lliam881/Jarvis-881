@@ -45,10 +45,10 @@ Acceptans: försäljning under 15 sekunder (e2e-test), prisändring uppdaterar v
 - ✅ Godkännandekö för utkast
 - ✅ Tolkning av inklistrade mejl från Vinted, Plick, Doorzo
 - ✅ Dagliga säkerhetskopior (lokalt vid start; Supabase pg_cron i schemat)
-- ⬜ Gmail-import (kräver Supabase och Google-samtycke)
+- ✅ Gmail-import via Google Apps Script i ditt eget konto → funktionen `ingest-mail` → godkännandekön (adresser och telefonnummer tas bort)
 - ⬜ Google Sheets-import (när det nya arket finns)
 - ⬜ CSV-import av försäljning (parser finns, vy saknas)
-- ⬜ Påminnelser (push kräver Supabase; uppgifter och uppdrag fungerar redan i appen)
+- ✅ Påminnelser som notiser (funktionen `daily-reminder`, varje timme)
 
 ## Fas 5 – Skärpning 🟡
 

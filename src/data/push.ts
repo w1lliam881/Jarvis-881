@@ -1,5 +1,8 @@
 import { supabaseConfigured } from './supabase-config';
 
+// Publik nyckel för webbnotiser (inte hemlig). Den privata ligger bara i Supabase.
+const VAPID_PUBLIC_KEY = (import.meta.env.VITE_VAPID_PUBLIC_KEY as string | undefined) || 'BJNM8FEBn8YsLi_A6ZgPOOOpgwT-G_J6VzrWsV-Fv4Be6M08gAFw3uGVfMVNNNVHGZHXVssQdgmCoVHtJfpov9o';
+
 export interface PushPrefs {
   time: string; // "HH:MM"
   kinds: { daily: boolean; inbox: boolean; oldStock: boolean; watch?: boolean };
@@ -8,7 +11,6 @@ export interface PushPrefs {
 /** Varför påminnelser inte kan slås på här, eller null om det går. */
 export function pushBlocker(): string | null {
   if (!supabaseConfigured()) return 'Påminnelser kräver att Jarvis är publicerad med Supabase.';
-  if (!import.meta.env.VITE_VAPID_PUBLIC_KEY) return 'Påminnelser är inte uppsatta på servern än.';
   if (!('serviceWorker' in navigator) || !('PushManager' in window) || typeof Notification === 'undefined')
     return 'Lägg Jarvis på hemskärmen (Safari → Dela → Lägg till på hemskärmen) och öppna den därifrån.';
   if (Notification.permission === 'denied') return 'Notiser är avstängda för Jarvis i iPhonens inställningar (Inställningar → Notiser → Jarvis).';
@@ -29,7 +31,7 @@ export async function enablePush(prefs: PushPrefs): Promise<string | null> {
   const perm = await Notification.requestPermission();
   if (perm !== 'granted') return 'Du behöver tillåta notiser för att få påminnelser.';
   const reg = await navigator.serviceWorker.ready;
-  const sub = (await reg.pushManager.getSubscription()) ?? (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(import.meta.env.VITE_VAPID_PUBLIC_KEY as string) }));
+  const sub = (await reg.pushManager.getSubscription()) ?? (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(VAPID_PUBLIC_KEY) }));
   const { savePushSubscription } = await import('./supabase');
   return savePushSubscription(sub.toJSON(), prefs);
 }
