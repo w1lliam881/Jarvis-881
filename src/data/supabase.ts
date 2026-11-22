@@ -14,7 +14,10 @@ function sb(): SupabaseClient {
 
 export async function sendMagicLink(email: string): Promise<string | null> {
   const { error } = await sb().auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname, shouldCreateUser: false } });
-  return error ? 'Kunde inte skicka länken. Är adressen tillagd som användare?' : null;
+  if (!error) return null;
+  if (error.status === 429 || /rate limit/i.test(error.message)) return 'För många inloggningsmejl på kort tid. Supabase skickar högst några i timmen. Vänta en stund och försök igen, eller använd länken i ett mejl du redan fått.';
+  if (/signups not allowed|not found|otp_disabled/i.test(error.message) || error.status === 422) return 'Den här adressen har inte tillgång till Jarvis. Be den som äger appen att lägga till den.';
+  return `Kunde inte skicka länken: ${error.message}`;
 }
 
 export async function savePushSubscription(sub: PushSubscriptionJSON, prefs: { time: string; kinds: Record<string, boolean> }): Promise<string | null> {
@@ -57,6 +60,39 @@ export async function signInWithHandoff(code: string): Promise<string | null> {
   const { data, error } = await sb().auth.refreshSession({ refresh_token: code.trim() });
   if (error || !data.session) return 'Koden fungerade inte. Den kan bara användas en gång: tryck på länken i mejlet igen för en ny kod.';
   return null;
+}
+
+export interface ChatReply {
+  content?: unknown[];
+  stop_reason?: string;
+  spent_ore?: number;
+  cap_ore?: number;
+  error?: string;
+}
+
+/** Skicka konversationen till Jarvis-chatten (Supabase-funktionen jarvis-chat). */
+export async function askJarvis(messages: unknown[]): Promise<ChatReply> {
+  const { data, error } = await sb().functions.invoke('jarvis-chat', { body: { messages } });
+  if (error) {
+    try {
+      const body = await (error as { context?: Response }).context?.json();
+      return { error: body?.error ?? 'Jarvis svarade inte.', spent_ore: body?.spent_ore, cap_ore: body?.cap_ore };
+    } catch {
+      return { error: 'Jarvis svarade inte. Kontrollera nätet och försök igen.' };
+    }
+  }
+  return data as ChatReply;
+}
+
+/** Logga godkända åtgärder och föreslagna plagg för kvittot. */
+export async function logAi(kind: 'godkänd' | 'förslag', itemIds: string[], note: string): Promise<void> {
+  const { data } = await sb().auth.getSession();
+  await sb().from('ai_usage').insert({ email: data.session?.user.email ?? 'okänd', kind, cost_ore: 0, item_ids: itemIds, note });
+}
+
+export async function aiUsage(): Promise<{ at: string; kind: string; cost_ore: number; item_ids: string[]; note: string | null; email: string }[]> {
+  const { data } = await sb().from('ai_usage').select('at,kind,cost_ore,item_ids,note,email').order('at', { ascending: false }).limit(2000);
+  return (data ?? []) as never;
 }
 
 interface RecordRow {

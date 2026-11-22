@@ -53,6 +53,10 @@ export interface Item extends BaseRecord {
   platform: Platform | null;
   /** Produkt-ID som används för att hålla isär plaggen, t.ex. "TS-Gar-2026-207" */
   productId: string;
+  /** Passform, t.ex. "bootcut", "slim", "rak" */
+  fit?: string;
+  /** Mått i cm, nyckel = måttets namn (t.ex. "Midja") */
+  measurements?: Record<string, number>;
   comment: string;
   ok: CheckStatus;
   saleBooking: SaleBooking;
@@ -169,6 +173,11 @@ export interface IdeaState extends BaseRecord {
 
 export interface SearchSaved extends BaseRecord {
   query: string;
+  /** Bevakning: påminn dagligen och visa färdiga sökningar */
+  watch?: boolean;
+  category?: Category | null;
+  /** Eget maxpris i ören. Null = räknas ut från dina krav och din historik. */
+  maxPrice?: Ore | null;
 }
 
 export type DraftStatus = 'väntar' | 'godkänd' | 'avvisad';
@@ -214,6 +223,13 @@ export interface Settings {
   /** Bokföringen är låst till och med detta datum: verifikat där ändras inte, rättelser blir nya verifikat. */
   lockedThrough: ISODate | null;
   userName: string;
+  /** Annonser: modellens längd och vikt (cm, kg) som skrivs sist i annonsen. 0 = utelämnas. */
+  adModelHeight: number;
+  /** Ungefärlig växelkurs för bevakningar: yen per krona */
+  yenPerSek: number;
+  /** Jarvis-chatten (Claude Sonnet 5.5) är påslagen */
+  aiEnabled: boolean;
+  adModelWeight: number;
   updatedAt: string;
 }
 
