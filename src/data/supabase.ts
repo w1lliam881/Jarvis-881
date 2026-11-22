@@ -14,7 +14,10 @@ function sb(): SupabaseClient {
 
 export async function sendMagicLink(email: string): Promise<string | null> {
   const { error } = await sb().auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname, shouldCreateUser: false } });
-  return error ? 'Kunde inte skicka länken. Är adressen tillagd som användare?' : null;
+  if (!error) return null;
+  if (error.status === 429 || /rate limit/i.test(error.message)) return 'För många inloggningsmejl på kort tid. Supabase skickar högst några i timmen. Vänta en stund och försök igen, eller använd länken i ett mejl du redan fått.';
+  if (/signups not allowed|not found|otp_disabled/i.test(error.message) || error.status === 422) return 'Den här adressen har inte tillgång till Jarvis. Be den som äger appen att lägga till den.';
+  return `Kunde inte skicka länken: ${error.message}`;
 }
 
 export async function savePushSubscription(sub: PushSubscriptionJSON, prefs: { time: string; kinds: Record<string, boolean> }): Promise<string | null> {
