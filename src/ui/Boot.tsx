@@ -64,13 +64,23 @@ async function pickBackend(): Promise<{ backend: Backend; warning: string | null
 }
 
 export function Boot({ children }: { children: ReactNode }) {
+  const [handoff, setHandoff] = useState<string | null>(null);
   const [state, setState] = useState<{ ready: boolean; error: string | null; warning: string | null; login: boolean }>({ ready: false, error: null, warning: null, login: false });
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
+        // Kom vi hit från länken i mejlet, i Safari? Då visas en kod för att logga in i appen på hemskärmen.
+        const fromLink = /access_token=|[?&]code=|token_hash=/.test(location.href);
         const { backend, warning } = await pickBackend();
+        if (fromLink && backend.kind === 'supabase') {
+          const m = await import('../data/supabase');
+          if (!m.isStandalone()) {
+            const c = await m.handoffCode();
+            if (c && !cancelled) setHandoff(c);
+          }
+        }
         const s = new Store(backend, () => backend.email || deviceUser() || 'Okänd');
         setStore(s);
         await s.init();
@@ -97,6 +107,7 @@ export function Boot({ children }: { children: ReactNode }) {
   }, []);
 
   if (state.login) return <LoginLazy />;
+  if (handoff) return <HandoffLazy code={handoff} onContinue={() => setHandoff(null)} />;
   if (state.error)
     return (
       <div className="mx-auto max-w-[480px] p-6">
@@ -134,4 +145,12 @@ function LoginLazy() {
     import('./screens/Login').then((m) => setC(() => m.Login));
   }, []);
   return C ? <C /> : null;
+}
+
+function HandoffLazy({ code, onContinue }: { code: string; onContinue: () => void }) {
+  const [C, setC] = useState<null | ((p: { code: string; onContinue: () => void }) => ReactNode)>(null);
+  useEffect(() => {
+    import('./screens/Login').then((m) => setC(() => m.Handoff));
+  }, []);
+  return C ? <C code={code} onContinue={onContinue} /> : null;
 }
