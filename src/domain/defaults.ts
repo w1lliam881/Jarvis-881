@@ -26,6 +26,9 @@ export function defaultSettings(): Settings {
     migratedAt: null,
     lockedThrough: null,
     userName: 'Jag',
+    adModelHeight: 178,
+    yenPerSek: 14,
+    adModelWeight: 65,
     updatedAt: new Date(0).toISOString(),
   };
 }

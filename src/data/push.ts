@@ -2,7 +2,7 @@ import { supabaseConfigured } from './supabase-config';
 
 export interface PushPrefs {
   time: string; // "HH:MM"
-  kinds: { daily: boolean; inbox: boolean; oldStock: boolean };
+  kinds: { daily: boolean; inbox: boolean; oldStock: boolean; watch?: boolean };
 }
 
 /** Varför påminnelser inte kan slås på här, eller null om det går. */

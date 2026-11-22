@@ -17,9 +17,10 @@ Deno.serve(async () => {
   const due = (subs ?? []).filter((s) => String(s.remind_at).slice(0, 2) === hour);
   if (!due.length) return new Response('inga');
 
-  const { data: rows } = await db.from('records').select('collection,data').in('collection', ['tasks', 'inbox', 'items', 'drops']).is('deleted_at', null);
+  const { data: rows } = await db.from('records').select('collection,data').in('collection', ['tasks', 'inbox', 'items', 'drops', 'searches']).is('deleted_at', null);
   const all = rows ?? [];
   const tasks = all.filter((r) => r.collection === 'tasks' && !r.data.done && r.data.date <= today).length;
+  const watches = all.filter((r) => r.collection === 'searches' && r.data.watch).length;
   const inbox = all.filter((r) => r.collection === 'inbox' && r.data.status === 'väntar').length;
   const drops = new Map(all.filter((r) => r.collection === 'drops').map((r) => [r.data.id, r.data.date]));
   const old = all.filter((r) => {
@@ -34,6 +35,7 @@ Deno.serve(async () => {
     if (s.kinds?.daily && tasks) parts.push(`${tasks} uppgifter att göra`);
     if (s.kinds?.inbox && inbox) parts.push(`${inbox} utkast väntar i godkännandekön`);
     if (s.kinds?.oldStock && monday && old) parts.push(`${old} plagg har legat över 60 dagar`);
+    if (s.kinds?.watch !== false && watches) parts.push(`kolla dina ${watches} bevakningar`);
     if (!parts.length) continue;
     try {
       await webpush.sendNotification(s.subscription, JSON.stringify({ title: 'Jarvis', body: parts.join(' · '), url: inbox ? './#/ekonomi/ko' : './#/idag', tag: `jarvis-${today}` }));

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { CheckCircle2, ChevronRight, Circle, Plus, AlertTriangle, RotateCcw, Search } from 'lucide-react';
+import { CheckCircle2, ChevronRight, Circle, Copy, Plus, AlertTriangle, RotateCcw, Search } from 'lucide-react';
+import { adText, measuresFilled, MEASURES } from '../../domain/ad';
 import { useData } from '../../data/store';
 import { addItems, deleteDrop, deleteItem, returnItem, setOk, undoSale, updateDrop, updateItem } from '../../data/actions';
 import { daysBetween, monthName, todayISO } from '../../domain/dates';
@@ -493,6 +494,8 @@ function ItemView({ id }: { id: string }) {
           </Field>
         </Card>
 
+        <AdCard item={item} />
+
         <Card>
           <div className="mb-2 font-semibold">Så räknas hemkostnaden</div>
           <dl className="m-0 grid grid-cols-[1fr_auto] gap-y-1 text-[14px]">
@@ -549,4 +552,48 @@ function CommentInput({ value, onCommit }: { value: string; onCommit: (v: string
   const [s, setS] = useState(value);
   useEffect(() => setS(value), [value]);
   return <textarea className="field min-h-[72px]" value={s} placeholder="Skick, mått, annons-ID, vad som helst" onChange={(e) => setS(e.target.value)} onBlur={() => s !== value && onCommit(s)} />;
+}
+
+function AdCard({ item }: { item: Item }) {
+  const ds = useData();
+  const text = adText(item, ds.settings);
+  const { filled, total } = measuresFilled(item);
+  const keys = MEASURES[item.category];
+  const setMeasure = (k: string, v: string) => {
+    const n = Math.max(0, parseFloat(v.replace(',', '.')) || 0);
+    const m = { ...(item.measurements ?? {}) };
+    if (n) m[k] = n;
+    else delete m[k];
+    void updateItem(item.id, { measurements: m }, 'Mått sparade');
+  };
+  return (
+    <Section title="Annons" action={<span className="text-muted">{filled}/{total} mått</span>}>
+      <Card className="flex flex-col gap-3">
+        <div className="grid grid-cols-2 gap-3">
+          {keys.map((k) => (
+            <Field key={k} label={`${k} (cm)`}>
+              <TextInput inputMode="decimal" value={item.measurements?.[k] ? String(item.measurements[k]).replace('.', ',') : ''} onCommit={(v) => setMeasure(k, v)} />
+            </Field>
+          ))}
+          <Field label="Passform">
+            <TextInput value={item.fit ?? ''} onCommit={(v) => void updateItem(item.id, { fit: v.trim() }, 'Passform sparad')} placeholder="t.ex. bootcut" />
+          </Field>
+        </div>
+        <div className="whitespace-pre-wrap rounded-xl bg-surface-2 p-3 text-[15px] leading-relaxed">{text}</div>
+        {filled < total && <p className="m-0 text-[12px] text-me">Fyll i alla mått innan du lägger upp annonsen.</p>}
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={() =>
+            navigator.clipboard?.writeText(text).then(
+              () => toast('Annonsen kopierad'),
+              () => toast('Markera texten och kopiera', 'error'),
+            )
+          }
+        >
+          <Copy size={16} aria-hidden /> Kopiera annons
+        </button>
+      </Card>
+    </Section>
+  );
 }

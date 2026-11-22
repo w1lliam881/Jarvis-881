@@ -55,3 +55,20 @@ describe('märke från namn', () => {
     expect(inferBrand('Mörkblå v-neck')).toBe('');
   });
 });
+
+import { watchView } from '../../src/domain/watch';
+import { defaultSettings } from '../../src/domain/defaults';
+import { history } from '../../src/domain/metrics';
+describe('bevakningar', () => {
+  it('ger japanska termer, länkar och maxpris i yen', () => {
+    const { dataset } = importV14(src as any);
+    const H = history(dataset, '2026-11-21');
+    const w = { id: 'w', version: 1, createdAt: '', updatedAt: '', query: "levis 501 jeans", watch: true, category: 'Jeans' as const, maxPrice: 30000 };
+    const v = watchView(w, H, defaultSettings());
+    expect(v.terms[0].ja).toContain('リーバイス');
+    expect(v.maxYen).toBe(4200);
+    expect(v.links[0].url).toContain('price_max=4200');
+    const auto = watchView({ ...w, maxPrice: null }, H, defaultSettings());
+    expect(auto.maxSource).toBe('krav');
+  });
+});

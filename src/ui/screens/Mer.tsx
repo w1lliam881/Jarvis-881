@@ -117,6 +117,19 @@ function Settings() {
             <p className="m-0 mt-2 text-[12px] text-muted">Räkenskapsår: kalenderår. Metod: fakturametoden (händelser bokförs på order- eller fakturadatum). Kontoplan: BAS.</p>
           </Card>
         </Section>
+        <Section title="Annonser">
+          <Card className="grid grid-cols-2 gap-3">
+            <Field label="Modellens längd (cm)" hint="0 = utelämnas">
+              <TextInput inputMode="numeric" value={String(s.adModelHeight ?? 0)} onCommit={(v) => void updateSettings({ adModelHeight: parseInt(v, 10) || 0 })} />
+            </Field>
+            <Field label="Yen per krona (bevakningar)">
+              <TextInput inputMode="decimal" value={String(s.yenPerSek ?? 14)} onCommit={(v) => void updateSettings({ yenPerSek: parseFloat(v.replace(',', '.')) || 14 })} />
+            </Field>
+            <Field label="Modellens vikt (kg)">
+              <TextInput inputMode="numeric" value={String(s.adModelWeight ?? 0)} onCommit={(v) => void updateSettings({ adModelWeight: parseInt(v, 10) || 0 })} />
+            </Field>
+          </Card>
+        </Section>
         <Reminders />
         <Section title="Spelet">
           <Card>
@@ -349,6 +362,7 @@ function Reminders() {
             <Toggle label="Uppgifter för dagen" checked={prefs.kinds.daily} onChange={(v) => void save({ ...prefs, kinds: { ...prefs.kinds, daily: v } }, on)} />
             <Toggle label="Utkast i godkännandekön" checked={prefs.kinds.inbox} onChange={(v) => void save({ ...prefs, kinds: { ...prefs.kinds, inbox: v } }, on)} />
             <Toggle label="Gamla plagg (måndagar)" checked={prefs.kinds.oldStock} onChange={(v) => void save({ ...prefs, kinds: { ...prefs.kinds, oldStock: v } }, on)} />
+            <Toggle label="Bevakningar" checked={prefs.kinds.watch !== false} onChange={(v) => void save({ ...prefs, kinds: { ...prefs.kinds, watch: v } }, on)} />
           </>
         )}
       </Card>

@@ -5,6 +5,7 @@ import { approveDraft, deleteVoucher, fillSaleDates, rejectDraft, saveManualVouc
 import { monthName, prevMonth, todayISO } from '../../domain/dates';
 import { healthScore, runChecks, type IssueGroup } from '../../domain/checks';
 import { ACCOUNTS, accountName, EVENT_TYPES, isBalanced, saleAmount, trialBalance, voucherBalance } from '../../domain/ledger';
+import { quarterLabel, quarterOf, quarterReport, type Group, type Quarter } from '../../domain/quarter';
 import { allLanded, brandStats, dropStats, isSold, live, periodPL } from '../../domain/metrics';
 import { kr, parseOre } from '../../domain/money';
 import { backupJson, encodeCp437, itemsCsv, ledgerCsv, sie4, sourceLabel, sortedVouchers, vouchersCsv } from '../../domain/export';
@@ -22,6 +23,7 @@ const VIEWS = [
   { value: 'verifikat', label: 'Verifikat' },
   { value: 'rapporter', label: 'Rapporter' },
   { value: 'analys', label: 'Analys' },
+  { value: 'kvartal', label: 'Kvartal' },
   { value: 'kontroll', label: 'Kontroll' },
 ] as const;
 
@@ -50,6 +52,7 @@ export function Ekonomi({ route }: { route: Route }) {
         {view === 'verifikat' && <Vouchers />}
         {view === 'rapporter' && <Reports />}
         {view === 'analys' && <Analysis />}
+        {view === 'kvartal' && <QuarterView />}
         {view === 'kontroll' && <Checks />}
       </Page>
     </>
@@ -899,6 +902,102 @@ function BrandTable({ period }: { period: string }) {
         )}
       </Card>
       <p className="m-0 px-1 text-[12px] text-muted">Vinst = försäljningspris minus hemkostnad (inköp, frakt, tull, förpackning). Marginal = vinst delat med omsättning. Plagg utan märke räknas som Okänt märke.</p>
+    </Section>
+  );
+}
+
+function QuarterView() {
+  const ds = useData();
+  const now = quarterOf(todayISO());
+  const first = useMemo(() => {
+    const dates = ds.items.filter((i) => !i.deletedAt && i.saleDate).map((i) => i.saleDate!) as string[];
+    return dates.length ? quarterOf(dates.reduce((a, b) => (a < b ? a : b))) : now;
+  }, [ds]);
+  const options: Quarter[] = [];
+  for (let y = now.year, q = now.q; y > first.year || (y === first.year && q >= first.q); q === 1 ? ((q = 4 as Quarter['q']), y--) : (q = (q - 1) as Quarter['q'])) options.push({ year: y, q });
+  const [sel, setSel] = useState(0);
+  const r = useMemo(() => quarterReport(ds, options[sel] ?? now), [ds, sel]);
+  const diff = (a: number, b: number) => (b ? `${a >= b ? '+' : '−'}${Math.abs(Math.round(((a - b) / Math.abs(b)) * 100))} % mot förra kvartalet` : undefined);
+  return (
+    <>
+      <select className="field" value={sel} onChange={(e) => setSel(+e.target.value)} aria-label="Kvartal">
+        {options.map((q, i) => (
+          <option key={i} value={i}>
+            {quarterLabel(q)}
+            {i === 0 ? ' (pågår)' : ''}
+          </option>
+        ))}
+      </select>
+      <div className="grid grid-cols-2 gap-2.5">
+        <Stat label="Sålt" value={kr(r.soldRevenue)} sub={`${r.soldCount} plagg${r.prev.soldCount ? ` · förra: ${r.prev.soldCount}` : ''}`} />
+        <Stat label="Vinst på sålda" value={<span className={r.soldProfit < 0 ? 'text-neg' : 'text-pos'}>{kr(r.soldProfit)}</span>} sub={`${Math.round(r.margin)} % marginal`} />
+        <Stat label="Resultat (bokföring)" value={kr(r.result)} sub={diff(r.result, r.prev.result)} />
+        <Stat label="Lager vid kvartalets slut" value={kr(r.stockValueEnd)} sub={`${r.unsoldEnd} plagg`} />
+      </div>
+      {(r.buyMore.length > 0 || r.buyLess.length > 0) && (
+        <div className="grid gap-2.5 sm:grid-cols-2">
+          <Card>
+            <div className="mb-1 font-semibold text-pos">Köp mer av</div>
+            {r.buyMore.length ? r.buyMore.map((t) => <p key={t} className="m-0 text-[14px]">{t}</p>) : <p className="m-0 text-[14px] text-muted">Inget som sticker ut.</p>}
+          </Card>
+          <Card>
+            <div className="mb-1 font-semibold text-me">Köp mindre av</div>
+            {r.buyLess.length ? r.buyLess.map((t) => <p key={t} className="m-0 text-[14px]">{t}</p>) : <p className="m-0 text-[14px] text-muted">Inget som sticker ut.</p>}
+          </Card>
+        </div>
+      )}
+      {r.notes.length > 0 && (
+        <Card className="flex flex-col gap-1">
+          {r.notes.map((n) => (
+            <p key={n} className="m-0 text-[14px]">
+              {n}
+            </p>
+          ))}
+        </Card>
+      )}
+      <GroupTable title="Märken" rows={r.brands} />
+      <GroupTable title="Kategorier" rows={r.categories} />
+      <GroupTable title="Storlekar" rows={r.sizes} />
+      <GroupTable title="Inköpspris" rows={r.costBuckets} keepOrder />
+      <p className="m-0 px-1 text-[12px] text-muted">Rekommendationerna bygger på minst tre sålda plagg per märke eller kategori, marginal jämfört med ditt snitt och hur stor andel som sålts. Jarvis sätter aldrig pris på enskilda plagg.</p>
+    </>
+  );
+}
+
+function GroupTable({ title, rows, keepOrder }: { title: string; rows: Group[]; keepOrder?: boolean }) {
+  const list = (keepOrder ? rows : rows.slice(0, 10)).filter((g) => g.sold > 0 || g.bought > 0);
+  if (!list.length) return null;
+  return (
+    <Section title={title}>
+      <Card pad={false}>
+        <table className="w-full text-[13px]">
+          <thead>
+            <tr className="text-left text-[12px] text-muted">
+              <th className="px-3 py-2 font-medium">{({ Märken: 'Märke', Kategorier: 'Kategori', Storlekar: 'Storlek', Inköpspris: 'Pris' } as Record<string, string>)[title] ?? title}</th>
+              <th className="px-1 py-2 text-right font-medium">Sålda</th>
+              <th className="px-1 py-2 text-right font-medium">Vinst</th>
+              <th className="px-3 py-2 text-right font-medium">ROI</th>
+            </tr>
+          </thead>
+          <tbody>
+            {list.map((g) => (
+              <tr key={g.key} className="border-t border-line-2">
+                <td className="px-3 py-2">
+                  <div className="font-medium">{g.key}</div>
+                  <div className="text-[11px] text-muted">
+                    {g.bought ? `${g.bought} köpta` : ''}
+                    {g.bought && g.sellThrough !== null ? ' · ' : ''}
+                    {g.sellThrough !== null ? `${Math.round(g.sellThrough * 100)} % sålda totalt` : ''}
+                  </div>
+                </td>
+                <td className="num px-1 py-2 text-right">{g.sold}</td>
+                <td className={cx('num px-1 py-2 text-right', g.profit < 0 && 'text-neg')}>{kr(g.profit, { unit: false })}</td>
+                <td className={cx('num px-3 py-2 text-right', g.roi < 0 ? 'text-neg' : g.roi >= 100 ? 'text-pos' : '')}>{g.sold ? `${Math.round(g.roi)} %` : '–'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Card>
     </Section>
   );
 }

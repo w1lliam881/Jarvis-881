@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
 import { Bookmark, Check, Copy, Plus, Trash2, X } from 'lucide-react';
 import { useData } from '../../data/store';
-import { buyCandidate, deleteCandidate, deleteGoal, deleteVideo, saveCandidate, saveGoal, saveSearch, saveVideo, setIdea, updateSettings } from '../../data/actions';
+import { deleteSearch, saveWatch, buyCandidate, deleteCandidate, deleteGoal, deleteVideo, saveCandidate, saveGoal, saveSearch, saveVideo, setIdea, updateSettings } from '../../data/actions';
 import { evaluateCandidate, maxPriceFor, orderPlan, rates } from '../../domain/calc';
 import { buildSearch } from '../../domain/doorzo';
+import { watchView } from '../../domain/watch';
 import { todayISO } from '../../domain/dates';
 import { history, live, allLanded } from '../../domain/metrics';
 import { kr } from '../../domain/money';
@@ -349,7 +350,7 @@ function Doorzo() {
   const [q, setQ] = useState('');
   const [run, setRun] = useState('');
   const res = useMemo(() => (run ? buildSearch(run) : null), [run]);
-  const saved = live(ds.searches).slice().reverse();
+  const saved = live(ds.searches).filter((x) => !x.watch).slice().reverse();
   const copy = (t: string) =>
     navigator.clipboard?.writeText(t).then(
       () => toast(`Kopierat: ${t}`),
@@ -379,6 +380,7 @@ function Doorzo() {
           </div>
         )}
       </Card>
+      <Watches query={run || q} />
       {res && res.understood.length > 0 && <p className="m-0 px-1 text-[13px] text-muted">Förstod: {res.understood.join(', ')}</p>}
       {res && !res.groups.length && <Empty title="Inga söktermer" text="Prova ett märke eller ett plaggord, t.ex. jeans, jacka eller tröja." />}
       {res?.groups.map((g) => (
@@ -713,5 +715,69 @@ function Video() {
         </Section>
       )}
     </>
+  );
+}
+
+function Watches({ query }: { query: string }) {
+  const ds = useData();
+  const H = useMemo(() => history(ds, todayISO()), [ds]);
+  const watches = live(ds.searches).filter((x) => x.watch);
+  const [cat, setCat] = useState<Category>('Jeans');
+  const [max, setMax] = useState(0);
+  const copy = (t: string) => navigator.clipboard?.writeText(t).then(() => toast(`Kopierat: ${t}`), () => toast(t));
+  return (
+    <Section title={`Bevakningar${watches.length ? ` · ${watches.length}` : ''}`}>
+      {watches.map((w) => {
+        const v = watchView(w, H, ds.settings);
+        return (
+          <Card key={w.id} className="flex flex-col gap-2">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <div className="font-semibold">{w.query}</div>
+                <div className="text-[12px] text-muted">
+                  {w.category ?? 'Alla kategorier'}
+                  {v.maxPrice ? ` · maxpris ${kr(v.maxPrice)} (ca ${v.maxYen?.toLocaleString('sv-SE')} yen, ${v.maxSource === 'eget' ? 'eget' : 'från dina krav'})` : ''}
+                </div>
+              </div>
+              <button aria-label={`Ta bort bevakningen ${w.query}`} className="grid h-9 w-9 place-items-center text-muted" onClick={() => void deleteSearch(w.id)}>
+                <Trash2 size={16} aria-hidden />
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {v.terms.slice(0, 4).map((t) => (
+                <button key={t.ja} type="button" onClick={() => copy(t.ja)} className="min-h-[34px] rounded-lg border border-line px-2.5 text-left text-[13px]" title={t.sv}>
+                  <span lang="ja">{t.ja}</span> <Copy size={12} className="inline text-muted" aria-hidden />
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              {v.links.map((l) => (
+                <a key={l.label} href={l.url} target="_blank" rel="noopener noreferrer" className="btn btn-soft h-10 min-h-0 flex-1 text-[14px]">
+                  Öppna {l.label}
+                </a>
+              ))}
+            </div>
+            <p className="m-0 text-[12px] text-muted">Hittar du något: lägg in det i Kalkyl så får du Köp, Tveksam eller Avstå. På Doorzo klistrar du in en kopierad sökterm.</p>
+          </Card>
+        );
+      })}
+      <Card className="flex flex-col gap-2">
+        <div className="text-[14px]">
+          Bevaka <b>{query.trim() || 'en sökning'}</b> och få påminnelse varje dag.
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <Field label="Kategori">
+            <Select value={cat} options={CATEGORIES} onChange={setCat} />
+          </Field>
+          <Field label="Eget maxpris" hint="Tomt = räknas från dina krav">
+            <MoneyInput value={max} onCommit={setMax} />
+          </Field>
+        </div>
+        <button className="btn btn-primary" disabled={!query.trim()} onClick={() => void saveWatch({ query: query.trim(), category: cat, maxPrice: max || null }).then((ok) => ok && setMax(0))}>
+          Lägg till bevakning
+        </button>
+        <p className="m-0 text-[12px] text-muted">Jarvis söker inte automatiskt på sajterna. Du får färdiga sökningar och en daglig påminnelse. Växelkursen ({ds.settings.yenPerSek} yen per krona) ändras under Mer → Inställningar.</p>
+      </Card>
+    </Section>
   );
 }

@@ -5,6 +5,7 @@ import type { ParsedRow } from '../domain/parse';
 import type {
   Attachment,
   Candidate,
+  Category,
   CheckStatus,
   Dataset,
   Drop,
@@ -402,6 +403,20 @@ export function setIdea(ideaKey: string, status: 'sparad' | 'använd' | 'avfärd
     const cur = ds.ideas.find((i) => i.ideaKey === ideaKey);
     if (!status) return cur ? [{ collection: 'ideas', record: { ...cur, deletedAt: now() } as never }] : [];
     return [{ collection: 'ideas', record: (cur ? { ...cur, status, deletedAt: null } : { ...baseRecord(), ideaKey, status }) as never }];
+  });
+}
+
+export function saveWatch(w: { query: string; category: Category | null; maxPrice: Ore | null }, id?: string): Promise<boolean> {
+  return store().save(id ? 'Bevakning ändrad' : 'Bevakning sparad', (ds) => {
+    const cur = id ? find(ds.searches, id) : undefined;
+    return [{ collection: 'searches', record: (cur ? { ...cur, ...w, watch: true } : { ...baseRecord(), ...w, watch: true }) as never }];
+  });
+}
+
+export function deleteSearch(id: string): Promise<boolean> {
+  return store().save('Borttagen', (ds) => {
+    const x = find(ds.searches, id);
+    return x ? [{ collection: 'searches', record: { ...x, deletedAt: now() } as never }] : [];
   });
 }
 
