@@ -28,6 +28,7 @@ export function defaultSettings(): Settings {
     userName: 'Jag',
     adModelHeight: 178,
     yenPerSek: 14,
+    aiEnabled: false,
     adModelWeight: 65,
     updatedAt: new Date(0).toISOString(),
   };

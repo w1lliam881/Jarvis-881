@@ -62,6 +62,39 @@ export async function signInWithHandoff(code: string): Promise<string | null> {
   return null;
 }
 
+export interface ChatReply {
+  content?: unknown[];
+  stop_reason?: string;
+  spent_ore?: number;
+  cap_ore?: number;
+  error?: string;
+}
+
+/** Skicka konversationen till Jarvis-chatten (Supabase-funktionen jarvis-chat). */
+export async function askJarvis(messages: unknown[]): Promise<ChatReply> {
+  const { data, error } = await sb().functions.invoke('jarvis-chat', { body: { messages } });
+  if (error) {
+    try {
+      const body = await (error as { context?: Response }).context?.json();
+      return { error: body?.error ?? 'Jarvis svarade inte.', spent_ore: body?.spent_ore, cap_ore: body?.cap_ore };
+    } catch {
+      return { error: 'Jarvis svarade inte. Kontrollera nätet och försök igen.' };
+    }
+  }
+  return data as ChatReply;
+}
+
+/** Logga godkända åtgärder och föreslagna plagg för kvittot. */
+export async function logAi(kind: 'godkänd' | 'förslag', itemIds: string[], note: string): Promise<void> {
+  const { data } = await sb().auth.getSession();
+  await sb().from('ai_usage').insert({ email: data.session?.user.email ?? 'okänd', kind, cost_ore: 0, item_ids: itemIds, note });
+}
+
+export async function aiUsage(): Promise<{ at: string; kind: string; cost_ore: number; item_ids: string[]; note: string | null; email: string }[]> {
+  const { data } = await sb().from('ai_usage').select('at,kind,cost_ore,item_ids,note,email').order('at', { ascending: false }).limit(2000);
+  return (data ?? []) as never;
+}
+
 interface RecordRow {
   collection: string;
   id: string;
