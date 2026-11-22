@@ -11,15 +11,18 @@ export function toast(message: string, tone: 'ok' | 'xp' | 'error' = 'ok') {
   window.dispatchEvent(new CustomEvent('jarvis-toast', { detail: { message, tone } }));
 }
 
+// Namnet sparas på enheten. Om webbläsaren inte tillåter lagring hålls det i minnet.
+let memoryUser = '';
 export function deviceUser(): string {
   try {
-    return localStorage.getItem('jarvis-user') || '';
+    return localStorage.getItem('jarvis-user') || memoryUser;
   } catch {
-    return '';
+    return memoryUser;
   }
 }
 
 export function setDeviceUser(name: string) {
+  memoryUser = name;
   try {
     localStorage.setItem('jarvis-user', name);
   } catch {
@@ -116,7 +119,10 @@ export function Boot({ children }: { children: ReactNode }) {
     );
   return (
     <>
-      {state.warning && <div className="no-print bg-me-bg px-4 py-2 text-[13px] text-me">{state.warning}</div>}
+      {import.meta.env.MODE === 'preview' && (
+        <div className="no-print bg-me-bg px-4 py-2 pt-[max(8px,env(safe-area-inset-top))] text-[13px] text-me">Förhandsvisning. Datan sparas bara i den här webbläsaren. Export, utskrift och öppning av filer fungerar i den riktiga appen.</div>
+      )}
+      {state.warning && import.meta.env.MODE !== 'preview' && <div className="no-print bg-me-bg px-4 py-2 text-[13px] text-me">{state.warning}</div>}
       {children}
     </>
   );

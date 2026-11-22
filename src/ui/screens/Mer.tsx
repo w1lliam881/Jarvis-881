@@ -107,7 +107,10 @@ function Settings() {
             </Field>
             <Toggle label="Momsregistrerad" sub="Slår på momsrader och momsrapporten. Av tills företaget är registrerat." checked={s.vatEnabled} onChange={(v) => void updateSettings({ vatEnabled: v })} />
             <Toggle label="Flagga verifikat utan underlag" sub="Visas i Kontroll. Gäller bara nya verifikat." checked={s.attachmentsFlag} onChange={(v) => void updateSettings({ attachmentsFlag: v })} />
-            <p className="m-0 text-[12px] text-muted">Räkenskapsår: kalenderår. Metod: fakturametoden (händelser bokförs på order- eller fakturadatum). Kontoplan: BAS.</p>
+            <Field label="Bokföringen låst till och med" hint="Verifikat till och med datumet ändras inte längre, inte heller automatiskt. Rättelser bokförs med ett senare datum. Lås ett år när det är avstämt.">
+              <input type="date" className="field" value={s.lockedThrough ?? ''} onChange={(e) => void updateSettings({ lockedThrough: e.target.value || null }, e.target.value ? `Låst till och med ${e.target.value}` : 'Låsningen borttagen')} />
+            </Field>
+            <p className="m-0 mt-2 text-[12px] text-muted">Räkenskapsår: kalenderår. Metod: fakturametoden (händelser bokförs på order- eller fakturadatum). Kontoplan: BAS.</p>
           </Card>
         </Section>
         <Section title="Spelet">

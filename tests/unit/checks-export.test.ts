@@ -47,3 +47,13 @@ describe('export', () => {
     expect(rows.length).toBe(1 + dataset.vouchers.reduce((s, v) => s + v.lines.length, 0));
   });
 });
+
+describe('SIE ingående balans', () => {
+  it('går jämnt ut när tidigare år har ett resultat', () => {
+    const { dataset } = importV14(src as any);
+    const s = sie4(dataset, '2026', '2026-11-21');
+    const ib = [...s.matchAll(/#IB 0 \d+ (-?\d+\.\d{2})/g)].reduce((a, m) => a + Math.round(parseFloat(m[1]) * 100), 0);
+    expect(ib).toBe(0);
+    expect(s).toContain('#IB 0 2010');
+  });
+});

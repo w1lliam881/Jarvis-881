@@ -24,6 +24,7 @@ export function defaultSettings(): Settings {
     videoAbilities: { face: true, voice: true, package: true, garments: true, time: true },
     attachmentsFlag: true,
     migratedAt: null,
+    lockedThrough: null,
     userName: 'Jag',
     updatedAt: new Date(0).toISOString(),
   };

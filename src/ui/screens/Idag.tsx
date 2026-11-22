@@ -9,6 +9,7 @@ import { kr } from '../../domain/money';
 import { saleAmount } from '../../domain/ledger';
 import { generateQuests, questBoard, xpInfo } from '../../game/engine';
 import type { Dataset, Task } from '../../domain/types';
+import { go } from '../router';
 import type { Route } from '../router';
 import { Bars, Card, Money, Page, Pill, RoiPill, Section, Segmented, Spark, Stat, TopBand, cx } from '../components/ui';
 import { openQuick } from '../App';
@@ -66,7 +67,7 @@ export function Idag({ route }: { route: Route }) {
           <Segmented
             dark
             value={view}
-            onChange={(v) => (location.hash = v === 'kalender' ? '#/idag?v=kalender' : '#/idag')}
+            onChange={(v) => (go(v === 'kalender' ? '#/idag?v=kalender' : '#/idag'))}
             options={[
               { value: 'oversikt', label: 'Översikt' },
               { value: 'kalender', label: 'Kalender' },

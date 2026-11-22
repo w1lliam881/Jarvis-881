@@ -140,7 +140,7 @@ function sizes(q: string): Term[] {
     const cm = Math.round(+w[1] * 2.54);
     out.push({ ja: `ウエスト${cm}`, sv: `Midja ${cm} cm (japanska annonser anger ofta cm)` });
   }
-  const s = q.match(/\b(xxs|xs|s|m|l|xl|xxl)\b/i);
+  const s = q.match(/(?:^|\s)(xxs|xs|s|m|l|xl|xxl)(?=\s|$)/i);
   if (s) out.push({ ja: `サイズ${s[1].toUpperCase()}`, sv: `Storlek ${s[1].toUpperCase()}` });
   const shoe = q.match(/\b(?:eu\s?)?(3[6-9]|4[0-7])\b/);
   const JP: Record<number, string> = { 36: '23', 37: '23.5', 38: '24', 39: '24.5', 40: '25', 41: '26', 42: '26.5', 43: '27.5', 44: '28', 45: '29', 46: '29.5', 47: '30' };

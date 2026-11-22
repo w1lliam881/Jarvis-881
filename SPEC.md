@@ -1,6 +1,6 @@
 # Jarvis 2.0 – Specifikation
 
-Status: **Utkast, väntar på godkännande**
+Status: **Godkänd 2026-11-21**
 Datum: 2026-11-21
 
 Jarvis 2.0 är ett eget affärssystem för 881: köp av second hand-/vintagekläder (främst denim) från Japan och vidareförsäljning. Det ersätter Jarvis v14 (Claude-artifact) med en riktig webbapp. All funktionalitet från v14 följer med eller blir bättre, och bokföringen blir mycket enklare att använda.
@@ -109,7 +109,7 @@ Jarvis föreslår **aldrig** försäljningspris på enskilda plagg. Användaren 
 - Ett eget, **vanligt fantasy-äventyr** utan koppling till denim/881, för att ge en rolig och belönande del av jobbet.
 - **Pixelart.** Ljud och musik finns men är **av** som standard.
 - Verkligt arbete ger XP. Level-formel som i v14 (level = floor(sqrt(xp/50)) + 1) men kalibrerad så att en **värld tar 3–4 veckor** med normal aktivitet.
-- Världar (förslag, kan justeras): Skogen, Öknen, Isvidderna, Vulkanen, Molnriket, Stjärnslottet. Varje värld har egen miljö, egna uppdrag, en boss och en kosmetisk belöning.
+- Världar: Mosskogen, Sandhavet, Frostriket, Glödbergen, Molnöarna, Stjärnslottet. Varje värld har egen miljö, egna uppdrag, en boss (tre liv, ett slag per dag målet uppfylls) och en kosmetisk titel.
 - **Uppdrag genereras av verklig data** och bockas av automatiskt när det går. Prioriterade typer:
   1. **Bokföring i fas** (saknad tull/frakt, inköpspris, underlag, månadsavstämning)
   2. **Marknadsföring/innehåll** (filma och posta, logga TikTok-statistik)
@@ -120,7 +120,7 @@ Jarvis föreslår **aldrig** försäljningspris på enskilda plagg. Användaren 
 
 ## 10. Teknik och drift
 
-- Next.js + TypeScript + Tailwind, PWA.
+- React + TypeScript + Tailwind, byggt med Vite, PWA. (Ändrat från Next.js: appen behöver ingen egen server, så Vite ger en enklare, snabbare och helt statisk app som kan ligga gratis på Vercel.)
 - Supabase (Postgres, inloggning, fillagring, realtid), **lagrat i EU**. Gratisnivå.
 - Vercel (gratis hobbynivå).
 - Mål: **0 kr/månad** i drift. Exakt kostnad redovisas i `ARCHITECTURE.md`.
@@ -145,6 +145,6 @@ Byggs inte här, och datamodellen förbereds inte för den nu.
 
 ## 14. Arbetsordning
 
-1. Steg 0: frågor → denna SPEC → **ditt godkännande** ← *vi är här*
+1. Steg 0: frågor → denna SPEC → godkänd
 2. Plan: `ARCHITECTURE.md`, `DATA_MODEL.md`, `PLAN.md` → godkännande
 3. Fas 1 Grund → Fas 2 Kärna → Fas 3 Resten → Fas 3b Spelet → Fas 4 Automation → Fas 5 Skärpning. Godkännande efter varje fas.

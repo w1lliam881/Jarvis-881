@@ -19,6 +19,10 @@ export function Attachments({ voucherId, dropId }: { voucherId?: string; dropId?
   const add = async (files: FileList | null) => {
     if (!files?.length) return;
     for (const f of Array.from(files)) {
+      if (!/^image\/(jpeg|png|heic|heif|webp|gif)$|^application\/pdf$/.test(f.type)) {
+        toast(`${f.name}: bara bilder (JPG, PNG, HEIC) och PDF går att bifoga`, 'error');
+        continue;
+      }
       if (f.size > 15 * 1024 * 1024) {
         toast(`${f.name} är för stor (max 15 MB)`, 'error');
         continue;
@@ -54,7 +58,7 @@ export function Attachments({ voucherId, dropId }: { voucherId?: string; dropId?
             }}
           >
             <Paperclip size={16} aria-hidden /> Fil
-            <input type="file" accept="image/*,application/pdf" multiple className="sr-only" onChange={(e) => void add(e.target.files)} />
+            <input type="file" accept="image/jpeg,image/png,image/heic,image/heif,image/webp,application/pdf" multiple className="sr-only" onChange={(e) => void add(e.target.files)} />
           </label>
           <button type="button" className="btn btn-soft px-2 text-[14px]" onClick={() => setShowText((x) => !x)}>
             <FileText size={16} aria-hidden /> Text
@@ -100,6 +104,7 @@ function AttachmentRow({ a }: { a: Attachment }) {
     if (!a.blobKey) return;
     const b = await store().backend.getBlob(a.blobKey);
     if (!b) return toast('Filen finns inte på den här enheten', 'error');
+    if (!/^image\/(jpeg|png|heic|heif|webp|gif)$|^application\/pdf$/.test(b.type)) return toast('Filtypen kan inte visas', 'error');
     const url = URL.createObjectURL(b);
     window.open(url, '_blank');
     setTimeout(() => URL.revokeObjectURL(url), 60000);

@@ -108,7 +108,14 @@ export function maxPriceFor(category: Category, H: History, s: Settings): MaxPri
   const byProfit = avgSale - s.minProfit;
   const byRoi = avgSale / (1 + s.minRoiPct / 100);
   const landedMax = Math.min(byProfit, byRoi);
-  const p = Math.floor((landedMax - s.packaging) / (1 + R.customsRate) - shipping);
+  let p = Math.floor((landedMax - s.packaging) / (1 + R.customsRate) - shipping);
+  // Kalkylen avrundar tullen till hela ören: sänk till ett pris som garanterat får omdömet Köp på kraven
+  const passes = (price: number) => {
+    const sh = Math.round(w * R.shippingPerKg);
+    const landed = price + sh + Math.round(R.customsRate * (price + sh)) + s.packaging;
+    return avgSale - landed >= s.minProfit && ((avgSale - landed) / landed) * 100 >= s.minRoiPct;
+  };
+  while (p > 0 && !passes(p)) p--;
   return { category, avgSale, weightKg: w, shipping, maxPrice: p > 0 ? p : null, limitedBy: byRoi <= byProfit ? 'roi' : 'vinst', basis: h.sold };
 }
 

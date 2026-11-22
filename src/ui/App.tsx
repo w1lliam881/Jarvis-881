@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { BarChart3, Home, MoreHorizontal, Package, Plus, ShoppingBag, Undo2 } from 'lucide-react';
 import { store, useStore } from '../data/store';
-import { useRoute } from './router';
+import { useRoute, go } from './router';
 import { cx } from './components/ui';
 import { QuickSheet, type QuickKind } from './Quick';
 import { Idag } from './screens/Idag';
@@ -47,7 +47,7 @@ export function App() {
       if (e.key === 'n') setQuick('sale');
       else if (e.key === 'k') setQuick('cost');
       else if (e.key === 'u') setQuick('task');
-      else if (/^[1-5]$/.test(e.key)) location.hash = `#/${TABS[+e.key - 1].id}`;
+      else if (/^[1-5]$/.test(e.key)) go(`#/${TABS[+e.key - 1].id}`);
       else return;
       e.preventDefault();
     };

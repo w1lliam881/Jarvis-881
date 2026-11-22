@@ -7,6 +7,7 @@ import { allLanded, dropStats, isSold, landedForDrop, itemsOfDrop, live, type La
 import { kr } from '../../domain/money';
 import { parseLines } from '../../domain/parse';
 import { CATEGORIES, PLATFORMS, type CheckStatus, type Dataset, type Drop, type DropStatus, type Item } from '../../domain/types';
+import { go } from '../router';
 import type { Route } from '../router';
 import { Bar, Card, Chips, ConfirmButton, Empty, Field, Money, MoneyInput, Page, Pill, RoiPill, Section, Select, Stat, TextInput, TopBand, cx } from '../components/ui';
 import { SaleSheet, DropSheet, CostSheet } from '../Quick';
@@ -345,7 +346,7 @@ function DropView({ id }: { id: string }) {
 
         <Attachments dropId={drop.id} />
 
-        <ConfirmButton label="Ta bort drop" confirmLabel={`Ta bort ${drop.name} och ${items.length} plagg?`} onConfirm={() => void deleteDrop(drop.id).then(() => (location.hash = '#/lager/drops'))} />
+        <ConfirmButton label="Ta bort drop" confirmLabel={`Ta bort ${drop.name} och ${items.length} plagg?`} onConfirm={() => void deleteDrop(drop.id).then(() => (go('#/lager/drops')))} />
       </Page>
       {cost && <CostSheet onClose={() => setCost(null)} preset={{ type: cost, dropId: drop.id }} />}
     </>
@@ -502,7 +503,7 @@ function ItemView({ id }: { id: string }) {
             <AlertTriangle size={16} aria-hidden /> Fel
           </button>
         </div>
-        <ConfirmButton label="Ta bort plagg" onConfirm={() => void deleteItem(item.id).then(() => (location.hash = `#/lager/drop/${drop.id}`))} />
+        <ConfirmButton label="Ta bort plagg" onConfirm={() => void deleteItem(item.id).then(() => (go(`#/lager/drop/${drop.id}`)))} />
       </Page>
       {sell && <SaleSheet onClose={() => setSell(false)} itemId={item.id} />}
     </>

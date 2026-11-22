@@ -11,6 +11,8 @@ describe('doorzo', () => {
     expect(r.groups[0].terms[0].ja).toBe('リーバイス 501 ジーンズ');
     for (const g of r.groups) for (const t of g.terms) expect(t.sv.length).toBeGreaterThan(0);
     expect(JSON.stringify(r.groups)).toContain('W32');
+    expect(r.understood.join(' ')).not.toMatch(/Storlek S/);
+    expect(buildSearch('levis jeans storlek m').understood).toContain('Storlek M');
   });
   it('förstår svenska ord', () => {
     const r = buildSearch('nudie jeans otvättade');

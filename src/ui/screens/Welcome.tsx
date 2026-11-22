@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { go } from '../router';
 import { CheckCircle2, AlertTriangle, Upload } from 'lucide-react';
 import { store, useData } from '../../data/store';
 import { emptyDataset } from '../../domain/defaults';
@@ -31,7 +32,7 @@ export function Welcome() {
             onClick={() => {
               setDeviceUser(name.trim());
               setNamed(true);
-              if (hasData) location.reload();
+              if (hasData) void store().reload();
             }}
           >
             Fortsätt
@@ -62,8 +63,7 @@ async function startEmpty(d: Dataset) {
   d.settings.migratedAt = new Date().toISOString();
   d.settings.gameStartedAt = new Date().toISOString();
   await store().replaceAll(d, 'Start utan data');
-  location.hash = '#/idag';
-  location.reload();
+  go('#/idag');
 }
 
 function Shell({ children }: { children: React.ReactNode }) {
@@ -106,7 +106,7 @@ export function Importer({ onDone }: { onDone?: () => void }) {
     const d = result.ds;
     d.settings.gameStartedAt = new Date().toISOString();
     d.game.badgeBaseline = startGame(d).baseline;
-    location.hash = '#/idag';
+    go('#/idag');
     await store().replaceAll(d, 'Import från v14');
     // Räkna om automatiska verifikat direkt (exakt ett per händelse)
     await store().save('Bokföringen avstämd efter import', () => [{ settings: store().ds!.settings }], { undoable: false });

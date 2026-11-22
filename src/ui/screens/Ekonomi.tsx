@@ -9,6 +9,7 @@ import { allLanded, dropStats, isSold, live, periodPL } from '../../domain/metri
 import { kr, parseOre } from '../../domain/money';
 import { backupJson, encodeCp437, itemsCsv, ledgerCsv, sie4, sourceLabel, sortedVouchers, vouchersCsv } from '../../domain/export';
 import type { Dataset, EventType, InboxDraft, Voucher, VoucherLine } from '../../domain/types';
+import { go } from '../router';
 import type { Route } from '../router';
 import { Bars, Card, Chips, Columns, ConfirmButton, Empty, Field, MoneyInput, Page, Pill, Row, Section, Segmented, Stat, TopBand, cx } from '../components/ui';
 import { Attachments } from './Attachments';
@@ -212,7 +213,7 @@ function VoucherView({ id }: { id: string }) {
         )}
         {editable && (item || drop) && <Card className="text-[14px]">Kopplat till {item ? `plagget ${item.name}` : `dropen ${drop!.name}`}.</Card>}
         <Attachments voucherId={v.id} />
-        {editable && <ConfirmButton label={<><Trash2 size={16} aria-hidden /> Ta bort verifikat</>} onConfirm={() => void deleteVoucher(v.id).then(() => (location.hash = '#/ekonomi/verifikat'))} />}
+        {editable && <ConfirmButton label={<><Trash2 size={16} aria-hidden /> Ta bort verifikat</>} onConfirm={() => void deleteVoucher(v.id).then(() => (go('#/ekonomi/verifikat')))} />}
       </Page>
     </>
   );
@@ -271,7 +272,7 @@ function VoucherEditor({ initial }: { initial?: Voucher }) {
   const save = async () => {
     const clean = lines.filter((l) => l.debit || l.credit);
     if (await saveManualVoucher({ date, text: text || 'Manuell post', lines: clean }, initial?.id)) {
-      if (!initial) location.hash = '#/ekonomi/verifikat';
+      if (!initial) go('#/ekonomi/verifikat');
     }
   };
   return (
@@ -349,9 +350,11 @@ function Reports() {
             ]}
           />
         </div>
-        <button className="btn btn-ghost w-11 px-0" onClick={() => window.print()} aria-label="Skriv ut eller spara som PDF">
-          <Printer size={18} aria-hidden />
-        </button>
+        {import.meta.env.MODE !== 'preview' && (
+          <button className="btn btn-ghost w-11 px-0" onClick={() => window.print()} aria-label="Skriv ut eller spara som PDF">
+            <Printer size={18} aria-hidden />
+          </button>
+        )}
       </div>
       {rep === 'res' && (
         <>
@@ -828,7 +831,7 @@ function Export() {
               <span className="text-[13px] text-muted">Läses av alla svenska bokföringsprogram och byråer</span>
             </span>
           </Row>
-          <Row onClick={() => (location.hash = '#/ekonomi/rapporter')}>
+          <Row onClick={() => (go('#/ekonomi/rapporter'))}>
             <span className="flex-1">
               <b className="block">PDF</b>
               <span className="text-[13px] text-muted">Öppna Rapporter och tryck på skrivarikonen, välj Spara som PDF</span>

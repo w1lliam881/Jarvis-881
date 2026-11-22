@@ -209,6 +209,8 @@ export interface Settings {
   videoAbilities: { face: boolean; voice: boolean; package: boolean; garments: boolean; time: boolean };
   attachmentsFlag: boolean;
   migratedAt: string | null;
+  /** Bokföringen är låst till och med detta datum: verifikat där ändras inte, rättelser blir nya verifikat. */
+  lockedThrough: ISODate | null;
   userName: string;
   updatedAt: string;
 }

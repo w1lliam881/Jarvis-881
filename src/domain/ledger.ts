@@ -233,7 +233,10 @@ export interface LedgerDiff {
 
 /** Jämför önskade automatiska verifikat med befintliga. Exakt ett verifikat per nyckel. */
 export function diffLedger(ds: Dataset): LedgerDiff {
-  const desired = desiredAll(ds);
+  const lock = ds.settings.lockedThrough ?? '';
+  const locked = (date: string) => !!lock && date <= lock;
+  const all = desiredAll(ds);
+  const desired = all.filter((d) => !locked(d.date));
   const byKey = new Map<string, Voucher[]>();
   for (const v of ds.vouchers) {
     if (v.deletedAt || v.source !== 'auto' || !v.key) continue;
@@ -247,6 +250,7 @@ export function diffLedger(ds: Dataset): LedgerDiff {
     seen.add(d.key);
     const existing = byKey.get(d.key) ?? [];
     if (!existing.length) diff.create.push(d);
+    else if (existing.some((v) => locked(v.date))) continue;
     else {
       const [first, ...dups] = existing.sort((a, b) => a.nr - b.nr);
       const imported = first.updatedBy === 'import';
@@ -261,7 +265,8 @@ export function diffLedger(ds: Dataset): LedgerDiff {
       diff.remove.push(...dups);
     }
   }
-  for (const [key, vs] of byKey) if (!seen.has(key)) diff.remove.push(...vs);
+  for (const d of all) seen.add(d.key);
+  for (const [key, vs] of byKey) if (!seen.has(key)) diff.remove.push(...vs.filter((v) => !locked(v.date)));
   return diff;
 }
 

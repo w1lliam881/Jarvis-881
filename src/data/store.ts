@@ -18,6 +18,8 @@ export type Change =
 interface UndoEntry {
   label: string;
   before: Change[];
+  /** Versionen varje post fick av ändringen. Ångra vägras om någon ändrat posten efter det. */
+  after: Map<string, number>;
 }
 
 type Listener = () => void;
@@ -43,7 +45,11 @@ export class Store {
   async init(): Promise<void> {
     this.ds = await this.backend.load();
     this.status = { state: 'idle', at: null, message: null };
-    this.backend.onRemoteChange(() => void this.reload('Uppdaterad från annan flik eller enhet'));
+    this.backend.onRemoteChange(() => {
+      // Efter en ändring från någon annan går det inte att ångra äldre steg säkert
+      this.undoStack = [];
+      void this.reload('Uppdaterad från annan flik eller enhet');
+    });
     this.emit();
   }
 
@@ -78,7 +84,9 @@ export class Store {
         await this.backend.commit(muts, log);
         this.ds = applyMutations(this.ds, muts);
         if (opts.undoable !== false) {
-          this.undoStack.push({ label, before });
+          const after = new Map<string, number>();
+          for (const m of muts) after.set(m.kind === 'put' ? `${m.collection}/${m.record.id}` : m.kind, m.record.version);
+          this.undoStack.push({ label, before, after });
           if (this.undoStack.length > 30) this.undoStack.shift();
         }
         this.status = { state: 'saved', at: new Date().toISOString(), message: label };
@@ -101,6 +109,19 @@ export class Store {
   async undo(): Promise<boolean> {
     const entry = this.undoStack.pop();
     if (!entry || !this.ds) return false;
+    const ds = this.ds;
+    const changed = entry.before.some((c) => {
+      if ('settings' in c) return ds.settings.version !== entry.after.get('settings');
+      if ('game' in c) return false;
+      const cur = (ds[c.collection] as { id: string; version: number }[]).find((x) => x.id === c.record.id);
+      return (cur?.version ?? 0) !== entry.after.get(`${c.collection}/${c.record.id}`);
+    });
+    if (changed) {
+      this.status = { state: 'error', at: this.status.at, message: 'Kan inte ångra: posten har ändrats efteråt. Ändra tillbaka för hand.' };
+      this.undoStack = [];
+      this.emit();
+      return false;
+    }
     const ok = await this.save(`Ångrade: ${entry.label}`, () => entry.before, { undoable: false });
     if (!ok) this.undoStack.push(entry);
     this.emit();
@@ -117,6 +138,12 @@ export class Store {
     const putRecord = (collection: CollectionName, rec: { id: string } & Record<string, unknown>, summary?: string) => {
       const arr = (working[collection] as unknown as { id: string; version: number; deletedAt?: string | null }[]);
       const cur = arr.find((x) => x.id === rec.id);
+      const lock = working.settings.lockedThrough;
+      if (collection === 'vouchers' && lock) {
+        const d0 = (cur as { date?: string } | undefined)?.date ?? '9999';
+        const d1 = (rec as { date?: string }).date ?? d0;
+        if (d0 <= lock || d1 <= lock) throw new ValidationError(`Bokföringen är låst till och med ${lock}. Bokför en rättelse med ett senare datum.`);
+      }
       const orig = (ds[collection] as unknown as { id: string; version: number }[]).find((x) => x.id === rec.id);
       const next = {
         ...(cur ?? {}),
@@ -162,9 +189,13 @@ export class Store {
     const diff = diffLedger(working);
     let nr = nextVoucherNr(working.vouchers);
     for (const d of diff.create) {
+      // Fast id per händelse: två flikar som skapar samma verifikat samtidigt krockar i versionskontrollen.
+      // Ett tidigare borttaget verifikat med samma händelse återupplivas och behåller sitt nummer.
+      const id = `auto-${d.key.replace(/[^a-zA-Z0-9:_-]/g, '_')}`;
+      const old = working.vouchers.find((v) => v.id === id);
       putRecord('vouchers', {
-        id: newId('v'),
-        nr: nr++,
+        id,
+        nr: old?.nr ?? nr++,
         date: d.date,
         text: d.text,
         lines: d.lines,

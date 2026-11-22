@@ -111,3 +111,14 @@ describe('huvudbok och dubbletter', () => {
     expect(d.map((x) => x.voucher.id)).toEqual(['m']);
   });
 });
+
+describe('låst period', () => {
+  it('automatiska verifikat i en låst period ändras inte', () => {
+    const data = ds([mkDrop({ id: 'd1', date: '2025-06-01' })], [mkItem({ id: 'a', dropId: 'd1', cost: 10000, salePrice: 50000, saleDate: '2025-07-01' })]);
+    const first = diffLedger(data);
+    data.vouchers = first.create.map((c, i) => voucher({ id: `v${i}`, nr: i + 1, source: 'auto', key: c.key, date: c.date, text: c.text, lines: c.lines, dropId: c.dropId, itemId: c.itemId }));
+    data.settings = { ...data.settings, lockedThrough: '2025-12-31', vatEnabled: true };
+    data.items = data.items.map((i) => ({ ...i, salePrice: 60000 }));
+    expect(diffLedger(data)).toEqual({ create: [], update: [], remove: [] });
+  });
+});

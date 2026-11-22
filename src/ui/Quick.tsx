@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { go } from './router';
 import { ClipboardPaste, ListPlus, Package, Receipt, ShoppingBag } from 'lucide-react';
 import { useData } from '../data/store';
 import { addDraft, addTask, bookEvent, createDrop, sellItem } from '../data/actions';
@@ -303,7 +304,7 @@ function MailSheet({ onClose }: { onClose: () => void }) {
     if (ok) {
       toast('Utkastet ligger i godkännandekön');
       onClose();
-      location.hash = '#/ekonomi/ko';
+      go('#/ekonomi/ko');
     }
   };
   return (

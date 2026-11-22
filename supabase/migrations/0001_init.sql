@@ -102,6 +102,17 @@ begin
   from jsonb_array_elements(log) l;
 end $$;
 
+-- Ersätt all data i en transaktion (import och återställning). Misslyckas något ändras inget.
+create or replace function public.replace_all(rows jsonb) returns void
+language plpgsql security invoker set search_path = public as $$
+begin
+  if not public.is_allowed() then raise exception 'Inte behörig' using errcode = '42501'; end if;
+  delete from public.records;
+  insert into public.records (collection, id, data, version, updated_at, updated_by, deleted_at)
+  select r ->> 'collection', r ->> 'id', r -> 'data', (r ->> 'version')::integer, now(), r ->> 'updated_by', nullif(r ->> 'deleted_at', '')::timestamptz
+  from jsonb_array_elements(rows) r;
+end $$;
+
 -- Realtid: andra flikar och enheter får veta när något ändrats.
 alter publication supabase_realtime add table public.records;
 

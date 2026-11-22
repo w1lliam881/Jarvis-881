@@ -7,7 +7,7 @@ import { buildSearch } from '../../domain/doorzo';
 import { todayISO } from '../../domain/dates';
 import { history, live, allLanded } from '../../domain/metrics';
 import { kr } from '../../domain/money';
-import { assessIdea, marketingSummary, suggestIdeas, engagement, type Filters } from '../../domain/video';
+import { assessIdea, marketingSummary, suggestIdeas, engagement, IDEAS, fill, ideaContext, type Filters } from '../../domain/video';
 import { CATEGORIES, VIDEO_TYPES, type Candidate, type Category, type VideoPost, type VideoType } from '../../domain/types';
 import type { Route } from '../router';
 import { Bars, Card, Empty, Field, MoneyInput, Page, Pill, Section, Select, Sheet, Stat, TextInput, Toggle, TopBand, cx } from '../components/ui';
@@ -703,7 +703,7 @@ function Video() {
           <Card pad={false}>
             {saved.map((x) => (
               <div key={x.id} className="flex min-h-[48px] items-center justify-between gap-2 border-b border-line-2 px-4 py-2 last:border-0 text-[14px]">
-                <span className="truncate">{x.ideaKey}</span>
+                <span className="truncate">{(() => { const t = IDEAS.find((i) => i.key === x.ideaKey); return t ? fill(t.title, ideaContext(ds)) : x.ideaKey; })()}</span>
                 <button className="text-[13px] font-semibold text-accent" onClick={() => void setIdea(x.ideaKey, 'använd')}>
                   Gjord
                 </button>

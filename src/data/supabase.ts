@@ -117,8 +117,11 @@ export class SupabaseBackend implements Backend {
     if (Array.isArray(d)) {
       const ds = emptyDataset();
       for (const r of d) {
-        if (r.collection === 'meta') continue;
-        (ds as unknown as Record<string, unknown[]>)[r.collection]?.push(r.data);
+        if (r.collection === 'meta') {
+          const m = r.data as { id?: string };
+          if (m.id === 'settings') ds.settings = { ...defaultSettings(), ...(r.data as object), id: 'main' } as Dataset['settings'];
+          if (m.id === 'game') ds.game = { ...defaultGame(), ...(r.data as object), id: 'main' } as Dataset['game'];
+        } else (ds as unknown as Record<string, unknown[]>)[r.collection]?.push(r.data);
       }
       return ds;
     }
@@ -132,12 +135,10 @@ export class SupabaseBackend implements Backend {
       { collection: 'meta', id: 'settings', data: { ...d.settings, id: 'settings' }, version: d.settings.version, updated_by: null, deleted_at: null },
       { collection: 'meta', id: 'game', data: { ...d.game, id: 'game' }, version: d.game.version, updated_by: null, deleted_at: null },
     ];
+    // Kontrollera först, så att databasen aldrig töms för att en post sedan stoppas
+    validateMutations(COLLECTIONS.flatMap((c) => (d[c] as unknown as { id: string; version: number }[]).map((record) => ({ kind: 'put' as const, collection: c, record, expectedVersion: null }))));
     this.myWrites = Date.now();
-    const del = await sb().from('records').delete().neq('collection', '__none__');
-    if (del.error) throw new Error(del.error.message);
-    for (let i = 0; i < rows.length; i += 500) {
-      const { error } = await sb().from('records').insert(rows.slice(i, i + 500));
-      if (error) throw new Error(error.message);
-    }
+    const { error } = await sb().rpc('replace_all', { rows });
+    if (error) throw new Error(`Ingenting ändrades: ${error.message}`);
   }
 }

@@ -103,6 +103,7 @@ export function sie4(ds: Dataset, year: string, generated: string): string {
   const before = all.filter((v) => v.date < `${year}-01-01`);
   const accounts = new Set<number>();
   for (const v of all) for (const l of v.lines) accounts.add(l.account);
+  if (before.length) accounts.add(2010);
   const lines: string[] = [
     '#FLAGGA 0',
     '#PROGRAM "Jarvis" 2.0',
@@ -120,6 +121,9 @@ export function sie4(ds: Dataset, year: string, generated: string): string {
   // Ingående balans för balanskonton = utgående balans från tidigare år
   const ib = new Map<number, number>();
   for (const v of before) for (const l of v.lines) if (l.account < 3000) ib.set(l.account, (ib.get(l.account) ?? 0) + l.debit - l.credit);
+  // Tidigare års resultat förs över till eget kapital (2010) så att ingående balans går jämnt ut
+  const ibSum = [...ib.values()].reduce((a, b) => a + b, 0);
+  if (ibSum !== 0) ib.set(2010, (ib.get(2010) ?? 0) - ibSum);
   const ub = new Map(ib);
   const res = new Map<number, number>();
   for (const v of inYear)

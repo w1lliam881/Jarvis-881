@@ -78,12 +78,12 @@ export function badges(ds: Dataset): Badge[] {
     { id: 'sold', name: 'Säljaren', desc: 'Sålda plagg', value: sold.length, tiers: [10, 50, 100, 250, 500], fmt: st },
     { id: 'revenue', name: 'Omsättning', desc: 'Total försäljning', value: revenue, tiers: [500000, 2500000, 5000000, 10000000, 25000000], fmt: kr },
     { id: 'profit', name: 'Vinstjakt', desc: 'Total vinst på sålda plagg', value: profit, tiers: [200000, 1000000, 2500000, 5000000, 10000000], fmt: kr },
-    { id: 'drops', name: 'Dropkung', desc: 'Genomförda drops', value: live(ds.drops).length, tiers: [1, 3, 5, 10, 20], fmt: st },
+    { id: 'drops', name: 'Dropkung', desc: 'Genomförda drops', value: live(ds.drops).filter((d) => L.some((l) => l.drop.id === d.id && l.item.cost > 0)).length, tiers: [1, 3, 5, 10, 20], fmt: st },
     { id: 'gem', name: 'Pärlfynd', desc: 'Högsta vinst på ett plagg', value: best, tiers: [30000, 60000, 100000, 150000, 250000], fmt: kr },
     { id: 'month', name: 'Rekordmånad', desc: 'Högsta månadsintäkt', value: bestMonth, tiers: [500000, 1000000, 2000000, 3000000, 5000000], fmt: kr },
     { id: 'monthsold', name: 'Månadsmaskin', desc: 'Flest sålda på en månad', value: Math.max(0, ...Object.values(perMonth)), tiers: [5, 10, 20, 30, 50], fmt: st },
-    { id: 'videos', name: 'Innehållsskapare', desc: 'Loggade klipp', value: live(ds.videos).length, tiers: [1, 5, 15, 40, 100], fmt: st },
-    { id: 'books', name: 'Bokförare', desc: 'Verifikat', value: live(ds.vouchers).length, tiers: [10, 25, 50, 100, 200], fmt: st },
+    { id: 'videos', name: 'Innehållsskapare', desc: 'Loggade klipp', value: live(ds.videos).filter((v) => v.views > 0).length, tiers: [1, 5, 15, 40, 100], fmt: st },
+    { id: 'books', name: 'Bokförare', desc: 'Verifikat', value: live(ds.vouchers).filter((v) => v.lines.some((l) => l.debit >= 100)).length, tiers: [10, 25, 50, 100, 200], fmt: st },
   ];
 }
 
@@ -132,7 +132,9 @@ export function generateQuests(ds: Dataset, today: ISODate, activeIds: Set<strin
   // --- Bokföring i fas ---
   for (const d of drops) {
     const hasItems = L.some((l) => l.drop.id === d.id);
-    if (!hasItems || d.status === 'beställd' || !isRecentDrop(ds, d, today)) continue;
+    // Bara riktiga drops: minst ett plagg med inköpspris och totalt minst 100 kr
+    const real = L.filter((l) => l.drop.id === d.id && l.item.cost > 0).reduce((s, l) => s + l.item.cost, 0) >= 10000;
+    if (!hasItems || !real || d.status === 'beställd' || !isRecentDrop(ds, d, today)) continue;
     {
       add({
         id: `customs:${d.id}`,
@@ -143,7 +145,7 @@ export function generateQuests(ds: Dataset, today: ISODate, activeIds: Set<strin
         benefit: 'Rätt hemkostnad och vinst per plagg',
         priority: 3,
         minutes: 3,
-        progress: { cur: d.customs > 0 ? 1 : 0, target: 1 },
+        progress: { cur: d.customs >= 1000 ? 1 : 0, target: 1 },
         route: `#/lager/drop/${d.id}`,
       });
     }
@@ -157,7 +159,7 @@ export function generateQuests(ds: Dataset, today: ISODate, activeIds: Set<strin
         benefit: 'Rätt hemkostnad och vinst per plagg',
         priority: 3,
         minutes: 3,
-        progress: { cur: d.shipping > 0 ? 1 : 0, target: 1 },
+        progress: { cur: d.shipping >= 1000 ? 1 : 0, target: 1 },
         route: `#/lager/drop/${d.id}`,
       });
     }
@@ -369,8 +371,13 @@ export function settleGame(ds: Dataset, before: Quest[], today: ISODate = todayI
   const now = new Date().toISOString();
   const completed = { ...ds.game.completed };
   let changed = false;
+  // Tak: högst fyra drop-uppdrag om dagen, så att XP inte kan samlas med påhittade drops
+  const dropQuest = (id: string) => /^(customs|shipping|unbox):/.test(id);
+  let dropToday = Object.entries(completed).filter(([k, c]) => dropQuest(k) && c.at.slice(0, 10) === today).length;
   for (const q of after) {
     if (q.done && activeIds.has(q.id) && !completed[q.id]) {
+      if (dropQuest(q.id) && dropToday >= 4) continue;
+      if (dropQuest(q.id)) dropToday++;
       completed[q.id] = { at: now, xp: q.xp, title: q.title };
       changed = true;
     }
