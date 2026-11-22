@@ -5,7 +5,7 @@ import { approveDraft, deleteVoucher, fillSaleDates, rejectDraft, saveManualVouc
 import { monthName, prevMonth, todayISO } from '../../domain/dates';
 import { healthScore, runChecks, type IssueGroup } from '../../domain/checks';
 import { ACCOUNTS, accountName, EVENT_TYPES, isBalanced, saleAmount, trialBalance, voucherBalance } from '../../domain/ledger';
-import { allLanded, dropStats, isSold, live, periodPL } from '../../domain/metrics';
+import { allLanded, brandStats, dropStats, isSold, live, periodPL } from '../../domain/metrics';
 import { kr, parseOre } from '../../domain/money';
 import { backupJson, encodeCp437, itemsCsv, ledgerCsv, sie4, sourceLabel, sortedVouchers, vouchersCsv } from '../../domain/export';
 import type { Dataset, EventType, InboxDraft, Voucher, VoucherLine } from '../../domain/types';
@@ -582,6 +582,7 @@ function Analysis() {
           <Bars rows={[...cats].sort((a, b) => b[1].r - a[1].r).map(([k, c]) => ({ label: k, value: c.r, sub: `${c.n} st · ${kr(c.r)} · vinst ${kr(c.p)}` }))} />
         </Card>
       </Section>
+      <BrandTable period={period} />
       <Section title="Bästa plagg i perioden">
         <Card>
           <Bars rows={sold.sort((a, b) => (b.profit ?? 0) - (a.profit ?? 0)).slice(0, 5).map((l) => ({ label: l.item.name, value: l.profit ?? 0, sub: kr(l.profit ?? 0) }))} />
@@ -846,5 +847,58 @@ function Export() {
         </Card>
       </Page>
     </>
+  );
+}
+
+function BrandTable({ period }: { period: string }) {
+  const ds = useData();
+  const [sort, setSort] = useState<'revenue' | 'profit' | 'margin'>('revenue');
+  const rows = useMemo(() => brandStats(ds, period), [ds, period]).sort((a, b) => b[sort] - a[sort]);
+  const max = Math.max(1, ...rows.map((r) => Math.abs(r[sort])));
+  return (
+    <Section title="Märken">
+      <Segmented
+        value={sort}
+        onChange={setSort}
+        options={[
+          { value: 'revenue', label: 'Omsättning' },
+          { value: 'profit', label: 'Vinst' },
+          { value: 'margin', label: 'Marginal' },
+        ]}
+      />
+      <Card pad={false} className="overflow-x-auto">
+        {rows.length ? (
+          <table className="w-full text-[13px]">
+            <thead>
+              <tr className="text-left text-[12px] text-muted">
+                <th className="px-3 py-2 font-medium">Märke</th>
+                <th className="px-1 py-2 text-right font-medium">Oms.</th>
+                <th className="px-1 py-2 text-right font-medium">Vinst</th>
+                <th className="px-3 py-2 text-right font-medium">Marg.</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.brand} className="border-t border-line-2">
+                  <td className="px-3 py-2">
+                    <div className="font-medium">{r.brand}</div>
+                    <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-line-2">
+                      <i className="block h-full rounded-full" style={{ width: `${(Math.abs(r[sort]) / max) * 100}%`, background: r[sort] < 0 ? 'var(--neg)' : 'var(--accent)' }} />
+                    </div>
+                    <div className="mt-0.5 text-[11px] text-muted">{r.sold} sålda · snitt {kr(r.avgPrice)}{r.unsold ? ` · ${r.unsold} osålda` : ''}</div>
+                  </td>
+                  <td className="num px-1 py-2 text-right">{kr(r.revenue, { unit: false })}</td>
+                  <td className={cx('num px-1 py-2 text-right', r.profit < 0 && 'text-neg')}>{kr(r.profit, { unit: false })}</td>
+                  <td className={cx('num px-3 py-2 text-right', r.margin < 0 ? 'text-neg' : r.margin >= 50 ? 'text-pos' : '')}>{Math.round(r.margin)} %</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p className="m-0 p-4 text-[14px] text-muted">Ingen försäljning i perioden.</p>
+        )}
+      </Card>
+      <p className="m-0 px-1 text-[12px] text-muted">Vinst = försäljningspris minus hemkostnad (inköp, frakt, tull, förpackning). Marginal = vinst delat med omsättning. Plagg utan märke räknas som Okänt märke.</p>
+    </Section>
   );
 }

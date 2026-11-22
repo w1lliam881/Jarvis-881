@@ -45,3 +45,13 @@ describe('video', () => {
     expect(marketingSummary(dataset).count).toBe(0);
   });
 });
+
+import { inferBrand } from '../../src/domain/doorzo';
+describe('märke från namn', () => {
+  it('gissar märket', () => {
+    expect(inferBrand('Momotaro tröja')).toBe('Momotaro');
+    expect(inferBrand("Levi's 501")).toBe("Levi's");
+    expect(inferBrand('RL DS hoodie grå/svart')).toBe('Ralph Lauren');
+    expect(inferBrand('Mörkblå v-neck')).toBe('');
+  });
+});

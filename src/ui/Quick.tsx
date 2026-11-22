@@ -57,7 +57,7 @@ export function SaleSheet({ onClose, itemId: preset }: { onClose: () => void; it
   const [platform, setPlatform] = useState<Platform>('Vinted');
   const [busy, setBusy] = useState(false);
   const unsold = useMemo(() => allLanded(ds).filter((l) => !isSold(l.item)), [ds]);
-  const list = unsold.filter((l) => `${l.item.name} ${l.item.brand} ${l.item.size} ${l.item.category} ${l.drop.name}`.toLowerCase().includes(q.toLowerCase())).slice(0, 60);
+  const list = unsold.filter((l) => `${l.item.name} ${l.item.productId} ${l.item.brand} ${l.item.size} ${l.item.category} ${l.drop.name}`.toLowerCase().includes(q.toLowerCase())).slice(0, 60);
   const chosen = sel ? unsold.find((l) => l.item.id === sel) : null;
   const save = async () => {
     if (!chosen || !price) return;
@@ -88,6 +88,7 @@ export function SaleSheet({ onClose, itemId: preset }: { onClose: () => void; it
           <div className="card flex items-center justify-between gap-3 bg-accent-soft p-3">
             <div className="min-w-0">
               <div className="truncate font-semibold">{chosen.item.name}</div>
+              {chosen.item.productId && <div className="num text-[13px]">{chosen.item.productId}</div>}
               <div className="text-[13px] text-muted">
                 {chosen.drop.name} · hemkostnad {kr(chosen.landed)}
               </div>
@@ -120,7 +121,7 @@ export function SaleSheet({ onClose, itemId: preset }: { onClose: () => void; it
                 <span className="min-w-0">
                   <span className="block truncate">{l.item.name}</span>
                   <span className="block truncate text-[12px] text-muted">
-                    {[l.item.brand, l.item.size, l.drop.name].filter(Boolean).join(' · ')}
+                    {[l.item.productId, l.item.brand, l.item.size, l.drop.name].filter(Boolean).join(' · ')}
                   </span>
                 </span>
                 <span className="num shrink-0 text-[13px] text-muted">{kr(l.landed)}</span>

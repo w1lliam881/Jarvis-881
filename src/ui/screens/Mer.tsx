@@ -7,9 +7,13 @@ import type { ChangeLogEntry, Dataset } from '../../domain/types';
 import { backupJson } from '../../domain/export';
 import { todayISO } from '../../domain/dates';
 import type { Route } from '../router';
-import { Card, ConfirmButton, Field, Page, Row, Section, Segmented, TextInput, Toggle, TopBand } from '../components/ui';
+import { Card, Chips, ConfirmButton, Empty, Field, Page, Row, Section, Segmented, TextInput, Toggle, TopBand, cx } from '../components/ui';
+import { changeDetails, initial, isSystemChange } from '../../domain/changes';
+import { longDate } from '../../domain/dates';
 import { Importer } from './Welcome';
 import { deviceUser, setDeviceUser, toast } from '../Boot';
+import { Presence } from '../components/Presence';
+import { disablePush, enablePush, pushActive, pushBlocker, type PushPrefs } from '../../data/push';
 
 export function Mer({ route }: { route: Route }) {
   const sub = route.path[1];
@@ -36,7 +40,7 @@ function Menu() {
   );
   return (
     <>
-      <TopBand title="Mer" sub={`Inloggad som ${deviceUser()}`} />
+      <TopBand title="Mer" sub={`Inloggad som ${store().user()}`} right={<Presence />} />
       <Page>
         <Section title="Planering">
           <Card pad={false}>
@@ -113,6 +117,7 @@ function Settings() {
             <p className="m-0 mt-2 text-[12px] text-muted">Räkenskapsår: kalenderår. Metod: fakturametoden (händelser bokförs på order- eller fakturadatum). Kontoplan: BAS.</p>
           </Card>
         </Section>
+        <Reminders />
         <Section title="Spelet">
           <Card>
             <Toggle label="Visa spelet" checked={s.gameEnabled} onChange={(v) => void updateSettings({ gameEnabled: v })} />
@@ -217,25 +222,58 @@ function ImportPage() {
 
 function Log() {
   const [list, setList] = useState<ChangeLogEntry[] | null>(null);
-  useEffect(() => void store().backend.changelog(200).then(setList), []);
+  const [who, setWho] = useState('alla');
+  const [sys, setSys] = useState(false);
+  useEffect(() => void store().backend.changelog(300).then(setList), []);
+  const me = store().user();
+  const people = [...new Set((list ?? []).map((e) => e.by))];
+  const shown = (list ?? []).filter((e) => (who === 'alla' ? true : who === 'jag' ? e.by === me : e.by !== me) && (sys || !isSystemChange(e)));
+  const days = new Map<string, ChangeLogEntry[]>();
+  for (const e of shown) days.set(e.at.slice(0, 10), [...(days.get(e.at.slice(0, 10)) ?? []), e]);
+  const verb: Record<string, string> = { skapa: 'Lade till', ändra: 'Ändrade', 'ta bort': 'Tog bort', återställ: 'Återställde' };
   return (
     <>
-      <TopBand title="Ändringslogg" back="#/mer" sub="De senaste 200 ändringarna" />
+      <TopBand title="Ändringslogg" back="#/mer" sub="Vem som gjort vad, och när" />
       <Page>
-        <Card pad={false}>
-          {list?.map((e) => (
-            <div key={e.id} className="border-b border-line-2 px-4 py-2.5 last:border-0">
-              <div className="flex justify-between gap-2 text-[14px]">
-                <span className="truncate">{e.summary}</span>
-                <span className="shrink-0 text-[12px] text-muted">{e.action}</span>
-              </div>
-              <div className="text-[12px] text-muted">
-                {e.by} · {new Date(e.at).toLocaleString('sv-SE', { dateStyle: 'short', timeStyle: 'short' })}
-              </div>
-            </div>
-          ))}
-          {list && !list.length && <p className="m-0 p-4 text-muted">Inga ändringar ännu.</p>}
-        </Card>
+        <Chips
+          value={who}
+          onChange={setWho}
+          options={[
+            { value: 'alla', label: 'Alla' },
+            { value: 'jag', label: `Jag (${me})` },
+            ...(people.some((p) => p !== me) ? [{ value: 'andra', label: people.filter((p) => p !== me).join(', ') }] : []),
+          ]}
+        />
+        <Toggle label="Visa automatiska verifikat" sub="Verifikat som räknas om när ni ändrar plagg och drops" checked={sys} onChange={setSys} />
+        {[...days].map(([d, es]) => (
+          <Section key={d} title={<span className="first-letter:uppercase">{longDate(d)}</span>}>
+            <Card pad={false}>
+              {es.map((e) => {
+                const mine = e.by === me;
+                const details = changeDetails(e);
+                return (
+                  <div key={e.id} className="flex gap-3 border-b border-line-2 px-4 py-3 last:border-0">
+                    <span className={cx('mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full text-[13px] font-bold', mine ? 'bg-forest text-on-forest' : 'bg-sun text-sun-ink')} aria-hidden>
+                      {initial(e.by)}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[14px]">
+                        <b>{mine ? 'Du' : e.by}</b> · {verb[e.action] ?? e.action} {e.summary.charAt(0).toLowerCase() + e.summary.slice(1)}
+                      </span>
+                      {details.map((x) => (
+                        <span key={x} className="num block text-[12px] text-muted">
+                          {x}
+                        </span>
+                      ))}
+                      <span className="block text-[12px] text-muted">{new Date(e.at).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}</span>
+                    </span>
+                  </div>
+                );
+              })}
+            </Card>
+          </Section>
+        ))}
+        {list && !shown.length && <Empty title="Inga ändringar här" text="När du eller din kompis ändrar något syns det här." />}
       </Page>
     </>
   );
@@ -264,5 +302,56 @@ function Guide() {
         {q('Tangentbord på dator', 'n = ny försäljning, k = ny kostnad, u = ny uppgift, 1–5 = flikarna.')}
       </Page>
     </>
+  );
+}
+
+function Reminders() {
+  const blocked = pushBlocker();
+  const [on, setOn] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [prefs, setPrefs] = useState<PushPrefs>(() => {
+    try {
+      return { time: '18:00', kinds: { daily: true, inbox: true, oldStock: true }, ...JSON.parse(localStorage.getItem('jarvis-push') ?? '{}') };
+    } catch {
+      return { time: '18:00', kinds: { daily: true, inbox: true, oldStock: true } };
+    }
+  });
+  useEffect(() => void pushActive().then(setOn), []);
+  const save = async (p: PushPrefs, enable: boolean) => {
+    setPrefs(p);
+    try {
+      localStorage.setItem('jarvis-push', JSON.stringify(p));
+    } catch {
+      /* valfritt */
+    }
+    setBusy(true);
+    const err = enable ? await enablePush(p) : (await disablePush(), null);
+    setBusy(false);
+    if (err) toast(err, 'error');
+    else {
+      setOn(enable);
+      toast(enable ? 'Påminnelser på' : 'Påminnelser av');
+    }
+  };
+  return (
+    <Section title="Påminnelser">
+      <Card className="flex flex-col">
+        <Toggle label="Skicka påminnelser som notiser" sub={blocked ?? `Varje dag kl ${prefs.time} om det finns något att göra`} checked={on} onChange={(v) => !blocked && !busy && void save(prefs, v)} />
+        {!blocked && (
+          <>
+            <Field label="Tid">
+              <select className="field" value={prefs.time} onChange={(e) => void save({ ...prefs, time: e.target.value }, on)}>
+                {['08:00', '09:00', '12:00', '15:00', '17:00', '18:00', '19:00', '20:00', '21:00'].map((t) => (
+                  <option key={t}>{t}</option>
+                ))}
+              </select>
+            </Field>
+            <Toggle label="Uppgifter för dagen" checked={prefs.kinds.daily} onChange={(v) => void save({ ...prefs, kinds: { ...prefs.kinds, daily: v } }, on)} />
+            <Toggle label="Utkast i godkännandekön" checked={prefs.kinds.inbox} onChange={(v) => void save({ ...prefs, kinds: { ...prefs.kinds, inbox: v } }, on)} />
+            <Toggle label="Gamla plagg (måndagar)" checked={prefs.kinds.oldStock} onChange={(v) => void save({ ...prefs, kinds: { ...prefs.kinds, oldStock: v } }, on)} />
+          </>
+        )}
+      </Card>
+    </Section>
   );
 }

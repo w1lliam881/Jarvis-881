@@ -23,13 +23,14 @@ export function toCsv(rows: (string | number | null | undefined)[][]): string {
 
 export function itemsCsv(ds: Dataset): string {
   const rows: (string | number)[][] = [
-    ['Drop', 'Dropdatum', 'Plagg', 'Kategori', 'Märke', 'Storlek', 'Inköp', 'Vikt kg', 'Andel frakt', 'Andel tull', 'Förpackning', 'Hemkostnad', 'Såld för', 'Säljdatum', 'Plattform', 'Vinst', 'Kommentar'],
+    ['Drop', 'Dropdatum', 'Produkt-ID', 'Plagg', 'Kategori', 'Märke', 'Storlek', 'Inköp', 'Vikt kg', 'Andel frakt', 'Andel tull', 'Förpackning', 'Hemkostnad', 'Såld för', 'Säljdatum', 'Plattform', 'Vinst', 'Kommentar'],
   ];
   for (const l of allLanded(ds)) {
     const x = l.item;
     rows.push([
       l.drop.name,
       l.drop.date,
+      x.productId,
       x.name,
       x.category,
       x.brand,

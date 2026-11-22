@@ -1,4 +1,5 @@
 import { allocate } from './money';
+import { inferBrand } from './doorzo';
 import { daysBetween, monthOf } from './dates';
 import type { Category, Dataset, Drop, ISODate, Item, Ore, Voucher } from './types';
 
@@ -265,4 +266,41 @@ export function countBy<T extends string>(xs: T[]): Record<T, number> {
   const o = {} as Record<T, number>;
   for (const x of xs) o[x] = (o[x] ?? 0) + 1;
   return o;
+}
+
+export interface BrandStat {
+  brand: string;
+  sold: number;
+  revenue: Ore;
+  profit: Ore;
+  /** Vinstmarginal = vinst / omsättning, i procent */
+  margin: number;
+  avgPrice: Ore;
+  unsold: number;
+}
+
+/** Försäljning per märke för en period ("" = allt). Vinst räknas på hemkostnad. */
+export function brandStats(ds: Dataset, period = ''): BrandStat[] {
+  const m = new Map<string, BrandStat>();
+  for (const l of allLanded(ds)) {
+    const k = normBrand(l.item.brand) || inferBrand(l.item.name) || 'Okänt märke';
+    const s = m.get(k) ?? { brand: k, sold: 0, revenue: 0, profit: 0, margin: 0, avgPrice: 0, unsold: 0 };
+    if (isSold(l.item) && (l.item.saleDate ?? '').startsWith(period)) {
+      s.sold++;
+      s.revenue += l.item.salePrice;
+      s.profit += l.profit ?? 0;
+    } else if (!isSold(l.item)) s.unsold++;
+    m.set(k, s);
+  }
+  return [...m.values()]
+    .filter((s) => s.sold > 0)
+    .map((s) => ({ ...s, margin: s.revenue ? (s.profit / s.revenue) * 100 : 0, avgPrice: Math.round(s.revenue / s.sold) }))
+    .sort((a, b) => b.revenue - a.revenue);
+}
+
+/** Slå ihop stavningar som "Levis" och "Levi's", "Nudie" och "Nudie Jeans". */
+function normBrand(b: string): string {
+  const t = b.trim();
+  if (!t) return '';
+  return inferBrand(t) || t;
 }

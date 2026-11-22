@@ -1,7 +1,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { defaultGame, defaultSettings, emptyDataset } from '../domain/defaults';
 import { COLLECTIONS, type ChangeLogEntry, type Dataset } from '../domain/types';
-import { ConflictError, datasetCounts, validateMutations, type Backend, type BackupInfo, type Mutation } from './backend';
+import { ConflictError, datasetCounts, validateMutations, type Backend, type BackupInfo, type Mutation, type PresenceInfo } from './backend';
 
 let client: SupabaseClient | null = null;
 function sb(): SupabaseClient {
@@ -14,6 +14,17 @@ function sb(): SupabaseClient {
 export async function sendMagicLink(email: string): Promise<string | null> {
   const { error } = await sb().auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname, shouldCreateUser: false } });
   return error ? 'Kunde inte skicka länken. Är adressen tillagd som användare?' : null;
+}
+
+export async function savePushSubscription(sub: PushSubscriptionJSON, prefs: { time: string; kinds: Record<string, boolean> }): Promise<string | null> {
+  const { data } = await sb().auth.getSession();
+  const email = data.session?.user.email ?? '';
+  const { error } = await sb().from('push_subscriptions').upsert({ endpoint: sub.endpoint, email, subscription: sub, remind_at: prefs.time, kinds: prefs.kinds });
+  return error ? `Kunde inte spara: ${error.message}` : null;
+}
+
+export async function deletePushSubscription(endpoint: string): Promise<void> {
+  await sb().from('push_subscriptions').delete().eq('endpoint', endpoint);
 }
 
 interface RecordRow {
@@ -30,10 +41,13 @@ export class SupabaseBackend implements Backend {
   private listeners = new Set<() => void>();
   private myWrites = 0;
 
+  email = '';
+
   static async connect(): Promise<SupabaseBackend> {
     const { data } = await sb().auth.getSession();
     if (!data.session) throw new Error('LOGIN');
     const b = new SupabaseBackend();
+    b.email = data.session.user.email ?? '';
     sb()
       .channel('records')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'records' }, () => {
@@ -76,6 +90,51 @@ export class SupabaseBackend implements Backend {
       throw new Error(error.message);
     }
   }
+
+  /** Närvaro: vem som har appen öppen just nu, och när var och en senast var aktiv. */
+  presence = (cb: (list: PresenceInfo[]) => void): (() => void) => {
+    const me = this.email.toLowerCase();
+    let online = new Set<string>();
+    let people: { email: string; name: string }[] = [];
+    let seen: Record<string, string> = {};
+    const emit = () =>
+      cb(
+        (people.length ? people : [{ email: me, name: me }]).map((p) => {
+          const e = p.email.toLowerCase();
+          return { user: e, name: p.name || e, online: online.has(e) || e === me, lastSeen: seen[e] ?? null, me: e === me };
+        }),
+      );
+    const refresh = async () => {
+      const [u, s] = await Promise.all([sb().from('allowed_users').select('email,name'), sb().from('presence').select('email,last_seen')]);
+      people = (u.data ?? []) as { email: string; name: string }[];
+      seen = Object.fromEntries(((s.data ?? []) as { email: string; last_seen: string }[]).map((r) => [r.email.toLowerCase(), r.last_seen]));
+      emit();
+    };
+    const beat = () => {
+      if (document.visibilityState === 'visible') void sb().from('presence').upsert({ email: me, last_seen: new Date().toISOString() });
+    };
+    const ch = sb().channel('online', { config: { presence: { key: me } } });
+    ch.on('presence', { event: 'sync' }, () => {
+      online = new Set(Object.keys(ch.presenceState()).map((k) => k.toLowerCase()));
+      void refresh();
+    }).subscribe((status) => {
+      if (status === 'SUBSCRIBED') void ch.track({ at: new Date().toISOString() });
+    });
+    beat();
+    const t = setInterval(beat, 60000);
+    const vis = () => {
+      beat();
+      if (document.visibilityState === 'visible') void ch.track({ at: new Date().toISOString() });
+      else void ch.untrack();
+    };
+    document.addEventListener('visibilitychange', vis);
+    void refresh();
+    return () => {
+      clearInterval(t);
+      document.removeEventListener('visibilitychange', vis);
+      void ch.unsubscribe();
+    };
+  };
 
   onRemoteChange(cb: () => void): () => void {
     this.listeners.add(cb);

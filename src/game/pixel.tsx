@@ -24,12 +24,20 @@ const PALETTES: Record<string, Record<string, string>> = {
   slott: { H: '#E9B44C', S: '#F2C9A0', E: '#1A1A1A', M: '#C46A5A', A: '#3B3670', T: '#E9B44C', L: '#1A1838', B: '#100E24' },
 };
 
-export function Hero({ world = 'skog', size = 72, className }: { world?: string; size?: number; className?: string }) {
+// Gångbilder: benen växlar mellan två lägen
+const WALK = [
+  ['...LL..LL...', '..BBB..BBB..'],
+  ['....LLLL....', '...BB..BB...'],
+  ['..LL....LL..', '.BBB....BBB.'],
+];
+
+export function Hero({ world = 'skog', size = 72, className, frame = 0, flip = false }: { world?: string; size?: number; className?: string; frame?: number; flip?: boolean }) {
   const pal = PALETTES[world] ?? PALETTES.skog;
   const px = 12;
+  const rows = [...HERO.slice(0, 10), ...WALK[frame % WALK.length]];
   return (
-    <svg viewBox={`0 0 ${px} ${px}`} width={size} height={size} className={`pixel ${className ?? ''}`} role="img" aria-label="Din hjälte">
-      {HERO.flatMap((row, y) =>
+    <svg viewBox={`0 0 ${px} ${px}`} width={size} height={size} className={`pixel ${className ?? ''}`} role="img" aria-label="Din hjälte" style={flip ? { transform: 'scaleX(-1)' } : undefined}>
+      {rows.flatMap((row, y) =>
         [...row].map((c, x) => (c === '.' ? null : <rect key={`${x}-${y}`} x={x} y={y} width={1.02} height={1.02} fill={pal[c]} />)),
       )}
     </svg>
@@ -127,4 +135,39 @@ export function chime(kind: 'quest' | 'level' = 'quest') {
   } catch {
     /* ljud är valfritt */
   }
+}
+
+// ---------- Bossar ----------
+
+const BOSS_SPRITES: Record<string, string[]> = {
+  // Bokföringsdraken
+  skog: ['..........GG', '.........GGG', '..GG....GGEG', '.GGGG..GGGGG', 'GGWWGGGGGG..', 'GWWWWGGGG...', '.GGGGGGGG...', '..GGGGGGGG..', '..GG.GG.GGG.', '..GG.GG..GG.', '.GGG.GGG....', '............'],
+  // Ökenormen
+  oken: ['....GGGG....', '...GEGGEG...', '...GGGGGG...', '...GWWWWG...', '....GGGG....', '.....GGG....', '......GGG...', '.......GGG..', '..GG....GG..', '.GGGG..GGG..', '..GGGGGGG...', '....GGG.....'],
+  // Isjätten
+  frost: ['...GGGGGG...', '..GGGGGGGG..', '..GEGGGGEG..', '..GGGWWGGG..', '...GGGGGG...', '.GGGGGGGGGG.', 'GGWGGGGGGWGG', 'GG.GGGGGG.GG', 'GG.GGGGGG.GG', '...GG..GG...', '...GG..GG...', '..GGG..GGG..'],
+  // Eldfursten
+  vulkan: ['..W..W..W...', '..WW.WW.WW..', '..GGGGGGGG..', '..GEGGGGEG..', '..GGGWWGGG..', '...GGGGGG...', '.GGGGGGGGGG.', 'GG.GGWWGG.GG', '...GGGGGG...', '...GG..GG...', '...GG..GG...', '..GGG..GGG..'],
+  // Stormfågeln
+  moln: ['............', '....GGG.....', '...GGEGW....', '...GGGGWW...', 'GG..GGGG..GG', 'GGGGGGGGGGGG', '.GGGGGGGGGG.', '...GGGGGG...', '....GGGG....', '....G..G....', '...GG..GG...', '............'],
+  // Skuggkungen
+  slott: ['..W.W.W.W...', '..WWWWWWW...', '..GGGGGGG...', '..GEGGGEG...', '..GGGGGGG...', '...GWWWG....', '.GGGGGGGGG..', 'GGGGGGGGGGG.', 'GG.GGGGG.GG.', '...GGGGG....', '...GG.GG....', '..GGG.GGG...'],
+};
+const BOSS_COLORS: Record<string, { G: string; E: string; W: string }> = {
+  skog: { G: '#2F6B3A', E: '#FFE066', W: '#F4F1E6' },
+  oken: { G: '#B8732E', E: '#1A1A1A', W: '#F4F1E6' },
+  frost: { G: '#9CC7EA', E: '#1A1A1A', W: '#FFFFFF' },
+  vulkan: { G: '#7A2218', E: '#FFE066', W: '#FFB15C' },
+  moln: { G: '#4E6E9A', E: '#FFE066', W: '#E9B44C' },
+  slott: { G: '#2A2550', E: '#F28B82', W: '#E9B44C' },
+};
+
+export function Boss({ world, size = 72, className, defeated }: { world: string; size?: number; className?: string; defeated?: boolean }) {
+  const rows = BOSS_SPRITES[world] ?? BOSS_SPRITES.skog;
+  const c = BOSS_COLORS[world] ?? BOSS_COLORS.skog;
+  return (
+    <svg viewBox="0 0 12 12" width={size} height={size} className={`pixel ${className ?? ''}`} role="img" aria-label="Boss" style={defeated ? { opacity: 0.25, filter: 'grayscale(1)' } : undefined}>
+      {rows.flatMap((row, y) => [...row].map((ch, x) => (ch === '.' ? null : <rect key={`${x}-${y}`} x={x} y={y} width={1.02} height={1.02} fill={c[ch as 'G' | 'E' | 'W']} />)))}
+    </svg>
+  );
 }

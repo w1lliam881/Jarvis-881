@@ -111,3 +111,16 @@ describe('försäljning av gamla plagg', () => {
     expect(live(s.ds!.vouchers).some((v) => v.key === `item:${id}:sale`)).toBe(true);
   });
 });
+
+import { changeDetails } from '../../src/domain/changes';
+describe('ändringslogg', () => {
+  it('visar vad som ändrades i klartext och vem som gjorde det', async () => {
+    await createDrop({ name: 'P', date: '2026-11-01' }, parseLines('Jeans 100'));
+    const id = s.ds!.items[0].id;
+    await sellItem(id, 80000, '2026-11-10', 'Vinted');
+    const log = await backend.changelog(50);
+    const e = log.find((x) => x.collection === 'items' && x.action === 'ändra')!;
+    expect(e.by).toBe('Testare');
+    expect(changeDetails(e)).toEqual(expect.arrayContaining(['Såld för: 0 kr → 800 kr', 'Säljdatum: tomt → 2026-11-10', 'Plattform: tomt → Vinted']));
+  });
+});

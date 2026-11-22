@@ -71,7 +71,7 @@ export function Boot({ children }: { children: ReactNode }) {
     (async () => {
       try {
         const { backend, warning } = await pickBackend();
-        const s = new Store(backend, () => deviceUser() || 'Okänd');
+        const s = new Store(backend, () => backend.email || deviceUser() || 'Okänd');
         setStore(s);
         await s.init();
         // Daglig säkerhetskopia, en gång per dag

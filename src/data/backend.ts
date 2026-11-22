@@ -27,8 +27,20 @@ export interface BackupInfo {
   counts: string;
 }
 
+export interface PresenceInfo {
+  user: string;
+  name: string;
+  online: boolean;
+  lastSeen: string | null;
+  me: boolean;
+}
+
 export interface Backend {
   readonly kind: 'local' | 'memory' | 'supabase';
+  /** Vem som är inne och när de senast var aktiva (bara när data delas, dvs. Supabase). */
+  presence?: (cb: (list: PresenceInfo[]) => void) => () => void;
+  /** Inloggad användares e-post (Supabase). */
+  readonly email?: string;
   readonly durable: boolean;
   load(): Promise<Dataset>;
   /** Atomiskt: allt sparas eller inget. Versionsnummer kontrolleras per rad. */

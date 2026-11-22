@@ -39,6 +39,12 @@ create table if not exists public.backups (
   data jsonb not null
 );
 
+-- Senast aktiv per användare (visas som "senast inne")
+create table if not exists public.presence (
+  email text primary key,
+  last_seen timestamptz not null default now()
+);
+
 -- Bara inloggade användare som finns i allowed_users får läsa och skriva.
 create or replace function public.is_allowed() returns boolean
 language sql stable security definer set search_path = public as $$
@@ -55,6 +61,10 @@ create policy changelog_r on public.changelog for select using (public.is_allowe
 create policy changelog_i on public.changelog for insert with check (public.is_allowed());
 create policy backups_rw on public.backups for all using (public.is_allowed()) with check (public.is_allowed());
 create policy allowed_r on public.allowed_users for select using (public.is_allowed());
+alter table public.presence enable row level security;
+create policy presence_r on public.presence for select using (public.is_allowed());
+create policy presence_w on public.presence for insert with check (public.is_allowed() and lower(email) = lower(auth.jwt() ->> 'email'));
+create policy presence_u on public.presence for update using (public.is_allowed() and lower(email) = lower(auth.jwt() ->> 'email'));
 
 -- Debet = kredit tvingas av databasen för verifikat som inte är borttagna.
 create or replace function public.check_voucher_balance() returns trigger
@@ -134,3 +144,17 @@ begin
   delete from public.backups where note like 'Daglig%' and at < now() - interval '30 days';
 end $$;
 select cron.schedule('jarvis-daily-backup', '0 3 * * *', $$select public.daily_backup()$$);
+
+-- Påminnelser: en rad per enhet som slagit på notiser.
+create table if not exists public.push_subscriptions (
+  endpoint text primary key,
+  email text not null,
+  subscription jsonb not null,
+  remind_at text not null default '18:00',
+  kinds jsonb not null default '{"daily": true, "inbox": true, "oldStock": true}',
+  created_at timestamptz not null default now()
+);
+alter table public.push_subscriptions enable row level security;
+create policy push_own on public.push_subscriptions for all
+  using (public.is_allowed() and lower(email) = lower(auth.jwt() ->> 'email'))
+  with check (public.is_allowed() and lower(email) = lower(auth.jwt() ->> 'email'));

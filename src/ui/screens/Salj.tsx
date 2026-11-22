@@ -16,7 +16,7 @@ export function Salj() {
   const [p, setP] = useState<string>('Alla');
   const [link, setLink] = useState<string | null>(null);
   const L = useMemo(() => allLanded(ds).filter((l) => isSold(l.item)), [ds]);
-  const list = L.filter((l) => (p === 'Alla' || l.item.platform === p) && (!q || `${l.item.name} ${l.item.brand} ${l.drop.name} ${l.item.comment}`.toLowerCase().includes(q.toLowerCase()))).sort((a, b) =>
+  const list = L.filter((l) => (p === 'Alla' || l.item.platform === p) && (!q || `${l.item.name} ${l.item.productId} ${l.item.brand} ${l.drop.name} ${l.item.comment}`.toLowerCase().includes(q.toLowerCase()))).sort((a, b) =>
     (b.item.saleDate ?? '') > (a.item.saleDate ?? '') ? 1 : -1,
   );
   const months = new Map<string, typeof list>();
@@ -86,7 +86,7 @@ export function Salj() {
                   <span className="num w-11 shrink-0 text-[12px] text-muted">{l.item.saleDate ? `${+l.item.saleDate.slice(8)}/${+l.item.saleDate.slice(5, 7)}` : '–'}</span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[15px]">{l.item.name}</span>
-                    <span className="block truncate text-[12px] text-muted">{[l.item.platform, l.drop.name].filter(Boolean).join(' · ')}</span>
+                    <span className="block truncate text-[12px] text-muted">{[l.item.productId, l.item.platform, l.drop.name].filter(Boolean).join(' · ')}</span>
                   </span>
                   <span className="flex shrink-0 flex-col items-end">
                     <Money v={l.item.salePrice} className="text-[14px]" />

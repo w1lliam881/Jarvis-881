@@ -21,3 +21,32 @@ self.addEventListener('fetch', (e) => {
       .catch(() => caches.match(e.request).then((r) => r || caches.match('./index.html'))),
   );
 });
+
+// Påminnelser (webbnotiser). Skickas från Supabase-funktionen daily-reminder.
+self.addEventListener('push', (e) => {
+  let d = {};
+  try {
+    d = e.data ? e.data.json() : {};
+  } catch {
+    d = { body: e.data ? e.data.text() : '' };
+  }
+  e.waitUntil(
+    self.registration.showNotification(d.title || 'Jarvis', {
+      body: d.body || 'Dags att kika in i Jarvis.',
+      icon: 'icon-192.png',
+      badge: 'icon-192.png',
+      tag: d.tag || 'jarvis',
+      data: { url: d.url || './#/idag' },
+    }),
+  );
+});
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || './#/idag';
+  e.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((cs) => {
+      for (const c of cs) if ('focus' in c) return c.navigate(url).then((w) => w && w.focus());
+      return self.clients.openWindow(url);
+    }),
+  );
+});

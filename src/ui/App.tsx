@@ -57,7 +57,7 @@ export function App() {
 
   if (!ds) return null;
   const empty = !ds.settings.migratedAt && !ds.drops.length && !ds.vouchers.length;
-  if (empty || !deviceUser()) return <Welcome />;
+  if (empty || (!deviceUser() && !store().backend.email)) return <Welcome />;
 
   const top = route.path[0] ?? 'idag';
   const tab = ['planering', 'spelet'].includes(top) ? 'mer' : top;

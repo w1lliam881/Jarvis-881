@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Flame, Lock, Swords, Trophy } from 'lucide-react';
+import { Flame, Swords, Trophy } from 'lucide-react';
 import { store, useData } from '../../data/store';
 import { updateSettings } from '../../data/actions';
 import { todayISO } from '../../domain/dates';
 import { BOSS_HP, BOSS_XP, TIER_NAMES, WORLDS, badges, bossStatus, generateQuests, questBoard, startGame, tierOf, xpInfo, type Quest } from '../../game/engine';
-import { Hero, Island, chime } from '../../game/pixel';
+import { Hero, chime } from '../../game/pixel';
+import { Overworld, WorldScene } from '../../game/Overworld';
+import type { World } from '../../game/engine';
 import { Page, Toggle, cx } from '../components/ui';
 
 const TIER_COLORS = ['#CD7F32', '#B8C0CA', '#E9B44C', '#7FD1E0', '#B9A2FF'];
@@ -17,6 +19,7 @@ export function Spelet() {
   const board = useMemo(() => questBoard(generateQuests(ds, today)), [ds, today]);
   const bs = useMemo(() => badges(ds), [ds]);
   const [levelUp, setLevelUp] = useState<number | null>(null);
+  const [sel, setSel] = useState<World | null>(null);
 
   useEffect(() => {
     if (s.gameStartedAt && xp.level > ds.game.seenLevel) {
@@ -92,6 +95,23 @@ export function Spelet() {
           <PixelStat icon={<Trophy size={16} aria-hidden />} label="Bossar" value={`${Object.keys(ds.game.bossesBeaten).length}/6`} />
         </div>
 
+        <PSection title="Världskartan" sub={xp.next ? `${toNext} XP kvar till ${xp.next.name}` : 'Alla världar upplåsta'}>
+          <Overworld level={xp.level} beaten={ds.game.bossesBeaten} hits={ds.game.bossHits ?? {}} sound={s.gameSound} onSelect={setSel} />
+          {sel && (
+            <>
+              <WorldScene world={sel} heroWorld={sel.id} bossHits={ds.game.bossHits?.[sel.boss.id]?.length ?? 0} beaten={!!ds.game.bossesBeaten[sel.boss.id]} />
+              <div className="border-2 border-[#E9EEEA]/15 bg-black/25 p-3 text-[13px]">
+                <div className="font-pixel text-[11px] text-[#E9B44C]">{sel.name}</div>
+                <p className="m-0 mt-1 text-[#C9D3CD]">{sel.blurb}</p>
+                <p className="m-0 mt-2">
+                  <b>{sel.boss.name}:</b> {sel.boss.goal}.
+                </p>
+                <p className="m-0 mt-1 text-[12px] text-[#A9B5AE]">Titel när du når världen: {sel.title}.</p>
+              </div>
+            </>
+          )}
+        </PSection>
+
         <PSection title="Dagens uppdrag" sub="De tre viktigaste just nu. Klara uppdrag bockas av automatiskt.">
           {board.today.map((q) => (
             <QuestCard key={q.id} q={q} />
@@ -139,31 +159,6 @@ export function Spelet() {
           </div>
         </PSection>
 
-        <PSection title="Världskartan" sub={xp.next ? `${toNext} XP kvar till ${xp.next.name}` : 'Alla världar upplåsta'}>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {WORLDS.map((w) => {
-              const locked = xp.level < w.unlockLevel;
-              const cur = w.id === xp.world.id;
-              const beaten = !!ds.game.bossesBeaten[w.boss.id];
-              return (
-                <div key={w.id} className={cx('border-2 p-1.5', cur ? 'border-[#E9B44C]' : 'border-[#E9EEEA]/15')}>
-                  <Island sky={w.sky} ground={w.ground} accent={w.accent} locked={locked} current={cur} kind={w.id} />
-                  <div className="mt-1.5 flex items-center justify-between gap-1">
-                    <span className="font-pixel truncate text-[9px]">{w.name}</span>
-                    {locked ? (
-                      <span className="flex items-center gap-0.5 text-[11px] text-[#A9B5AE]">
-                        <Lock size={10} aria-hidden /> Nv {w.unlockLevel}
-                      </span>
-                    ) : beaten ? (
-                      <span className="text-[11px] text-[#9EDBB8]">✓</span>
-                    ) : null}
-                  </div>
-                  <div className="mt-0.5 text-[11px] leading-snug text-[#A9B5AE]">{w.blurb}</div>
-                </div>
-              );
-            })}
-          </div>
-        </PSection>
 
         <PSection title="Badges" sub="Kosmetiska. Påverkar aldrig dina siffror.">
           <div className="grid grid-cols-3 gap-2">

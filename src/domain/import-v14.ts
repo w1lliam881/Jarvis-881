@@ -52,6 +52,12 @@ export interface V14Export {
   set?: { budget?: number; pack?: number; minroi?: number; minv?: number; lead?: number; cov?: number; wk?: number };
 }
 
+/** Plocka ut ett produkt-ID som "TS-Gar-2026-207" ur en kommentar. */
+export function productIdFrom(cm: string | undefined): string {
+  const m = String(cm ?? '').match(/[A-Z]{1,4}-?Gar-?\d{4}-?\d{1,4}/i);
+  return m ? m[0] : '';
+}
+
 const cat = (k: string | undefined): Category => (CATEGORIES as readonly string[]).includes(k ?? '') ? (k as Category) : 'Övrigt';
 const ok = (n: number | undefined): CheckStatus => (n === 1 || n === 2 ? n : 0);
 
@@ -97,7 +103,8 @@ export function importV14(src: V14Export, by = 'import'): ImportResult {
         salePrice: sold ? toOre(x.sp ?? 0) : 0,
         saleDate: sold && isISODate(x.sd) ? x.sd! : null,
         platform: null,
-        comment: x.cm ?? '',
+        productId: productIdFrom(x.cm),
+        comment: (x.cm ?? '').trim() === productIdFrom(x.cm) ? '' : x.cm ?? '',
         ok: ok(x.ok),
         // bk = 1 i v14 betyder att försäljningen ingår i dropens samlade verifikat. Gäller bara sålda plagg.
         saleBooking: sold && x.bk ? 'aggregate' : 'individual',

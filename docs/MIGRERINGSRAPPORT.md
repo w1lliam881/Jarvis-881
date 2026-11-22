@@ -1,6 +1,6 @@
 # Migreringsrapport: Jarvis v14 → Jarvis 2.0
 
-Källa: `fixtures/v14-audit.json` · skapad 2026-11-21 23:25 UTC
+Källa: `fixtures/v14-audit.json` · skapad 2026-11-22 08:14 UTC
 
 **Resultat: alla siffror stämmer.**
 
@@ -47,7 +47,7 @@ Hälsopoäng efter import: **79/100**.
 - Möjliga dubbletter i bokföringen: 1 st (V24 Nudie jeans average joe. ID TS-GAR-2026-176 · 900 kr (samma datum och belopp som bootcut barry))
 - Bokförda försäljningar utan plagg: 2 st (V22 Nudie Jeans average joe. ID -TS-GAR-2026-170  · 2026-10-24; V24 Nudie jeans average joe. ID TS-GAR-2026-176 · 2026-10-24)
 - Sålda under kostnaden: 3 st (Momotaro plånka · såld 425 kr · kostnad 648 kr; Nudie plånka · såld 300 kr · kostnad 648 kr; RL DS hoodie grå/svart · såld 450 kr · kostnad 589 kr)
-- Osålda i över 60 dagar: 2 st (Nudie Jeans Grim Tim w30 · 356 dagar · 342 kr; A.P.C. Green Military Jacket · 81 dagar · 445 kr)
+- Osålda i över 60 dagar: 2 st (Nudie Jeans Grim Tim w30 · 357 dagar · 342 kr; A.P.C. Green Military Jacket · 82 dagar · 445 kr)
 
 
 

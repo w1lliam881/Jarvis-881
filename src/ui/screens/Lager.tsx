@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, ChevronRight, Circle, Plus, AlertTriangle, RotateCcw, Search } from 'lucide-react';
 import { useData } from '../../data/store';
 import { addItems, deleteDrop, deleteItem, returnItem, setOk, undoSale, updateDrop, updateItem } from '../../data/actions';
@@ -42,7 +42,7 @@ function StockList({ initial }: { initial: string }) {
     if (f === 'unchecked' && l.item.ok !== 0) return false;
     if (f === 'wrong' && l.item.ok !== 2) return false;
     if (cat !== 'Alla' && l.item.category !== cat) return false;
-    if (q && !`${l.item.name} ${l.item.brand} ${l.item.size} ${l.item.comment} ${l.drop.name} ${l.item.location}`.toLowerCase().includes(q.toLowerCase())) return false;
+    if (q && !`${l.item.name} ${l.item.productId} ${l.item.brand} ${l.item.size} ${l.item.comment} ${l.drop.name} ${l.item.location}`.toLowerCase().includes(q.toLowerCase())) return false;
     return true;
   };
   const list = L.filter(match);
@@ -122,7 +122,10 @@ function ItemRow({ l, today }: { l: LandedItem; today: string }) {
   return (
     <a href={`#/lager/plagg/${l.item.id}`} className="flex min-h-[56px] items-center gap-2 border-b border-line-2 py-2 pl-4 pr-2 last:border-0 active:bg-surface-2">
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[15px]">{l.item.name}</span>
+        <span className="flex items-center gap-2">
+          <span className="truncate text-[15px]">{l.item.name}</span>
+          {l.item.productId && <ProductId id={l.item.productId} />}
+        </span>
         <span className="block truncate text-[12px] text-muted">
           {[l.item.brand, l.item.size, l.item.category, !s && age > 60 ? `${age} dagar` : null, l.item.location].filter(Boolean).join(' · ')}
         </span>
@@ -308,7 +311,7 @@ function DropView({ id }: { id: string }) {
                       <a href={`#/lager/plagg/${l.item.id}`} className="block truncate font-medium">
                         {l.item.name}
                       </a>
-                      <span className="block truncate text-[12px] text-muted">{[l.item.brand, l.item.size, l.item.category].filter(Boolean).join(' · ')}</span>
+                      <span className="block truncate text-[12px] text-muted">{[l.item.productId, l.item.brand, l.item.size].filter(Boolean).join(' · ')}</span>
                     </td>
                     <td className="w-[104px] px-1 py-1.5">
                       <MoneyInput value={l.item.cost} onCommit={(v) => void updateItem(l.item.id, { cost: v }, 'Inköpspris sparat')} />
@@ -369,6 +372,14 @@ function ItemView({ id }: { id: string }) {
   return (
     <>
       <TopBand title={item.name} back={`#/lager/drop/${drop.id}`} sub={drop.name} right={<OkChip ok={item.ok} label={item.name} onChange={(v) => void setOk('items', item.id, v)} />}>
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          {item.productId ? (
+            <span className="num rounded-lg bg-white/12 px-2.5 py-1 text-[15px] font-medium tracking-wide text-on-forest">{item.productId}</span>
+          ) : (
+            <span className="rounded-lg border border-dashed border-white/30 px-2.5 py-1 text-[13px] text-on-forest-muted">Inget produkt-ID</span>
+          )}
+          {item.comment && <span className="text-[13px] text-on-forest-muted">{item.comment}</span>}
+        </div>
         <div className="grid grid-cols-3 gap-3 text-[12px] text-on-forest-muted">
           <div>
             Hemkostnad
@@ -443,6 +454,17 @@ function ItemView({ id }: { id: string }) {
         )}
 
         <Card className="grid grid-cols-2 gap-3">
+          <Field label="Produkt-ID" hint="Det ID ni märker plagget med">
+            <TextInput value={item.productId} onCommit={(v) => up({ productId: v.trim() }, 'Produkt-ID sparat')} placeholder="t.ex. TS-Gar-2026-207" />
+          </Field>
+          <Field label="Lagerplats">
+            <TextInput value={item.location} onCommit={(v) => up({ location: v })} placeholder="t.ex. Låda 3" />
+          </Field>
+          <div className="col-span-2">
+            <Field label="Kommentar">
+              <CommentInput value={item.comment} onCommit={(v) => up({ comment: v }, 'Kommentar sparad')} />
+            </Field>
+          </div>
           <div className="col-span-2">
             <Field label="Namn">
               <TextInput value={item.name} onCommit={(v) => up({ name: v || item.name })} />
@@ -466,17 +488,9 @@ function ItemView({ id }: { id: string }) {
           <Field label="Vikt (kg)">
             <TextInput value={item.weightKg ? String(item.weightKg).replace('.', ',') : ''} inputMode="decimal" onCommit={(v) => up({ weightKg: Math.max(0, parseFloat(v.replace(',', '.')) || 0) })} />
           </Field>
-          <Field label="Lagerplats">
-            <TextInput value={item.location} onCommit={(v) => up({ location: v })} placeholder="t.ex. Låda 3" />
-          </Field>
           <Field label="Senast publicerad">
             <input type="date" className="field" value={item.listedAt ?? ''} onChange={(e) => up({ listedAt: e.target.value || null })} />
           </Field>
-          <div className="col-span-2">
-            <Field label="Kommentar">
-              <TextInput value={item.comment} onCommit={(v) => up({ comment: v })} placeholder="t.ex. annons-ID" />
-            </Field>
-          </div>
         </Card>
 
         <Card>
@@ -525,4 +539,14 @@ export function useDropOptions(ds: Dataset) {
   return live(ds.drops)
     .sort((a, b) => (a.date < b.date ? 1 : -1))
     .map((d) => ({ value: d.id, label: d.name }));
+}
+
+export function ProductId({ id }: { id: string }) {
+  return <span className="num shrink-0 rounded-md bg-surface-2 px-1.5 py-0.5 text-[11px] text-muted ring-1 ring-line">{id}</span>;
+}
+
+function CommentInput({ value, onCommit }: { value: string; onCommit: (v: string) => void }) {
+  const [s, setS] = useState(value);
+  useEffect(() => setS(value), [value]);
+  return <textarea className="field min-h-[72px]" value={s} placeholder="Skick, mått, annons-ID, vad som helst" onChange={(e) => setS(e.target.value)} onBlur={() => s !== value && onCommit(s)} />;
 }

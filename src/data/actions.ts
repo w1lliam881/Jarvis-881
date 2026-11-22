@@ -39,6 +39,7 @@ export function newItem(dropId: string, p: Partial<Item>): Item {
     salePrice: 0,
     saleDate: null,
     platform: null,
+    productId: '',
     comment: '',
     ok: 0,
     saleBooking: 'individual',

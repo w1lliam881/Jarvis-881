@@ -59,6 +59,16 @@ Acceptans: försäljning under 15 sekunder (e2e-test), prisändring uppdaterar v
 - ⬜ Färsk v14-export importerad och avstämd
 - ⬜ Prestanda: dela upp koden (bundle ~600 kB, 180 kB gzip)
 
+## Tillägg 2026-11-22 ✅
+
+- ✅ Produkt-ID per plagg (hämtas från v14-kommentarerna), syns i listor, sök och försäljning. Kommentar per plagg.
+- ✅ Spelet: världskarta där gubben går mellan världarna, världsscener med boss och miljö
+- ✅ Idag: senast sålt visar hela plaggnamnet
+- ✅ Analys per märke: omsättning, vinst i kr och vinstmarginal (märke gissas från namnet om det saknas)
+- ✅ Närvaro: initial för den som är aktiv, och när den andra senast var inne (aktiveras med Supabase)
+- ✅ Ändringslogg: per dag, vem (du eller kompisen), vad som ändrades från → till
+- 🟡 Påminnelser som notiser: klart i appen, servern (Supabase-funktion) slås på vid publicering
+
 ## Nästa steg (kräver dig)
 
 1. Skapa Supabase-konto (guide i README). Jag kör databasschemat och kopplar appen.

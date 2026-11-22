@@ -7,7 +7,7 @@ export function mkDrop(p: Partial<Drop> = {}): Drop {
 export function mkItem(p: Partial<Item> = {}): Item {
   return {
     ...baseRecord(p.id), dropId: 'd1', name: 'Plagg', category: 'Jeans', brand: '', model: '', size: '', cost: 10000, weightKg: 0.8,
-    salePrice: 0, saleDate: null, platform: null, comment: '', ok: 0, saleBooking: 'individual', location: '', listedAt: null, returnedAt: null, ...p,
+    salePrice: 0, saleDate: null, platform: null, productId: '', comment: '', ok: 0, saleBooking: 'individual', location: '', listedAt: null, returnedAt: null, ...p,
   };
 }
 export function ds(drops: Drop[], items: Item[]): Dataset {

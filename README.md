@@ -36,6 +36,27 @@ Just nu sparas datan **på enheten** (i webbläsaren). När Supabase är uppsatt
 
 Driftkostnad: 0 kr i månaden (se `ARCHITECTURE.md`).
 
+### Steg 3: Påminnelser (valfritt, gratis)
+
+Görs av Claude när Supabase finns:
+
+1. Skapa nycklar för notiser: `npx web-push generate-vapid-keys`.
+2. Publik nyckel → Vercel som `VITE_VAPID_PUBLIC_KEY`. Privat nyckel → `supabase secrets set VAPID_PRIVATE_KEY=… VAPID_PUBLIC_KEY=… VAPID_SUBJECT=mailto:din@mejl.se` (aldrig i koden).
+3. `supabase functions deploy daily-reminder`.
+4. Kör en gång i Supabase SQL Editor (byt adress och nyckel):
+   ```sql
+   create extension if not exists pg_net;
+   select cron.schedule('jarvis-reminders', '0 * * * *', $$
+     select net.http_post('https://<projekt>.supabase.co/functions/v1/daily-reminder',
+       headers := jsonb_build_object('Authorization', 'Bearer <service_role-nyckel>'));
+   $$);
+   ```
+5. På iPhone: öppna Jarvis från hemskärmen → Mer → Inställningar → Påminnelser.
+
+## Ändra i efterhand
+
+Allt går att ändra efter publiceringen. Säg till vad du vill ha, så ändrar jag koden och publicerar igen. Vercel bygger om automatiskt, och appen på hemskärmen uppdateras nästa gång den öppnas. Din data påverkas inte av att appen uppdateras.
+
 ## Säkerhetskopior
 
 - En kopia tas automatiskt varje dag (de senaste 30 sparas).

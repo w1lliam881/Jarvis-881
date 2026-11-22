@@ -202,7 +202,7 @@ export function desiredForItem(ds: Dataset, item: Item): DesiredVoucher | null {
   return {
     key: `item:${item.id}:sale`,
     date: item.saleDate ?? '',
-    text: `Försäljning: ${item.name}${item.platform ? ` (${item.platform})` : ''}${item.comment ? ` – ${item.comment}` : ''}`,
+    text: `Försäljning: ${item.name}${item.platform ? ` (${item.platform})` : ''}${item.productId ? ` – ${item.productId}` : item.comment ? ` – ${item.comment}` : ''}`,
     lines,
     dropId: item.dropId,
     itemId: item.id,
@@ -346,7 +346,7 @@ export function findDuplicateSales(ds: Dataset): DuplicateSale[] {
       if (used.has(v.id)) break;
       if (Math.abs(it.salePrice - amt) >= 50) continue;
       const vid = garmentId(v.text);
-      const iid = garmentId(it.comment);
+      const iid = garmentId(it.productId || it.comment);
       const byId = vid && iid && vid === iid;
       const byName = !vid && v.text.toLowerCase().includes(it.name.toLowerCase());
       const byDate = it.saleDate === v.date;

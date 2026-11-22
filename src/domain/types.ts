@@ -51,6 +51,8 @@ export interface Item extends BaseRecord {
   salePrice: Ore;
   saleDate: ISODate | null;
   platform: Platform | null;
+  /** Produkt-ID som används för att hålla isär plaggen, t.ex. "TS-Gar-2026-207" */
+  productId: string;
   comment: string;
   ok: CheckStatus;
   saleBooking: SaleBooking;

@@ -224,3 +224,17 @@ function dedupe(ts: Term[]): Term[] {
     return true;
   });
 }
+
+/** Gissa märke från ett plaggnamn, t.ex. "Momotaro tröja" -> "Momotaro". */
+export function inferBrand(name: string): string {
+  const q = ` ${name.toLowerCase().replace(/[’`]/g, "'")} `;
+  let best: { name: string; len: number } | null = null;
+  for (const b of BRANDS)
+    for (const k of b.keys) {
+      if (k.length < 3) continue;
+      const esc = k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      if (new RegExp(`[^a-z]${esc}[^a-z]`).test(q) && (!best || k.length > best.len)) best = { name: b.name, len: k.length };
+    }
+  if (/\brl\b/i.test(name) && !best) return 'Ralph Lauren';
+  return best?.name ?? '';
+}

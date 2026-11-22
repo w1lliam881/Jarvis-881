@@ -120,3 +120,22 @@ describe('resultat från verifikat', () => {
     expect(periodPL(vs, '2026').costs).toBe(19900);
   });
 });
+
+import { brandStats } from '../../src/domain/metrics';
+describe('märken', () => {
+  it('omsättning, vinst och marginal per märke', () => {
+    const d = mkDrop({ id: 'd1' });
+    const items = [
+      mkItem({ dropId: 'd1', brand: "Levi's", cost: 10000, salePrice: 50000, saleDate: '2026-11-01' }),
+      mkItem({ dropId: 'd1', brand: "Levi's", cost: 10000, salePrice: 30000, saleDate: '2026-11-02' }),
+      mkItem({ dropId: 'd1', brand: 'Nudie Jeans', cost: 20000, salePrice: 25000, saleDate: '2026-11-03' }),
+      mkItem({ dropId: 'd1', brand: '', cost: 5000 }),
+    ];
+    const data = { ...ds([d], items), settings: { ...defaultSettings(), packaging: 0 } };
+    const b = brandStats(data, '2026-11');
+    expect(b.map((x) => x.brand)).toEqual(["Levi's", 'Nudie Jeans']);
+    expect(b[0]).toMatchObject({ sold: 2, revenue: 80000, profit: 60000, avgPrice: 40000 });
+    expect(b[0].margin).toBe(75);
+    expect(b[1].margin).toBe(20);
+  });
+});

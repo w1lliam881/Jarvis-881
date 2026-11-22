@@ -2,6 +2,7 @@ import { useSyncExternalStore } from 'react';
 import { newId } from '../domain/defaults';
 import { diffLedger, nextVoucherNr } from '../domain/ledger';
 import type { ChangeLogEntry, CollectionName, Dataset, GameState, RecordOf, Settings, Voucher } from '../domain/types';
+import { productIdFrom } from '../domain/import-v14';
 import { applyMutations, ConflictError, ValidationError, type Backend, type Mutation } from './backend';
 
 export interface SaveStatus {
@@ -43,7 +44,7 @@ export class Store {
   constructor(public backend: Backend, public user: () => string) {}
 
   async init(): Promise<void> {
-    this.ds = await this.backend.load();
+    this.ds = normalize(await this.backend.load());
     this.status = { state: 'idle', at: null, message: null };
     this.backend.onRemoteChange(() => {
       // Efter en ändring från någon annan går det inte att ångra äldre steg säkert
@@ -54,7 +55,7 @@ export class Store {
   }
 
   async reload(message?: string): Promise<void> {
-    this.ds = await this.backend.load();
+    this.ds = normalize(await this.backend.load());
     if (message) this.status = { state: 'saved', at: new Date().toISOString(), message };
     this.emit();
   }
@@ -264,4 +265,10 @@ export function useData(): Dataset {
   const { ds } = useStore();
   if (!ds) throw new Error('Data inte laddad');
   return ds;
+}
+
+/** Fyll i fält som saknas i data sparad av en äldre version av appen. */
+function normalize(ds: Dataset): Dataset {
+  if (ds.items.every((i) => typeof i.productId === 'string')) return ds;
+  return { ...ds, items: ds.items.map((i) => (typeof i.productId === 'string' ? i : { ...i, productId: productIdFrom(i.comment) })) };
 }
