@@ -28,6 +28,37 @@ export async function deletePushSubscription(endpoint: string): Promise<void> {
   await sb().from('push_subscriptions').delete().eq('endpoint', endpoint);
 }
 
+/** Är appen öppnad från hemskärmen (inte i Safari)? */
+export function isStandalone(): boolean {
+  return window.matchMedia?.('(display-mode: standalone)').matches || (navigator as unknown as { standalone?: boolean }).standalone === true;
+}
+
+/** Inloggningskod att föra över från Safari till appen på hemskärmen (en engångskod). */
+export async function handoffCode(): Promise<string | null> {
+  const { data } = await sb().auth.getSession();
+  return data.session?.refresh_token ?? null;
+}
+
+/**
+ * Safari glömmer sin inloggning lokalt efter att koden kopierats, utan att logga ut på servern.
+ * Annars kan Safari senare förnya med samma kod, och Supabase loggar då ut även appen som skydd.
+ */
+export async function forgetLocalSession(): Promise<void> {
+  await sb().auth.stopAutoRefresh();
+  try {
+    for (const k of Object.keys(localStorage)) if (k.startsWith('sb-') && k.includes('auth-token')) localStorage.removeItem(k);
+  } catch {
+    /* privat läge */
+  }
+}
+
+/** Logga in i appen med koden från Safari. */
+export async function signInWithHandoff(code: string): Promise<string | null> {
+  const { data, error } = await sb().auth.refreshSession({ refresh_token: code.trim() });
+  if (error || !data.session) return 'Koden fungerade inte. Den kan bara användas en gång: tryck på länken i mejlet igen för en ny kod.';
+  return null;
+}
+
 interface RecordRow {
   collection: string;
   id: string;
