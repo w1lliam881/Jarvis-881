@@ -144,7 +144,32 @@ export class SupabaseBackend implements Backend {
   }
 
   /** Närvaro: vem som har appen öppen just nu, och när var och en senast var aktiv. */
+  // En gemensam anslutning för närvaro, hur många delar av appen som än visar den.
+  // (Supabase tillåter bara en prenumeration per kanal; två startade samtidigt kraschade appen.)
+  private presenceListeners = new Set<(list: PresenceInfo[]) => void>();
+  private presenceLast: PresenceInfo[] | null = null;
+  private presenceStop: (() => void) | null = null;
+
   presence = (cb: (list: PresenceInfo[]) => void): (() => void) => {
+    this.presenceListeners.add(cb);
+    if (this.presenceLast) cb(this.presenceLast);
+    if (!this.presenceStop) {
+      this.presenceStop = this.startPresence((list) => {
+        this.presenceLast = list;
+        for (const l of this.presenceListeners) l(list);
+      });
+    }
+    return () => {
+      this.presenceListeners.delete(cb);
+      if (!this.presenceListeners.size && this.presenceStop) {
+        this.presenceStop();
+        this.presenceStop = null;
+        this.presenceLast = null;
+      }
+    };
+  };
+
+  private startPresence(cb: (list: PresenceInfo[]) => void): () => void {
     const me = this.email.toLowerCase();
     let online = new Set<string>();
     let people: { email: string; name: string }[] = [];
@@ -184,9 +209,9 @@ export class SupabaseBackend implements Backend {
     return () => {
       clearInterval(t);
       document.removeEventListener('visibilitychange', vis);
-      void ch.unsubscribe();
+      void sb().removeChannel(ch);
     };
-  };
+  }
 
   onRemoteChange(cb: () => void): () => void {
     this.listeners.add(cb);
