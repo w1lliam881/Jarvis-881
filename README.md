@@ -43,6 +43,10 @@ Driftkostnad: 0 kr i månaden (se `ARCHITECTURE.md`).
 - **Påminnelser:** funktionen `daily-reminder` körs varje timme (pg_cron). Nycklarna för notiser ligger som hemligheter i Supabase. Slå på i appen: öppna Jarvis från hemskärmen → Mer → Inställningar → Påminnelser.
 - **Gmail:** skriptet `scripts/gmail-till-jarvis.gs` körs i ditt Google-konto på script.google.com och skickar mejl från Vinted, Plick och Doorzo till funktionen `ingest-mail`. De hamnar i godkännandekön. Nyckeln (`INGEST_TOKEN`) finns bara i Supabase och i ditt skript, aldrig i koden.
 
+### Inloggning
+
+Första gången loggar du in med länken i mejlet. Välj sedan ett lösenord under **Mer → Inställningar → Lösenord**. Därefter loggar du in med e-post och lösenord, både på datorn och i appen på hemskärmen. Länken finns kvar om du glömmer lösenordet.
+
 ## Ändra i efterhand
 
 Allt går att ändra efter publiceringen. Säg till vad du vill ha, så ändrar jag koden och publicerar igen. Vercel bygger om automatiskt, och appen på hemskärmen uppdateras nästa gång den öppnas. Din data påverkas inte av att appen uppdateras.

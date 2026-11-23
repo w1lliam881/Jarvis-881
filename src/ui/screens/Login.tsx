@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { ClipboardPaste } from 'lucide-react';
-import { forgetLocalSession, isStandalone, sendMagicLink, signInWithHandoff } from '../../data/supabase';
+import { forgetLocalSession, isStandalone, sendMagicLink, signInWithHandoff, signInWithPassword } from '../../data/supabase';
 
-/** Inloggning med e-postlänk. I appen på hemskärmen loggar man in med en kod som Safari visar efter länken. */
+/** Inloggning med e-post och lösenord, eller med e-postlänk. I appen på hemskärmen fungerar länken via en kod som Safari visar. */
 export function Login() {
   const [email, setEmail] = useState('');
+  const [pw, setPw] = useState('');
+  const [mode, setMode] = useState<'password' | 'link'>('password');
   const [sent, setSent] = useState(false);
   const [code, setCode] = useState('');
   const [err, setErr] = useState('');
@@ -14,6 +16,16 @@ export function Login() {
     if (!c.trim()) return;
     setBusy(true);
     const e = await signInWithHandoff(c);
+    setBusy(false);
+    if (e) setErr(e);
+    else location.reload();
+  };
+  const okEmail = /.+@.+\..+/.test(email);
+  const login = async () => {
+    if (!okEmail || !pw || busy) return;
+    setBusy(true);
+    setErr('');
+    const e = await signInWithPassword(email.trim(), pw);
     setBusy(false);
     if (e) setErr(e);
     else location.reload();
@@ -31,14 +43,31 @@ export function Login() {
     <div className="min-h-dvh bg-forest text-on-forest">
       <div className="safe-top mx-auto max-w-[480px] px-5 pt-16">
         <h1 className="m-0 font-serif text-[34px] font-semibold">Jarvis</h1>
-        <p className="text-on-forest-muted">Logga in med din e-post. Du får en länk, inget lösenord behövs.</p>
+        <p className="text-on-forest-muted">{mode === 'password' ? 'Logga in med e-post och lösenord.' : 'Logga in med din e-post. Du får en länk i mejlen.'}</p>
         <div className="mt-6 flex flex-col gap-3 rounded-2xl bg-surface p-4 text-text">
-          {!sent ? (
+          {mode === 'password' ? (
+            <form
+              className="flex flex-col gap-3"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void login();
+              }}
+            >
+              <input className="field" type="email" autoComplete="username" inputMode="email" placeholder="din@mejl.se" value={email} onChange={(e) => setEmail(e.target.value)} aria-label="E-post" />
+              <input className="field" type="password" autoComplete="current-password" placeholder="Lösenord" value={pw} onChange={(e) => setPw(e.target.value)} aria-label="Lösenord" />
+              <button type="submit" className="btn btn-primary" disabled={!okEmail || !pw || busy}>
+                Logga in
+              </button>
+              <button type="button" className="text-[14px] text-muted underline" onClick={() => (setMode('link'), setErr(''))}>
+                Inget lösenord än, eller glömt det? Få en inloggningslänk
+              </button>
+            </form>
+          ) : !sent ? (
             <>
               <input className="field" type="email" autoComplete="email" inputMode="email" placeholder="din@mejl.se" value={email} onChange={(e) => setEmail(e.target.value)} aria-label="E-post" />
               <button
                 className="btn btn-primary"
-                disabled={!/.+@.+\..+/.test(email) || busy}
+                disabled={!okEmail || busy}
                 onClick={async () => {
                   setBusy(true);
                   const r = await sendMagicLink(email.trim());
@@ -48,6 +77,10 @@ export function Login() {
                 }}
               >
                 Skicka inloggningslänk
+              </button>
+              <p className="m-0 text-[13px] text-muted">När du är inne kan du välja ett lösenord under Mer → Inställningar → Lösenord.</p>
+              <button type="button" className="text-[14px] text-muted underline" onClick={() => (setMode('password'), setErr(''))}>
+                Logga in med lösenord istället
               </button>
             </>
           ) : app ? (
@@ -61,7 +94,7 @@ export function Login() {
           )}
           {err && <p className="m-0 text-[14px] text-hi">{err}</p>}
         </div>
-        {app && (
+        {app && mode === 'link' && (
           <div className="mt-4 flex flex-col gap-3 rounded-2xl bg-surface p-4 text-text">
             <div className="font-semibold">Har du en kod från Safari?</div>
             <button className="btn btn-sun" disabled={busy} onClick={paste}>
