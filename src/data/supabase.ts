@@ -20,6 +20,23 @@ export async function sendMagicLink(email: string): Promise<string | null> {
   return `Kunde inte skicka länken: ${error.message}`;
 }
 
+export async function signInWithPassword(email: string, password: string): Promise<string | null> {
+  const { error } = await sb().auth.signInWithPassword({ email, password });
+  if (!error) return null;
+  if (error.status === 429 || /rate limit/i.test(error.message)) return 'För många försök. Vänta en stund och försök igen.';
+  if (/invalid login credentials/i.test(error.message) || error.status === 400) return 'Fel e-post eller lösenord. Har du inte valt något lösenord än? Logga in med länken och välj ett under Mer → Inställningar.';
+  return `Kunde inte logga in: ${error.message}`;
+}
+
+/** Väljer eller byter lösenord för den som är inloggad. */
+export async function setPassword(password: string): Promise<string | null> {
+  const { error } = await sb().auth.updateUser({ password });
+  if (!error) return null;
+  if (/different from the old/i.test(error.message)) return 'Det är samma lösenord som förut.';
+  if (/weak|short|at least/i.test(error.message)) return 'Lösenordet är för svagt. Välj minst 8 tecken.';
+  return `Kunde inte spara lösenordet: ${error.message}`;
+}
+
 export async function savePushSubscription(sub: PushSubscriptionJSON, prefs: { time: string; kinds: Record<string, boolean> }): Promise<string | null> {
   const { data } = await sb().auth.getSession();
   const email = data.session?.user.email ?? '';

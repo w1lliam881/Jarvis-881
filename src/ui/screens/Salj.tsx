@@ -109,26 +109,36 @@ function LinkSheet({ voucherId, onClose }: { voucherId: string; onClose: () => v
   const v = ds.vouchers.find((x) => x.id === voucherId)!;
   const [q, setQ] = useState('');
   const amt = saleAmount(v);
+  const linked = new Set(ds.vouchers.filter((x) => !x.deletedAt && x.source !== 'auto' && x.itemId && x.id !== v.id).map((x) => x.itemId));
+  const needle = q.toLowerCase();
   const list = allLanded(ds)
-    .filter((l) => !isSold(l.item) && `${l.item.name} ${l.item.brand} ${l.drop.name}`.toLowerCase().includes(q.toLowerCase()))
-    .slice(0, 50);
+    .filter((l) => !linked.has(l.item.id) && `${l.item.name} ${l.item.productId} ${l.item.brand} ${l.drop.name}`.toLowerCase().includes(needle))
+    .sort((a, b) => Number(isSold(a.item)) - Number(isSold(b.item)))
+    .slice(0, 60);
   return (
     <Sheet open onClose={onClose} title="Koppla till plagg">
       <p className="mt-0 text-[14px] text-muted">
-        {v.text} · {kr(amt)} · {v.date}. Plagget markeras som sålt för samma belopp och verifikatet kopplas till det.
+        {v.text} · {kr(amt)} · {v.date}. Plagget markeras som sålt för samma belopp och datum, och verifikatet kopplas till det. Är plagget redan markerat som sålt ersätter det här verifikatet den automatiska bokningen, så att försäljningen inte räknas två gånger.
       </p>
-      <input className="field mb-2" placeholder="Sök osålt plagg…" value={q} onChange={(e) => setQ(e.target.value)} />
+      <input className="field mb-2" placeholder="Sök plagg, produkt-ID eller drop…" value={q} onChange={(e) => setQ(e.target.value)} />
       <Card pad={false}>
-        {list.map((l) => (
-          <button key={l.item.id} type="button" onClick={() => void linkSaleToItem(v.id, l.item.id, amt).then((ok) => ok && onClose())} className="flex min-h-[52px] w-full items-center justify-between border-b border-line-2 px-4 py-2 text-left last:border-0">
-            <span className="min-w-0">
-              <span className="block truncate">{l.item.name}</span>
-              <span className="block text-[12px] text-muted">{l.drop.name}</span>
-            </span>
-            <Money v={l.landed} className="text-[13px] text-muted" />
-          </button>
-        ))}
-        {!list.length && <p className="m-0 p-4 text-muted">Inga osålda plagg.</p>}
+        {list.map((l) => {
+          const sold = isSold(l.item);
+          return (
+            <button key={l.item.id} type="button" onClick={() => void linkSaleToItem(v.id, l.item.id, amt).then((ok) => ok && onClose())} className="flex min-h-[52px] w-full items-center justify-between gap-3 border-b border-line-2 px-4 py-2 text-left last:border-0">
+              <span className="min-w-0">
+                <span className="block truncate">{l.item.name}</span>
+                <span className="block text-[12px] text-muted">
+                  {l.drop.name}
+                  {l.item.productId ? ` · ${l.item.productId}` : ''}
+                  {sold ? ` · redan såld ${l.item.saleDate ?? ''} för ${kr(l.item.salePrice)}` : ''}
+                </span>
+              </span>
+              <Money v={l.landed} className="text-[13px] text-muted" />
+            </button>
+          );
+        })}
+        {!list.length && <p className="m-0 p-4 text-muted">Inga plagg hittades.</p>}
       </Card>
     </Sheet>
   );

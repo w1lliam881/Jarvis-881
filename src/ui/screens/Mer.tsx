@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BookOpen, Calculator, CalendarClock, Clapperboard, Database, Gamepad2, History, Languages, LineChart, Settings as Cog, Upload, Wallet } from 'lucide-react';
+import { BookOpen, Calculator, CalendarClock, Clapperboard, Database, Eye, Gamepad2, History, Languages, LineChart, Settings as Cog, Upload, Wallet } from 'lucide-react';
 import { store, useData } from '../../data/store';
 import { updateSettings } from '../../data/actions';
 import type { BackupInfo } from '../../data/backend';
@@ -47,6 +47,7 @@ function Menu() {
             {item('#/planering/kalkyl', Calculator, 'Kalkyl', 'Räkna på Doorzo-plagg innan du köper')}
             {item('#/planering/framtid', Wallet, 'Framtid och budget', 'Maxpris per kategori, orderplan och mål')}
             {item('#/planering/doorzo', Languages, 'Doorzo-sökningar', 'Svenska till japanska söktermer')}
+            {item('#/planering/doorzo', Eye, 'Bevakningar', 'Sparade sökningar med maxpris (under Doorzo-sökningar)')}
             {item('#/planering/marknad', LineChart, 'Marknadsföring', 'Dina TikTok-klipp och vad som fungerar')}
             {item('#/planering/video', Clapperboard, 'Videoidéer', 'Idéer och bedömning av dina egna')}
           </Card>
@@ -73,6 +74,52 @@ function Menu() {
         </p>
       </Page>
     </>
+  );
+}
+
+function PasswordCard({ email }: { email: string }) {
+  const [pw, setPw] = useState('');
+  const [pw2, setPw2] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState('');
+  const short = pw.length > 0 && pw.length < 8;
+  const mismatch = pw2.length > 0 && pw !== pw2;
+  return (
+    <Section title="Lösenord">
+      <Card>
+        <form
+          className="flex flex-col gap-3"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            if (pw.length < 8 || pw !== pw2) return;
+            setBusy(true);
+            const { setPassword } = await import('../../data/supabase');
+            const r = await setPassword(pw);
+            setBusy(false);
+            if (r) setMsg(r);
+            else {
+              setPw('');
+              setPw2('');
+              setMsg('');
+              toast('Lösenordet sparat');
+            }
+          }}
+        >
+          <p className="m-0 text-[14px] text-muted">Välj ett lösenord för {email}. Sedan kan du logga in med e-post och lösenord, även i appen på hemskärmen. Inloggningslänken fungerar fortfarande.</p>
+          <input type="email" autoComplete="username" value={email} readOnly hidden />
+          <Field label="Nytt lösenord" hint={short ? 'Minst 8 tecken.' : 'Minst 8 tecken. Spara det gärna i lösenordshanteraren.'}>
+            <input className="field" type="password" autoComplete="new-password" value={pw} onChange={(e) => setPw(e.target.value)} />
+          </Field>
+          <Field label="Samma lösenord igen" hint={mismatch ? 'Lösenorden är inte lika.' : undefined}>
+            <input className="field" type="password" autoComplete="new-password" value={pw2} onChange={(e) => setPw2(e.target.value)} />
+          </Field>
+          {msg && <p className="m-0 text-[14px] text-hi">{msg}</p>}
+          <button type="submit" className="btn btn-primary" disabled={busy || pw.length < 8 || pw !== pw2}>
+            Spara lösenord
+          </button>
+        </form>
+      </Card>
+    </Section>
   );
 }
 
@@ -104,6 +151,7 @@ function Settings() {
             </Field>
           </Card>
         </Section>
+        {store().backend.email && <PasswordCard email={store().backend.email!} />}
         <Section title="Företag och bokföring">
           <Card className="flex flex-col">
             <Field label="Företagsnamn">
