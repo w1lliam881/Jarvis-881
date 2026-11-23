@@ -7,7 +7,8 @@ import { unlinkedSales, saleAmount } from '../../domain/ledger';
 import { allLanded, isSold } from '../../domain/metrics';
 import { kr } from '../../domain/money';
 import { PLATFORMS } from '../../domain/types';
-import { Card, Chips, Empty, Money, Page, RoiPill, Section, Sheet, TopBand } from '../components/ui';
+import { Card, Chips, Empty, Money, Page, RoiPill, Section, Sheet, TopBand, cx } from '../components/ui';
+import { go } from '../router';
 import { openQuick } from '../App';
 
 export function Salj() {
@@ -65,11 +66,13 @@ export function Salj() {
             </Card>
           </Section>
         )}
-        <div className="relative">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:gap-4">
+        <div className="relative lg:w-[360px] lg:shrink-0">
           <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" aria-hidden />
           <input className="field pl-9" placeholder="Sök sålda plagg…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Sök sålda plagg" />
         </div>
         <Chips value={p} onChange={setP} options={['Alla', ...PLATFORMS].map((x) => ({ value: x, label: x }))} />
+        </div>
         {[...months].map(([m, ls]) => (
           <Section
             key={m}
@@ -80,7 +83,52 @@ export function Salj() {
               </span>
             }
           >
-            <Card pad={false}>
+            <Card pad={false} className="hidden overflow-hidden lg:block">
+              <table className="w-full whitespace-nowrap text-[14px]">
+                <thead>
+                  <tr className="bg-surface-2 text-left text-[12px] text-muted">
+                    <th className="w-[72px] px-4 py-2 font-medium">Datum</th>
+                    <th className="px-2 py-2 font-medium">Plagg</th>
+                    <th className="px-2 py-2 font-medium">Produkt-ID</th>
+                    <th className="hidden xl:table-cell px-2 py-2 font-medium">Plattform</th>
+                    <th className="hidden px-2 py-2 font-medium xl:table-cell">Drop</th>
+                    <th className="hidden xl:table-cell px-2 py-2 text-right font-medium">Hemkostnad</th>
+                    <th className="px-2 py-2 text-right font-medium">Såld för</th>
+                    <th className="px-2 py-2 text-right font-medium">Vinst</th>
+                    <th className="w-[84px] px-4 py-2 text-right font-medium">ROI</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ls.map((l) => (
+                    <tr key={l.item.id} className="cursor-pointer border-t border-line-2 hover:bg-surface-2" onClick={() => go(`#/lager/plagg/${l.item.id}`)}>
+                      <td className="num px-4 py-2.5 text-[12px] text-muted">{l.item.saleDate ? `${+l.item.saleDate.slice(8)}/${+l.item.saleDate.slice(5, 7)}` : '–'}</td>
+                      <td className="max-w-[260px] px-2 py-2.5">
+                        <a href={`#/lager/plagg/${l.item.id}`} className="block truncate font-medium" onClick={(e) => e.stopPropagation()}>
+                          {l.item.name}
+                        </a>
+                        {l.item.brand && <span className="block truncate text-[12px] text-muted">{l.item.brand}</span>}
+                      </td>
+                      <td className="num px-2 py-2.5 text-[12px] text-muted">{l.item.productId || '–'}</td>
+                      <td className="hidden xl:table-cell px-2 py-2.5 text-muted">{l.item.platform ?? '–'}</td>
+                      <td className="hidden max-w-[160px] truncate px-2 py-2.5 text-muted xl:table-cell">{l.drop.name}</td>
+                      <td className="hidden xl:table-cell px-2 py-2.5 text-right">
+                        <Money v={l.landed} className="text-muted" />
+                      </td>
+                      <td className="px-2 py-2.5 text-right">
+                        <Money v={l.item.salePrice} />
+                      </td>
+                      <td className={cx('px-2 py-2.5 text-right', (l.profit ?? 0) < 0 ? 'text-neg' : 'text-pos')}>
+                        <Money v={l.profit ?? 0} />
+                      </td>
+                      <td className="px-4 py-2.5 text-right">
+                        <RoiPill roi={l.landed ? ((l.profit ?? 0) / l.landed) * 100 : null} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </Card>
+            <Card pad={false} className="lg:hidden">
               {ls.map((l) => (
                 <a key={l.item.id} href={`#/lager/plagg/${l.item.id}`} className="flex min-h-[52px] items-center gap-3 border-b border-line-2 px-4 py-2 last:border-0 active:bg-surface-2">
                   <span className="num w-11 shrink-0 text-[12px] text-muted">{l.item.saleDate ? `${+l.item.saleDate.slice(8)}/${+l.item.saleDate.slice(5, 7)}` : '–'}</span>

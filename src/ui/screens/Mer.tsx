@@ -42,6 +42,7 @@ function Menu() {
     <>
       <TopBand title="Mer" sub={`Inloggad som ${store().user()}`} right={<Presence />} />
       <Page>
+        <div className="desk-flow">
         <Section title="Planering">
           <Card pad={false}>
             {item('#/planering/kalkyl', Calculator, 'Kalkyl', 'Räkna på Doorzo-plagg innan du köper')}
@@ -69,6 +70,7 @@ function Menu() {
           {item('#/mer/installningar', Cog, 'Inställningar', 'Tema, moms, underlag, spelet')}
           {item('#/mer/guide', BookOpen, 'Så använder du Jarvis', 'Kort guide')}
         </Card>
+        </div>
         <p className="m-0 px-1 text-[12px] text-muted">
           Jarvis 2.0 · lagring: {store().backend.kind === 'supabase' ? 'Supabase (EU)' : store().backend.kind === 'local' ? 'den här enheten' : 'tillfällig (sparas inte)'} · driftkostnad 0 kr/mån
         </p>
@@ -131,6 +133,7 @@ function Settings() {
     <>
       <TopBand title="Inställningar" back="#/mer" />
       <Page>
+        <div className="desk-flow">
         <Section title="Utseende">
           <Card>
             <Segmented
@@ -185,6 +188,7 @@ function Settings() {
             <Toggle label="Ljud i spelet" checked={s.gameSound} onChange={(v) => void updateSettings({ gameSound: v })} />
           </Card>
         </Section>
+        </div>
       </Page>
     </>
   );

@@ -82,6 +82,7 @@ function StockList({ initial }: { initial: string }) {
           ]}
         />
         {cats.length > 2 && <Chips value={cat} onChange={setCat} options={cats.map((c) => ({ value: c, label: c }))} />}
+        <div className="desk-grid2">
         {sortedGroups.map((g) => (
           <Section key={g[0].drop.id} title={g[0].drop.name} action={<a href={`#/lager/drop/${g[0].drop.id}`}>{g.length} plagg ›</a>}>
             <Card pad={false}>
@@ -91,6 +92,7 @@ function StockList({ initial }: { initial: string }) {
             </Card>
           </Section>
         ))}
+        </div>
         {!list.length && <Empty title="Inga plagg här" text={q ? 'Inget matchar sökningen.' : 'Lägg in en drop så dyker plaggen upp här.'} action={<button className="btn btn-primary" onClick={() => setNewDrop(true)}>Ny drop</button>} />}
       </Page>
       {newDrop && <DropSheet onClose={() => setNewDrop(false)} />}
@@ -172,6 +174,7 @@ function DropsList() {
           <Stat label="Försäljning" value={kr(tot.r)} />
           <Stat label="ROI" value={<RoiPill roi={tot.c ? ((tot.r - tot.c) / tot.c) * 100 : null} />} />
         </div>
+        <div className="desk-grid2">
         {months.map((m) => (
           <Section key={m} title={<span className="first-letter:uppercase">{monthName(m, false)}</span>}>
             <Card pad={false}>
@@ -202,6 +205,7 @@ function DropsList() {
             </Card>
           </Section>
         ))}
+        </div>
         {!drops.length && <Empty title="Inga drops än" text="Skapa en drop genom att klistra in plaggen." action={<button className="btn btn-primary" onClick={() => setNewDrop(true)}>Ny drop</button>} />}
       </Page>
       {newDrop && <DropSheet onClose={() => setNewDrop(false)} />}
@@ -250,6 +254,8 @@ function DropView({ id }: { id: string }) {
         </div>
       </TopBand>
       <Page>
+        <div className="desk-cols desk-xl">
+        <div className="desk-col xl:order-2">
         <Card>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Namn">
@@ -283,6 +289,8 @@ function DropView({ id }: { id: string }) {
             </button>
           </div>
         </Card>
+        </div>
+        <div className="desk-col xl:row-span-2">
 
         <Section title={`Plagg · ${items.length}`}>
           <Chips
@@ -314,11 +322,11 @@ function DropView({ id }: { id: string }) {
                       </a>
                       <span className="block truncate text-[12px] text-muted">{[l.item.productId, l.item.brand, l.item.size].filter(Boolean).join(' · ')}</span>
                     </td>
-                    <td className="w-[104px] px-1 py-1.5">
+                    <td className="w-[104px] px-1 py-1.5 lg:w-[136px]">
                       <MoneyInput value={l.item.cost} onCommit={(v) => void updateItem(l.item.id, { cost: v }, 'Inköpspris sparat')} />
                     </td>
                     <td className="num px-2 py-2 text-right text-muted">{Math.round(l.landed / 100)}</td>
-                    <td className="w-[104px] px-1 py-1.5">
+                    <td className="w-[104px] px-1 py-1.5 lg:w-[136px]">
                       <MoneyInput value={l.item.salePrice} placeholder="–" onCommit={(v) => void updateItem(l.item.id, { salePrice: v }, v ? 'Försäljning sparad' : 'Försäljning ångrad')} />
                     </td>
                     <td className={cx('num px-3 py-2 text-right', (l.profit ?? 0) < 0 ? 'text-neg' : 'text-pos')}>{l.profit != null ? Math.round(l.profit / 100) : '–'}</td>
@@ -329,6 +337,8 @@ function DropView({ id }: { id: string }) {
           </Card>
           <p className="m-0 px-1 text-[12px] text-muted">Skriv direkt i rutorna. Allt sparas när du lämnar rutan och räknas om överallt, även bokföringen. Hemkostnaden inkluderar frakt, tull och {kr(ds.settings.packaging)} förpackning.</p>
         </Section>
+        </div>
+        <div className="desk-col xl:order-3 xl:col-start-2">
 
         <Section title="Lägg till plagg">
           <Card>
@@ -351,6 +361,8 @@ function DropView({ id }: { id: string }) {
         <Attachments dropId={drop.id} />
 
         <ConfirmButton label="Ta bort drop" confirmLabel={`Ta bort ${drop.name} och ${items.length} plagg?`} onConfirm={() => void deleteDrop(drop.id).then(() => (go('#/lager/drops')))} />
+        </div>
+        </div>
       </Page>
       {cost && <CostSheet onClose={() => setCost(null)} preset={{ type: cost, dropId: drop.id }} />}
     </>
@@ -397,6 +409,8 @@ function ItemView({ id }: { id: string }) {
         </div>
       </TopBand>
       <Page>
+        <div className="desk-cols desk-cols-even">
+        <div className="desk-col">
         {sold ? (
           <Card className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
@@ -493,6 +507,8 @@ function ItemView({ id }: { id: string }) {
             <input type="date" className="field" value={item.listedAt ?? ''} onChange={(e) => up({ listedAt: e.target.value || null })} />
           </Field>
         </Card>
+        </div>
+        <div className="desk-col">
 
         <AdCard item={item} />
 
@@ -521,6 +537,8 @@ function ItemView({ id }: { id: string }) {
           </button>
         </div>
         <ConfirmButton label="Ta bort plagg" onConfirm={() => void deleteItem(item.id).then(() => (go(`#/lager/drop/${drop.id}`)))} />
+        </div>
+        </div>
       </Page>
       {sell && <SaleSheet onClose={() => setSell(false)} itemId={item.id} />}
     </>

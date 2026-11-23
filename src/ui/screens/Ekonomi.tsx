@@ -71,12 +71,14 @@ function Overview() {
   const bal = trialBalance(ds.vouchers).find((b) => b.account === 1930)?.balance ?? 0;
   return (
     <>
-      <div className="grid grid-cols-2 gap-2.5">
+      <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4 lg:gap-4">
         <Stat label={`Intäkter ${monthName(m, false)}`} value={kr(pl.revenue)} />
         <Stat label="Kostnader" value={kr(pl.costs)} />
         <Stat label="Resultat" value={<span className={pl.result < 0 ? 'text-neg' : ''}>{kr(pl.result)}</span>} />
         <Stat label="Företagskontot (1930)" value={kr(bal)} sub="enligt bokföringen" />
       </div>
+      <div className="desk-cols">
+      <div className="desk-col lg:order-2">
       <div className="grid grid-cols-2 gap-2">
         <button className="btn btn-primary" onClick={() => openQuick('cost')}>
           <Plus size={18} aria-hidden /> Händelse
@@ -96,10 +98,13 @@ function Overview() {
           <span className="flex-1">Exportera (CSV, PDF, SIE, backup)</span>
         </Row>
       </Card>
+      <p className="m-0 hidden px-1 text-[12px] text-muted lg:block">Bokföringen i Jarvis är ett stöd för eget bruk. Låt någon redovisningskunnig granska den innan den används för deklaration.</p>
+      </div>
       <Section title="Senast bokfört" action={<a href="#/ekonomi/verifikat">Alla</a>}>
         <Card pad={false}>{recent.length ? recent.map((v) => <VoucherRow key={v.id} v={v} />) : <p className="m-0 p-4 text-muted">Inget bokfört än.</p>}</Card>
       </Section>
-      <p className="m-0 px-1 text-[12px] text-muted">Bokföringen i Jarvis är ett stöd för eget bruk. Låt någon redovisningskunnig granska den innan den används för deklaration.</p>
+      </div>
+      <p className="m-0 px-1 text-[12px] text-muted lg:hidden">Bokföringen i Jarvis är ett stöd för eget bruk. Låt någon redovisningskunnig granska den innan den används för deklaration.</p>
     </>
   );
 }
@@ -137,7 +142,8 @@ function Vouchers() {
   for (const v of list) groups.set(v.date.slice(0, 7), [...(groups.get(v.date.slice(0, 7)) ?? []), v]);
   return (
     <>
-      <input className="field" placeholder="Sök verifikat (nummer, text, datum)…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Sök verifikat" />
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:gap-4">
+      <input className="field lg:w-[360px] lg:shrink-0" placeholder="Sök verifikat (nummer, text, datum)…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Sök verifikat" />
       <Chips
         value={src}
         onChange={setSrc}
@@ -147,6 +153,7 @@ function Vouchers() {
           { value: 'egna', label: 'Egna och händelser' },
         ]}
       />
+      </div>
       {[...groups].map(([m, vs], i) => {
         const pl = periodPL(vs, m);
         return (
@@ -498,6 +505,7 @@ function Analysis() {
     }
     return (
       <>
+        <div className="flex flex-col gap-5 lg:grid lg:grid-cols-2 lg:gap-4">
         <Segmented value={mode} onChange={setMode} options={[{ value: 'm', label: 'Månad' }, { value: 'y', label: 'År' }, { value: 'd', label: 'Drop' }]} />
         <select className="field" value={d.id} onChange={(e) => setDropId(e.target.value)} aria-label="Välj drop">
           {drops.map((x) => (
@@ -506,7 +514,8 @@ function Analysis() {
             </option>
           ))}
         </select>
-        <div className="grid grid-cols-2 gap-2.5">
+        </div>
+        <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4 lg:gap-4">
           <Stat label="Total kostnad" value={kr(s.cost)} />
           <Stat label="Intäkt" value={kr(s.revenue)} />
           <Stat label="Resultat" value={<span className={s.result < 0 ? 'text-neg' : 'text-pos'}>{kr(s.result)}</span>} />
@@ -516,6 +525,7 @@ function Analysis() {
           <Stat label="Osålda" value={`${s.count - s.sold} st`} sub={`${kr(s.unsoldCost)} kvar att tjäna in`} />
           <Stat label="Andel sålda" value={`${s.count ? Math.round((s.sold / s.count) * 100) : 0} %`} />
         </div>
+        <div className="desk-grid2">
         <Section title="Vinst per kategori">
           <Card>
             <Bars rows={[...cat].map(([k, c]) => ({ label: k, value: c.p, sub: `${c.s}/${c.n} sålda · ${kr(c.p)}` }))} />
@@ -531,6 +541,7 @@ function Analysis() {
             <Bars rows={drops.slice().reverse().map((x) => { const y = dropStats(ds, x); return { label: x.name, value: y.roi, sub: `${Math.round(y.roi)} % · ${kr(y.result)}` }; })} />
           </Card>
         </Section>
+        </div>
       </>
     );
   }
@@ -557,13 +568,15 @@ function Analysis() {
         });
   return (
     <>
+      <div className="flex flex-col gap-5 lg:grid lg:grid-cols-2 lg:gap-4">
       <Segmented value={mode} onChange={setMode} options={[{ value: 'm', label: 'Månad' }, { value: 'y', label: 'År' }, { value: 'd', label: 'Drop' }]} />
       {mode === 'm' ? (
         <input type="month" className="field" value={month} onChange={(e) => e.target.value && setMonth(e.target.value)} aria-label="Månad" />
       ) : (
         <input type="number" className="field" value={month.slice(0, 4)} onChange={(e) => e.target.value && setMonth(`${e.target.value}-${month.slice(5)}`)} aria-label="År" />
       )}
-      <div className="grid grid-cols-2 gap-2.5">
+      </div>
+      <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-6 lg:gap-4">
         <Stat label="Intäkter" value={kr(pl.revenue)} />
         <Stat label="Kostnader" value={kr(pl.costs)} />
         <Stat label="Resultat" value={<span className={pl.result < 0 ? 'text-neg' : 'text-pos'}>{kr(pl.result)}</span>} />
@@ -576,6 +589,7 @@ function Analysis() {
           <Columns rows={trend.map((m) => ({ label: m.slice(5), value: periodPL(ds.vouchers, m).result }))} />
         </Card>
       </Section>
+      <div className="desk-grid2">
       <Section title="Kostnadsfördelning">
         <Card>
           <Bars rows={costs.map(([a, n], i) => ({ label: accountName(+a), value: n, sub: kr(n), color: ['var(--c1)', 'var(--c2)', 'var(--c3)', 'var(--c4)', 'var(--c5)'][i % 5] }))} />
@@ -586,12 +600,13 @@ function Analysis() {
           <Bars rows={[...cats].sort((a, b) => b[1].r - a[1].r).map(([k, c]) => ({ label: k, value: c.r, sub: `${c.n} st · ${kr(c.r)} · vinst ${kr(c.p)}` }))} />
         </Card>
       </Section>
-      <BrandTable period={period} />
       <Section title="Bästa plagg i perioden">
         <Card>
           <Bars rows={sold.sort((a, b) => (b.profit ?? 0) - (a.profit ?? 0)).slice(0, 5).map((l) => ({ label: l.item.name, value: l.profit ?? 0, sub: kr(l.profit ?? 0) }))} />
         </Card>
       </Section>
+      </div>
+      <BrandTable period={period} />
     </>
   );
 }
@@ -611,9 +626,11 @@ function Checks() {
         <Stat label="Att titta på" value={groups.reduce((s, g) => s + g.refs.length, 0)} />
         <Stat label="Kontrollerade" value={`${L.filter((l) => l.item.ok === 1).length} ✓`} sub={`${L.filter((l) => l.item.ok === 2).length} fel`} />
       </div>
+      <div className="desk-grid2">
       {groups.map((g, i) => (
         <IssueCard key={g.id} g={g} open={i < 2} ds={ds} />
       ))}
+      </div>
       {!groups.length && <Empty title="Allt ser bra ut" text="Inga fel hittades i dina siffror." />}
       <a className="btn btn-ghost" href="#/ekonomi/export">
         <Download size={16} aria-hidden /> Exportera till CSV

@@ -69,9 +69,9 @@ export function Spelet() {
 
   return (
     <div className="min-h-dvh pb-32" style={{ background: '#11161A', color: '#E9EEEA' }}>
-      <header className="relative overflow-hidden px-5 pb-6 pt-[max(20px,env(safe-area-inset-top))]" style={{ background: `linear-gradient(180deg, ${xp.world.sky}, #11161A)` }}>
+      <header className="relative overflow-hidden px-5 pb-6 pt-[max(20px,env(safe-area-inset-top))] lg:px-8 lg:pt-8" style={{ background: `linear-gradient(180deg, ${xp.world.sky}, #11161A)` }}>
         <div className="absolute inset-x-0 bottom-0 h-3" style={{ background: xp.world.ground }} aria-hidden />
-        <div className="relative mx-auto flex max-w-[720px] items-end gap-4">
+        <div className="relative mx-auto flex max-w-[720px] items-end gap-4 lg:max-w-[1216px]">
           <Hero world={xp.world.id} size={96} className="bob shrink-0" />
           <div className="min-w-0 flex-1 pb-3">
             <div className="font-pixel text-[10px] uppercase tracking-wider opacity-80">{xp.world.name}</div>
@@ -88,13 +88,15 @@ export function Spelet() {
         </div>
       </header>
 
-      <div className="mx-auto flex max-w-[720px] flex-col gap-6 px-4 pt-5">
+      <div className="mx-auto flex max-w-[720px] flex-col gap-6 px-4 pt-5 lg:max-w-[1280px] lg:px-8 lg:pt-7">
         <div className="grid grid-cols-3 gap-2 text-center">
           <PixelStat icon={<Flame size={16} aria-hidden />} label="Streak" value={`${xp.streak} d`} />
           <PixelStat icon={<Swords size={16} aria-hidden />} label="Uppdrag" value={String(Object.keys(ds.game.completed).length)} />
           <PixelStat icon={<Trophy size={16} aria-hidden />} label="Bossar" value={`${Object.keys(ds.game.bossesBeaten).length}/6`} />
         </div>
 
+        <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:items-start lg:gap-8">
+        <div className="flex flex-col gap-6 lg:sticky lg:top-6">
         <PSection title="Världskartan" sub={xp.next ? `${toNext} XP kvar till ${xp.next.name}` : 'Alla världar upplåsta'}>
           <Overworld level={xp.level} beaten={ds.game.bossesBeaten} hits={ds.game.bossHits ?? {}} sound={s.gameSound} onSelect={setSel} />
           {sel && (
@@ -111,6 +113,8 @@ export function Spelet() {
             </>
           )}
         </PSection>
+        </div>
+        <div className="flex flex-col gap-6">
 
         <PSection title="Dagens uppdrag" sub="De tre viktigaste just nu. Klara uppdrag bockas av automatiskt.">
           {board.today.map((q) => (
@@ -204,6 +208,8 @@ export function Spelet() {
         <div className="rounded-xl bg-[#E9EEEA] px-4 text-[#17201B]">
           <Toggle label="Ljud" sub="Små pixelljud vid klara uppdrag och ny nivå" checked={s.gameSound} onChange={(v) => void updateSettings({ gameSound: v })} />
           <Toggle label="Visa spelet" sub="Stäng av för att dölja spelet helt" checked={s.gameEnabled} onChange={(v) => void updateSettings({ gameEnabled: v })} />
+        </div>
+        </div>
         </div>
         <p className="m-0 text-[12px] text-[#A9B5AE]">XP: 5 per sålt plagg, uppdrag 10–180, badge-nivåer 20–320, bossar {BOSS_XP}. Nivå = golvet av √(XP/25) + 1. Spelet föreslår aldrig priser.</p>
       </div>

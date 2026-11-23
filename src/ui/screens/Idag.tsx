@@ -33,7 +33,7 @@ export function Idag({ route }: { route: Route }) {
         right={
           <div className="mt-1 flex flex-col items-end gap-2">
           <Presence />
-          <span className="flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 font-mono text-[11px] text-mint">
+          <span className="flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 font-mono text-[11px] text-mint lg:hidden">
             <i className={cx('h-1.5 w-1.5 rounded-full', status.state === 'saving' ? 'bg-sun' : 'bg-mint')} />
             {status.state === 'saving' ? 'Sparar' : status.at ? `Sparat ${new Date(status.at).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}` : 'Synkad'}
           </span>
@@ -102,8 +102,8 @@ function Overview({ ds, o }: { ds: Dataset; o: ReturnType<typeof overview> }) {
   );
   return (
     <>
-      <div className="grid grid-cols-2 gap-2.5">
-        <a href="#/lager" className="card p-3">
+      <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4 lg:gap-4">
+        <a href="#/lager" className="card p-3 lg:p-4">
           <span className="block text-[12px] text-muted">Lagervärde</span>
           <span className="num mt-0.5 block text-[18px] font-medium">{kr(o.stockValue)}</span>
           <div className="mt-2 flex h-1.5 gap-0.5 overflow-hidden rounded-full">
@@ -113,26 +113,30 @@ function Overview({ ds, o }: { ds: Dataset; o: ReturnType<typeof overview> }) {
           </div>
           <span className="mt-1.5 block truncate text-[11px] text-muted">{cats.map(([c, n]) => `${c} ${n}`).join(' · ') || 'Tomt lager'}</span>
         </a>
-        <a href="#/lager?f=old" className="card p-3">
+        <a href="#/lager?f=old" className="card p-3 lg:p-4">
           <span className="block text-[12px] text-muted">Osålda plagg</span>
           <span className="num mt-0.5 block text-[18px] font-medium">{o.unsoldCount} st</span>
           <span className={cx('mt-1.5 block text-[12px]', o.old60Count ? 'text-me' : 'text-muted')}>{o.old60Count ? `${o.old60Count} ligger över 60 dagar` : 'Inget gammalt lager'}</span>
         </a>
-        <a href="#/ekonomi/kontroll" className="card p-3">
+        <a href="#/ekonomi/kontroll" className="card p-3 lg:p-4">
           <span className="block text-[12px] text-muted">Kontroll</span>
           <span className={cx('num mt-0.5 block text-[18px] font-medium', score >= 85 ? 'text-pos' : score >= 60 ? 'text-me' : 'text-neg')}>{score}/100</span>
           <span className="mt-1.5 block text-[12px] text-muted">{checks.reduce((s, g) => s + g.refs.length, 0)} saker att titta på</span>
         </a>
-        <a href="#/ekonomi/rapporter" className="card p-3">
+        <a href="#/ekonomi/rapporter" className="card p-3 lg:p-4">
           <span className="block text-[12px] text-muted">Resultat {monthName(o.month, false)}</span>
           <span className={cx('num mt-0.5 block text-[18px] font-medium', pl.result < 0 && 'text-neg')}>{kr(pl.result)}</span>
           <span className="mt-1.5 block text-[12px] text-muted">enligt bokföringen</span>
         </a>
       </div>
 
+      <div className="desk-cols">
+      <div className="desk-col">
       {ds.settings.gameEnabled && <QuestStrip ds={ds} />}
 
       <Tasks ds={ds} />
+      </div>
+      <div className="desk-col">
 
       <Section title="Senast sålt" action={<a href="#/salj">Visa alla</a>}>
         <Card pad={false}>
@@ -163,6 +167,8 @@ function Overview({ ds, o }: { ds: Dataset; o: ReturnType<typeof overview> }) {
       </Section>
 
       <Summary ds={ds} />
+      </div>
+      </div>
     </>
   );
 }
