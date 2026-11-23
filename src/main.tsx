@@ -3,12 +3,15 @@ import { createRoot } from 'react-dom/client';
 import './ui/styles.css';
 import { App } from './ui/App';
 import { Boot } from './ui/Boot';
+import { ErrorBoundary } from './ui/ErrorBoundary';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <Boot>
-      <App />
-    </Boot>
+    <ErrorBoundary>
+      <Boot>
+        <App />
+      </Boot>
+    </ErrorBoundary>
   </StrictMode>,
 );
 
