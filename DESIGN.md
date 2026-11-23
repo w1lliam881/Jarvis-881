@@ -55,3 +55,13 @@ Kontrast enligt WCAG AA i båda lägena. Alla knappar är riktiga knappar med et
 ## Copy
 
 Kort, saklig, naturlig svenska. Inga utropstecken i vanliga vyer (utom vid försäljning). Tomma tillstånd säger vad nästa steg är.
+
+## Dator (bred skärm, från 1024 px)
+
+Gäller bara datorn. Telefonen är oförändrad.
+
+- Mörkgrön sidomeny till vänster med månadens försäljning, knappen Ny registrering, alla sidor och genvägar (N, K, U, 1–5). Menyn i botten och den flytande Ny-knappen döljs.
+- Innehållet är upp till 1216 px brett. Sidorna delas i två kolumner: Idag, Ekonomi, plagg, drop, kalkyl, planering, inställningar och spelet.
+- Försäljning visas som tabell med hemkostnad, vinst och ROI. Mindre viktiga kolumner döljs under 1280 px.
+- Fönster (sheets) öppnas som en panel från höger i stället för underifrån.
+- Bakgrunden har en svag mint- och solton, och sidomenyn ett diskret twillmönster.

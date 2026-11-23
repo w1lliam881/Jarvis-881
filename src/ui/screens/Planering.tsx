@@ -60,7 +60,7 @@ function Kalkyl() {
   const cands = live(ds.candidates).slice().reverse();
   const s = ds.settings;
   return (
-    <>
+    <div className="desk-cols desk-cols-even">
       <Card className="flex flex-col gap-3">
         <div className="font-semibold">Nytt plagg från Doorzo</div>
         <div className="grid grid-cols-2 gap-3">
@@ -102,6 +102,7 @@ function Kalkyl() {
           {R.learned ? `Frakt ${Math.round(R.shippingPerKg / 100)} kr/kg och tull ${Math.round(R.customsRate * 1000) / 10} % lärt från dina drops.` : `Ingen historik: ${Math.round(R.shippingPerKg / 100)} kr/kg frakt och ${Math.round(R.customsRate * 1000) / 10} % tull och moms.`} Du bestämmer alltid själv säljpriset.
         </p>
       </Card>
+      <div className="desk-col">
       {cands.map((c) => (
         <CandidateCard key={c.id} c={c} />
       ))}
@@ -122,7 +123,8 @@ function Kalkyl() {
           </Field>
         </div>
       </details>
-    </>
+      </div>
+    </div>
   );
 }
 
@@ -210,7 +212,7 @@ function Framtid() {
   const [gTarget, setGTarget] = useState('');
   const [gKind, setGKind] = useState<'monthRevenue' | 'monthProfit' | 'monthSold' | 'manual'>('monthRevenue');
   return (
-    <>
+    <div className="desk-flow">
       <Section title="Budget för nästa drop">
         <Card className="flex flex-col gap-3">
           <Field label="Budget" hint="Lämna tomt för att räkna antal utifrån försäljningstakten istället.">
@@ -330,7 +332,7 @@ function Framtid() {
           </div>
         </Card>
       </Section>
-    </>
+    </div>
   );
 }
 
@@ -358,6 +360,7 @@ function Doorzo() {
     );
   return (
     <>
+      <div className="desk-flow">
       <Card className="flex flex-col gap-2">
         <Field label="Vad letar du efter?" hint="Skriv på svenska: märke, plagg, detaljer, storlek. T.ex. &quot;Levi's 501 vintage W32 svarta&quot;">
           <input className="field" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && setRun(q)} />
@@ -381,8 +384,10 @@ function Doorzo() {
         )}
       </Card>
       <Watches query={run || q} />
+      </div>
       {res && res.understood.length > 0 && <p className="m-0 px-1 text-[13px] text-muted">Förstod: {res.understood.join(', ')}</p>}
       {res && !res.groups.length && <Empty title="Inga söktermer" text="Prova ett märke eller ett plaggord, t.ex. jeans, jacka eller tröja." />}
+      <div className="desk-grid2">
       {res?.groups.map((g) => (
         <Section key={g.title} title={g.title}>
           <Card pad={false}>
@@ -403,6 +408,7 @@ function Doorzo() {
           </Card>
         </Section>
       ))}
+      </div>
     </>
   );
 }
@@ -416,10 +422,10 @@ function Marknad() {
   const vids = live(ds.videos).slice().sort((a, b) => (a.postedAt < b.postedAt ? 1 : -1));
   return (
     <>
-      <button className="btn btn-primary" onClick={() => setEdit('new')}>
+      <button className="btn btn-primary lg:self-start lg:px-6" onClick={() => setEdit('new')}>
         <Plus size={18} aria-hidden /> Logga klipp
       </button>
-      <div className="grid grid-cols-2 gap-2.5">
+      <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4 lg:gap-4">
         <Stat label="Klipp" value={sum.count} sub={`${sum.withStats} med statistik`} />
         <Stat label="Visningar" value={sum.totals.views.toLocaleString('sv-SE')} />
         <Stat label="Likes" value={sum.totals.likes.toLocaleString('sv-SE')} />

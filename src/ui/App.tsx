@@ -12,6 +12,7 @@ import { Mer } from './screens/Mer';
 import { Planering } from './screens/Planering';
 import { Spelet } from './screens/Spelet';
 import { Welcome } from './screens/Welcome';
+import { Sidebar } from './components/Sidebar';
 import { deviceUser } from './Boot';
 
 const TABS = [
@@ -87,18 +88,21 @@ export function App() {
 
   return (
     <div className="min-h-dvh">
-      <main key={top}>{screen}</main>
+      <Sidebar route={route} onNew={() => setQuick('menu')} />
+      <main key={top} className="desk-main">
+        {screen}
+      </main>
       <SaveStatus />
       <Toasts />
       <button
         type="button"
         onClick={() => setQuick('menu')}
-        className="no-print btn btn-sun fixed bottom-[calc(84px+env(safe-area-inset-bottom))] right-4 z-40 h-[52px] rounded-2xl px-5 shadow-[0_6px_16px_rgba(23,63,49,.25)]"
+        className="no-print btn btn-sun fixed lg:hidden bottom-[calc(84px+env(safe-area-inset-bottom))] right-4 z-40 h-[52px] rounded-2xl px-5 shadow-[0_6px_16px_rgba(23,63,49,.25)]"
         aria-label="Ny registrering"
       >
         <Plus size={20} strokeWidth={2.4} aria-hidden /> Ny
       </button>
-      <nav className="no-print safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/95 backdrop-blur" aria-label="Huvudmeny">
+      <nav className="no-print safe-bottom fixed lg:hidden inset-x-0 bottom-0 z-30 border-t border-line bg-surface/95 backdrop-blur" aria-label="Huvudmeny">
         <div className="mx-auto grid max-w-[720px] grid-cols-5 px-2 pt-2">
           {TABS.map((t) => {
             const on = tab === t.id;
@@ -137,7 +141,7 @@ function SaveStatus() {
   if (!show) return null;
   const err = status.state === 'error';
   return (
-    <div className="no-print pointer-events-none fixed bottom-[calc(76px+env(safe-area-inset-bottom))] left-3 right-[104px] z-50 flex justify-start" aria-live="polite">
+    <div className="no-print pointer-events-none fixed bottom-[calc(76px+env(safe-area-inset-bottom))] left-3 right-[104px] z-50 flex justify-start lg:bottom-6 lg:left-[288px] lg:right-6" aria-live="polite">
       <div className={cx('pointer-events-auto fade-in flex max-w-[520px] items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] shadow-lg', err ? 'bg-hi-bg text-hi' : 'bg-forest text-on-forest')}>
         {!err && <span className={cx('h-2 w-2 shrink-0 rounded-full', status.state === 'saving' ? 'animate-pulse bg-sun' : 'bg-mint')} />}
         <span className="line-clamp-2">{status.state === 'saving' ? 'Sparar…' : err ? status.message : `Sparat · ${status.message ?? ''}`}</span>
@@ -164,7 +168,7 @@ function Toasts() {
     return () => window.removeEventListener('jarvis-toast', on);
   }, []);
   return (
-    <div className="no-print pointer-events-none fixed inset-x-0 top-[max(12px,env(safe-area-inset-top))] z-[100] flex flex-col items-center gap-2 px-4" aria-live="polite">
+    <div className="no-print pointer-events-none fixed inset-x-0 top-[max(12px,env(safe-area-inset-top))] z-[100] lg:left-[264px] flex flex-col items-center gap-2 px-4" aria-live="polite">
       {items.map((t) => (
         <div key={t.id} className={cx('pop rounded-2xl px-4 py-2.5 text-[14px] font-semibold shadow-lg', t.tone === 'xp' ? 'bg-sun text-sun-ink' : t.tone === 'error' ? 'bg-hi-bg text-hi' : 'bg-forest text-on-forest')}>
           {t.message}

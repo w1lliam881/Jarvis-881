@@ -11,7 +11,7 @@ export function cx(...xs: (string | false | null | undefined)[]) {
 
 export function TopBand({ title, sub, right, children, back }: { title: string; sub?: ReactNode; right?: ReactNode; children?: ReactNode; back?: string }) {
   return (
-    <header className="top-band safe-top px-5 pb-5">
+    <header className="top-band safe-top px-5 pb-5 lg:px-8 lg:pb-7">
       <div className="relative z-10 flex items-start justify-between gap-3">
         <div className="min-w-0">
           {back && (
@@ -30,7 +30,7 @@ export function TopBand({ title, sub, right, children, back }: { title: string; 
 }
 
 export function Page({ children }: { children: ReactNode }) {
-  return <div className="mx-auto flex w-full max-w-[720px] flex-col gap-5 px-4 pb-32 pt-4">{children}</div>;
+  return <div className="page mx-auto flex w-full max-w-[720px] flex-col gap-5 px-4 pb-32 pt-4 lg:max-w-[1280px] lg:gap-6 lg:px-8 lg:pb-[72px] lg:pt-7">{children}</div>;
 }
 
 export function Section({ title, action, children, id }: { title?: ReactNode; action?: ReactNode; children: ReactNode; id?: string }) {
@@ -350,11 +350,11 @@ export function Sheet({ open, onClose, title, children, footer }: { open: boolea
   }, [open, onClose]);
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-[90] flex items-end justify-center" role="dialog" aria-modal="true" aria-label={title}>
+    <div className="fixed inset-0 z-[90] flex items-end justify-center lg:items-stretch lg:justify-end" role="dialog" aria-modal="true" aria-label={title}>
       <button type="button" aria-label="Stäng" className="fade-in absolute inset-0 bg-black/45" onClick={onClose} />
-      <div ref={ref} className="sheet-enter safe-bottom relative flex max-h-[92dvh] w-full max-w-[560px] flex-col rounded-t-[22px] bg-surface">
+      <div ref={ref} className="sheet-enter safe-bottom relative flex max-h-[92dvh] w-full max-w-[560px] flex-col rounded-t-[22px] bg-surface lg:h-full lg:max-h-none lg:max-w-[540px] lg:rounded-none lg:rounded-l-[24px] lg:pt-3 lg:shadow-2xl">
         <div className="flex items-center justify-between gap-3 px-5 pb-2 pt-3">
-          <div className="absolute left-1/2 top-1.5 h-1 w-10 -translate-x-1/2 rounded-full bg-line" aria-hidden />
+          <div className="absolute left-1/2 top-1.5 h-1 w-10 -translate-x-1/2 rounded-full bg-line lg:hidden" aria-hidden />
           <h2 className="m-0 mt-2 font-serif text-[22px] font-semibold">{title}</h2>
           <button type="button" onClick={onClose} aria-label="Stäng" className="mt-2 grid h-10 w-10 place-items-center rounded-full bg-surface-2 text-muted">
             <X size={18} />

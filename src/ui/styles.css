@@ -425,3 +425,157 @@ textarea.field {
   50% { transform: translateX(56px); }
 }
 .patrol { animation: patrol 7s steps(28) infinite; }
+
+/* ---------- Dator (bred skärm). Telefonen påverkas inte av något här. ---------- */
+@layer components {
+  .sidebar {
+    display: none;
+  }
+  .desk-cols,
+  .desk-col,
+  .desk-flow,
+  .desk-grid2 {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  @media (min-width: 1024px) {
+    body {
+      background:
+        radial-gradient(900px 520px at 100% -8%, color-mix(in srgb, var(--mint) 22%, transparent), transparent 65%),
+        radial-gradient(700px 480px at 0% 110%, color-mix(in srgb, var(--sun) 10%, transparent), transparent 60%),
+        var(--bg);
+      background-attachment: fixed;
+    }
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      inset: 0 auto 0 0;
+      z-index: 30;
+      width: 264px;
+      overflow-y: auto;
+      padding: 0 12px;
+      color: var(--on-forest);
+      background:
+        repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.018) 0 2px, transparent 2px 6px),
+        linear-gradient(180deg, var(--forest) 0%, color-mix(in srgb, var(--forest) 78%, #000) 100%);
+      box-shadow: 1px 0 0 rgba(255, 255, 255, 0.04);
+      scrollbar-width: thin;
+    }
+    .side-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 40px;
+      padding: 0 12px;
+      border-radius: 10px;
+      font-size: 14.5px;
+      color: var(--on-forest-muted);
+      transition: background 0.15s, color 0.15s;
+    }
+    .side-link:hover {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--on-forest);
+    }
+    .side-link-on {
+      background: rgba(158, 219, 184, 0.14);
+      color: var(--on-forest);
+      font-weight: 600;
+      box-shadow: inset 3px 0 0 var(--mint);
+    }
+    .side-link-small {
+      min-height: 35px;
+      font-size: 13.5px;
+    }
+    .side-sub {
+      display: block;
+      padding: 5px 10px;
+      border-radius: 8px;
+      font-size: 13px;
+      color: var(--on-forest-muted);
+    }
+    .side-sub:hover {
+      color: var(--on-forest);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .side-sub-on {
+      color: var(--mint);
+      font-weight: 600;
+    }
+    .side-kbd {
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      padding: 0 5px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--on-forest-muted);
+    }
+    .desk-main {
+      padding-left: 264px;
+    }
+    .desk-main .top-band {
+      width: calc(100% - 64px);
+      max-width: 1216px;
+      margin: 24px auto 0;
+      border-radius: 24px;
+      padding-top: 28px;
+      box-shadow: 0 18px 40px -24px rgba(23, 63, 49, 0.55);
+    }
+    .desk-cols {
+      display: grid;
+      grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
+      align-items: start;
+      gap: 24px;
+    }
+    .desk-cols.desk-xl {
+      display: flex;
+    }
+    .desk-cols-even {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+    .desk-flow {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      align-items: start;
+      gap: 24px;
+    }
+    .desk-flow > .desk-full {
+      grid-column: 1 / -1;
+    }
+    .desk-grid2 {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      align-items: start;
+      gap: 24px;
+    }
+    .card > a:not(.btn):hover,
+    .card > button:not(.btn):not(:disabled):hover {
+      background-color: color-mix(in srgb, var(--surface-2) 70%, var(--accent-soft));
+    }
+    a.card {
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    a.card:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 24px -14px rgba(23, 63, 49, 0.35);
+    }
+    .sheet-enter {
+      animation: sheet-left 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+  }
+  @media (min-width: 1280px) {
+    .desk-cols.desk-xl {
+      display: grid;
+    }
+  }
+  @keyframes sheet-left {
+    from {
+      transform: translateX(100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+}
