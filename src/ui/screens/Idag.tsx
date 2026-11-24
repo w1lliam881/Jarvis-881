@@ -15,6 +15,9 @@ import { Bars, Card, Money, Page, Pill, RoiPill, Section, Segmented, Spark, Stat
 import { openQuick } from '../App';
 import { Presence } from '../components/Presence';
 import { toast } from '../Boot';
+import { useAgentRuns } from './Byn';
+import { AgentSprite } from '../../game/village';
+import { agentById, agoText } from '../../domain/agents';
 
 export function Idag({ route }: { route: Route }) {
   const ds = useData();
@@ -129,6 +132,8 @@ function Overview({ ds, o }: { ds: Dataset; o: ReturnType<typeof overview> }) {
           <span className="mt-1.5 block text-[12px] text-muted">enligt bokföringen</span>
         </a>
       </div>
+
+      <AgentNote />
 
       <div className="desk-cols">
       <div className="desk-col">
@@ -503,5 +508,29 @@ function Calendar({ ds }: { ds: Dataset }) {
         </Section>
       )}
     </>
+  );
+}
+
+/** Det senaste från agenterna, helst dagens påminnelser. Visas bara när det finns något. */
+function AgentNote() {
+  const { runs } = useAgentRuns();
+  if (!runs?.length) return null;
+  const fresh = (iso: string) => Date.now() - new Date(iso).getTime() < 36 * 3600000;
+  const r = runs.find((x) => x.agent === 'reminder' && fresh(x.at)) ?? runs.find((x) => fresh(x.at));
+  if (!r) return null;
+  const def = agentById(r.agent)!;
+  return (
+    <a href={`#/byn/${r.agent}`} className="card flex gap-3 p-3.5">
+      <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl" style={{ background: def.wall }}>
+        <AgentSprite def={def} size={38} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="flex items-baseline justify-between gap-2">
+          <span className="text-[13px] font-semibold">{def.name} {agoText(r.at)}</span>
+          <span className="shrink-0 text-[12px] font-medium text-accent">Agentbyn</span>
+        </span>
+        <span className="mt-0.5 block text-[14px] leading-snug">{r.summary}</span>
+      </span>
+    </a>
   );
 }

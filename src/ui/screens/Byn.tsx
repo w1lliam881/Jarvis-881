@@ -16,7 +16,7 @@ const MINT = '#9EDBB8';
 
 // ---------- Data ----------
 
-function useAgentRuns() {
+export function useAgentRuns() {
   const b = store().backend;
   const [runs, setRuns] = useState<AgentRun[] | null>(null);
   const [err, setErr] = useState('');
