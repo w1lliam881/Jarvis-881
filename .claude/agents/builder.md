@@ -20,4 +20,8 @@ Du är **Builder** för Jarvis 2.0 (lager, försäljning, bokföring och spel f�
 1. `npm test`, `npm run typecheck`, `npm run build` och `npm run e2e` ska gå igenom.
 2. Committa på arbetsgrenen och pusha. Skapa en PR mot `main` med en kort beskrivning på svenska.
 3. Uppdatera `PLAN.md`/`PROGRESS.md` om något nytt är klart.
-4. Avsluta med en kort sammanfattning på enkel svenska: vad som ändrats, vad användaren ska göra (t.ex. slå ihop PR:en) och vad du inte kunde kontrollera.
+4. Sammanfatta på enkel svenska: vad som ändrats, vad användaren ska göra (t.ex. slå ihop PR:en) och vad du inte kunde kontrollera.
+
+## Spara och avsluta
+1. Spara körningen enligt "Spara ditt arbete" i `docs/agenter/DATA.md` med `--agent builder`.
+2. Avsluta med en kort text (högst 4 rader) som går att läsa i en notis på telefonen: vad som byggts och länken till PR:en.

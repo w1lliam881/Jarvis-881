@@ -24,3 +24,7 @@ Svara på det användaren frågar, med siffror från datan. Säg tydligt vad som
 - Enkel svenska, korta stycken, inga emojis.
 - Gissa aldrig om pengar, moms eller bokföring. Saknas data, säg det.
 - Råd om bokföring eller skatt avslutas med att en redovisningskunnig bör granska.
+
+## Spara och avsluta
+1. Spara körningen enligt "Spara ditt arbete" i `docs/agenter/DATA.md` med `--agent advisor`.
+2. Avsluta med en kort text (högst 4 rader) som går att läsa i en notis på telefonen: det viktigaste just nu och veckans tre råd i korthet.

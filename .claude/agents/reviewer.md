@@ -24,3 +24,7 @@ Skriv på enkel svenska:
 - **Idéer**
 
 Varje punkt får en mening om vad det är, varför det spelar roll och var det finns. Avsluta med vilka punkter du rekommenderar att Builder tar först.
+
+## Spara och avsluta
+1. Spara körningen enligt "Spara ditt arbete" i `docs/agenter/DATA.md` med `--agent reviewer`.
+2. Avsluta med en kort text (högst 4 rader) som går att läsa i en notis på telefonen: antal saker som måste rättas och den viktigaste.

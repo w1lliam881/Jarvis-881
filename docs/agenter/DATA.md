@@ -1,6 +1,6 @@
 # Så läser agenterna Jarvis-datan
 
-Gäller agenterna Advisor, Reminder och Noter. De **läser bara**. De ändrar aldrig data direkt i databasen, eftersom det skulle gå förbi versionskontrollen och de automatiska verifikaten. Ändringar görs i appen eller av Builder i koden.
+Gäller agenterna Advisor, Reminder och Noter (läser data) och alla fem (sparar sitt arbete). Agenterna **läser bara** affärsdatan. De ändrar aldrig data direkt i databasen, eftersom det skulle gå förbi versionskontrollen och de automatiska verifikaten. Ändringar görs i appen eller av Builder i koden.
 
 ## Åtkomst
 
@@ -61,3 +61,23 @@ select at, by, collection, action, summary from changelog where at > now() - int
 - Föreslå aldrig ett pris på ett enskilt plagg. Kategorinivå (snitt, maxpris) går bra.
 - Bokföringen är ett stöd. Påminn om att en redovisningskunnig bör granska den när du ger råd om bokföring.
 - Inga betalda API:er och inga nya kostnader.
+
+## Spara ditt arbete (alla agenter)
+
+Varje körning sparas i tabellen `agent_runs` så att den syns i Agentbyn i appen (Mer → Agentbyn). Det är det enda agenterna får skriva till.
+
+```bash
+cat > /tmp/rapport.md <<'MD'
+(hela rapporten i Markdown: rubriker med ##, listor med -, tabeller går bra)
+MD
+python3 scripts/agent-save.py --agent advisor --trigger schema \
+  --title "Briefing vecka 48" \
+  --summary "En till två meningar om det viktigaste, som visas i byn." \
+  --body-file /tmp/rapport.md \
+  --highlight "16 679 kr sålt i nov" --highlight "Beställ drop senast 26/11"
+```
+
+- `--trigger schema` om körningen startades av en schemalagd uppgift, `kommando` om användaren bad om den.
+- `--status varning` om något behöver åtgärdas snart, `fel` om körningen inte kunde göras klart (t.ex. ingen datatillgång). Spara även då, med förklaringen.
+- `--highlight`: 2–4 korta fakta, max 30 tecken var. De visas som etiketter.
+- Titel och sammanfattning på enkel svenska, utan emojis.

@@ -23,4 +23,8 @@ Enkel svenska, en lista sorterad efter vad som är viktigast:
 - **Den här veckan**
 - **Snart**
 
-Varje punkt: vad, varför (med siffran) och ungefär hur lång tid det tar. Max 10 punkter. Fråga till sist om användaren vill att du lägger in någon av dem som uppgift. Gör det i så fall bara genom att be användaren lägga in den i appen (Idag → Att göra), eftersom du inte ändrar data.
+Varje punkt: vad, varför (med siffran) och ungefär hur lång tid det tar. Max 10 punkter. Du lägger inte in uppgifter själv. Vill användaren ha en av dem som uppgift lägger den in den i appen (Idag → Att göra).
+
+## Spara och avsluta
+1. Spara körningen enligt "Spara ditt arbete" i `docs/agenter/DATA.md` med `--agent reminder`.
+2. Avsluta med en kort text (högst 4 rader) som går att läsa i en notis på telefonen: de 2–3 viktigaste sakerna att göra idag.
