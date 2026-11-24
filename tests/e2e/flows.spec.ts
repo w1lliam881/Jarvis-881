@@ -93,3 +93,21 @@ test('spelet visar uppdrag från riktig data', async ({ page }) => {
   await expect(page.getByText('Dagens uppdrag')).toBeVisible();
   await expect(page.getByText(/dubbletter/).first()).toBeVisible();
 });
+
+test('agentbyn visar fem hus och ett hus inifrån', async ({ page }) => {
+  await importV14(page);
+  await page.evaluate(() =>
+    sessionStorage.setItem(
+      'jarvis-agent-runs',
+      JSON.stringify([{ id: 'r1', agent: 'reminder', at: new Date().toISOString(), trigger: 'schema', status: 'varning', title: 'Att göra idag', summary: 'Beställ ny drop.', body: '## Idag\n\n- **Beställ** ny drop', highlights: ['Lager 2,5 veckor'] }]),
+    ),
+  );
+  await page.goto('/#/byn');
+  await expect(page.getByRole('heading', { name: 'Här bor dina agenter' })).toBeVisible();
+  for (const n of ['Reminder', 'Advisor', 'Noter', 'Reviewer', 'Builder']) await expect(page.getByText(n, { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('Att göra idag').first()).toBeVisible();
+  await page.getByRole('link', { name: /Reminder/ }).first().click();
+  await expect(page.getByRole('heading', { name: /Reminder/ })).toBeVisible();
+  await expect(page.getByText('Beställ', { exact: true })).toBeVisible();
+  await expect(page.getByText('/reminder', { exact: true })).toBeVisible();
+});

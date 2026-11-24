@@ -166,26 +166,26 @@ export function generateQuests(ds: Dataset, today: ISODate, activeIds: Set<strin
   }
   const noCost = L.filter((l) => !(l.item.cost > 0)).length;
   if (noCost || activeIds.has(`nocost:${week}`))
-    add({ id: `nocost:${week}`, scope: 'dag', category: 'Bokföring', title: `Sätt inköpspris på ${noCost || 'alla'} plagg som saknar det`, detail: 'Utan inköpspris blir ROI och vinst fel.', benefit: 'Korrekta siffror', priority: 2, minutes: 2 + noCost, progress: { cur: noCost ? 0 : 1, target: 1 }, route: '#/ekonomi/kontroll' });
+    add({ id: `nocost:${week}`, scope: 'dag', category: 'Bokföring', title: `Sätt inköpspris på ${noCost || 'alla'} plagg som saknar det`, detail: 'Utan inköpspris blir ROI och vinst fel.', benefit: 'ROI går att räkna', priority: 2, minutes: 2 + noCost, progress: { cur: noCost ? 0 : 1, target: 1 }, route: '#/ekonomi/kontroll' });
   const noDate = L.filter((l) => isSold(l.item) && !l.item.saleDate).length;
   if (noDate || activeIds.has(`nodate:${week}`))
     add({ id: `nodate:${week}`, scope: 'dag', category: 'Bokföring', title: `Fyll i säljdatum på ${noDate || 'alla'} sålda plagg`, detail: 'Annars hamnar försäljningen i fel månad.', benefit: 'Rätt månadsresultat', priority: 2, minutes: 2, progress: { cur: noDate ? 0 : 1, target: 1 }, route: '#/ekonomi/kontroll' });
   const dups = findDuplicateSales(ds).length;
   if (dups || activeIds.has(`dups:${week}`))
-    add({ id: `dups:${week}`, scope: 'dag', category: 'Bokföring', title: `Rensa ${dups || 'alla'} möjliga dubbletter i bokföringen`, detail: 'Samma försäljning bokförd två gånger gör intäkten för hög.', benefit: 'Rätt intäkt', priority: 3, minutes: 5, progress: { cur: dups ? 0 : 1, target: 1 }, route: '#/ekonomi/kontroll' });
+    add({ id: `dups:${week}`, scope: 'dag', category: 'Bokföring', title: `Rensa ${dups || 'alla'} möjliga dubbletter i bokföringen`, detail: 'Samma försäljning bokförd två gånger gör intäkten för hög.', benefit: 'Intäkten räknas en gång', priority: 3, minutes: 5, progress: { cur: dups ? 0 : 1, target: 1 }, route: '#/ekonomi/kontroll' });
   const unl = unlinkedSales(ds).length;
   if (unl || activeIds.has(`unlinked:${week}`))
-    add({ id: `unlinked:${week}`, scope: 'dag', category: 'Bokföring', title: `Koppla ${unl || 'alla'} bokförda försäljningar till plagg`, detail: 'Då stämmer lager, analys och bokföring med varandra.', benefit: 'En sanning överallt', priority: 2, minutes: 5, progress: { cur: unl ? 0 : 1, target: 1 }, route: '#/ekonomi/kontroll' });
+    add({ id: `unlinked:${week}`, scope: 'dag', category: 'Bokföring', title: `Koppla ${unl || 'alla'} bokförda försäljningar till plagg`, detail: 'Då stämmer lager, analys och bokföring med varandra.', benefit: 'Lager och bokföring stämmer', priority: 2, minutes: 5, progress: { cur: unl ? 0 : 1, target: 1 }, route: '#/ekonomi/kontroll' });
   const pending = live(ds.inbox).filter((d) => d.status === 'väntar').length;
   if (pending || activeIds.has(`inbox:${today}`))
-    add({ id: `inbox:${today}`, scope: 'dag', category: 'Bokföring', title: `Gå igenom ${pending || 'alla'} utkast i godkännandekön`, detail: 'Godkänn eller avvisa med ett tryck.', benefit: 'Bokföringen i fas', priority: 2, minutes: 2, progress: { cur: pending ? 0 : 1, target: 1 }, route: '#/ekonomi/ko' });
+    add({ id: `inbox:${today}`, scope: 'dag', category: 'Bokföring', title: `Gå igenom ${pending || 'alla'} utkast i godkännandekön`, detail: 'Godkänn eller avvisa med ett tryck.', benefit: 'Kön blir tom', priority: 2, minutes: 2, progress: { cur: pending ? 0 : 1, target: 1 }, route: '#/ekonomi/ko' });
   // Månadsavstämning av förra månaden, första veckan i månaden
   if (+today.slice(8, 10) <= 10) {
     const pm = prevMonth(month);
     const withAtt = new Set(live(ds.attachments).map((a) => a.voucherId));
     const missing = live(ds.vouchers).filter((v) => v.date.startsWith(pm) && v.source !== 'v14' && v.updatedBy !== 'import' && !(v.key?.includes(':sales:')) && !withAtt.has(v.id)).length;
     const serious = runChecks(ds, today).filter((g) => g.severity >= 2).reduce((s, g) => s + g.refs.length, 0);
-    add({ id: `close:${pm}`, scope: 'månad', category: 'Bokföring', title: `Stäm av ${monthLabel(pm)}`, detail: `${missing} verifikat saknar underlag och ${serious} saker i Kontroll behöver åtgärdas.`, benefit: 'En månad du kan lita på', priority: 2, minutes: 20, progress: { cur: missing + serious === 0 ? 1 : 0, target: 1 }, route: '#/ekonomi/kontroll' });
+    add({ id: `close:${pm}`, scope: 'månad', category: 'Bokföring', title: `Stäm av ${monthLabel(pm)}`, detail: `${missing} verifikat saknar underlag och ${serious} saker i Kontroll behöver åtgärdas.`, benefit: 'Månaden är avstämd', priority: 2, minutes: 20, progress: { cur: missing + serious === 0 ? 1 : 0, target: 1 }, route: '#/ekonomi/kontroll' });
   }
 
   // --- Marknadsföring ---
@@ -194,13 +194,13 @@ export function generateQuests(ds: Dataset, today: ISODate, activeIds: Set<strin
   add({ id: `post2:${week}`, scope: 'vecka', category: 'Marknadsföring', title: 'Filma och posta 2 klipp den här veckan', detail: `${thisWeek} av 2 loggade.`, benefit: 'Fler som ser dina plagg', priority: 2, minutes: 60, progress: { cur: Math.min(2, thisWeek), target: 2 }, route: '#/planering/marknad' });
   const noStats = vids.filter((v) => v.views === 0 && daysBetween(v.postedAt.slice(0, 10), today) >= 2);
   if (noStats.length || activeIds.has(`stats:${week}`))
-    add({ id: `stats:${week}`, scope: 'dag', category: 'Marknadsföring', title: `Lägg in statistik för ${noStats.length || 'alla'} klipp`, detail: 'Visningar, likes, kommentarer, delningar och sparade.', benefit: 'Bättre idéer utifrån vad som funkar', priority: 1, minutes: 3, progress: { cur: noStats.length ? 0 : 1, target: 1 }, route: '#/planering/marknad' });
+    add({ id: `stats:${week}`, scope: 'dag', category: 'Marknadsföring', title: `Lägg in statistik för ${noStats.length || 'alla'} klipp`, detail: 'Visningar, likes, kommentarer, delningar och sparade.', benefit: 'Ser vilka klipp som säljer', priority: 1, minutes: 3, progress: { cur: noStats.length ? 0 : 1, target: 1 }, route: '#/planering/marknad' });
   for (const d of drops.filter((d) => d.status === 'hemma' && daysBetween(d.date, today) <= 21 && daysBetween(d.date, today) >= 0)) {
     const has = vids.some((v) => v.dropIds.includes(d.id) || (v.type === 'Unboxing' && v.postedAt.slice(0, 10) >= d.date));
     add({ id: `unbox:${d.id}`, scope: 'vecka', category: 'Marknadsföring', title: `Gör ett unboxing-klipp av ${d.name}`, detail: 'Nya plagg är det bästa innehållet du har.', benefit: 'Snabbare försäljning av nya dropen', priority: 2, minutes: 30, progress: { cur: has ? 1 : 0, target: 1 }, route: '#/planering/video' });
   }
   const monthVids = vids.filter((v) => v.postedAt.startsWith(month)).length;
-  add({ id: `post8:${month}`, scope: 'månad', category: 'Marknadsföring', title: 'Logga 8 klipp den här månaden', detail: `${monthVids} av 8.`, benefit: 'Jämn synlighet', priority: 1, minutes: 240, progress: { cur: Math.min(8, monthVids), target: 8 }, route: '#/planering/marknad' });
+  add({ id: `post8:${month}`, scope: 'månad', category: 'Marknadsföring', title: 'Logga 8 klipp den här månaden', detail: `${monthVids} av 8.`, benefit: 'Syns varje vecka', priority: 1, minutes: 240, progress: { cur: Math.min(8, monthVids), target: 8 }, route: '#/planering/marknad' });
 
   // --- Smartare inköp ---
   const plan = orderPlan(ds, today);
@@ -209,10 +209,10 @@ export function generateQuests(ds: Dataset, today: ISODate, activeIds: Set<strin
   if (soon && plan.salesPerWeek > 0)
     add({ id: `calc:${week}`, scope: 'vecka', category: 'Inköp', title: 'Gör kalkyl på 3 Doorzo-plagg inför nästa order', detail: `Lagret räcker ungefär ${plan.weeksOfStock.toFixed(1)} veckor.`, benefit: 'Köp bara det som klarar dina krav', priority: 2, minutes: 15, progress: { cur: Math.min(3, candWeek), target: 3 }, route: '#/planering/kalkyl' });
   if (ds.settings.budget === 0 && soon)
-    add({ id: `budget:${month}`, scope: 'vecka', category: 'Inköp', title: 'Sätt en budget för nästa drop', detail: 'Då får du antal och maxpris per kategori.', benefit: 'Ingen överraskning när fakturan kommer', priority: 1, minutes: 5, progress: { cur: ds.settings.budget > 0 ? 1 : 0, target: 1 }, route: '#/planering/framtid' });
+    add({ id: `budget:${month}`, scope: 'vecka', category: 'Inköp', title: 'Sätt en budget för nästa drop', detail: 'Då får du antal och maxpris per kategori.', benefit: 'Du vet vad dropen får kosta', priority: 1, minutes: 5, progress: { cur: ds.settings.budget > 0 ? 1 : 0, target: 1 }, route: '#/planering/framtid' });
   const noWeight = L.filter((l) => l.drop.shipping > 0 && !(l.item.weightKg > 0)).length;
   if (noWeight || activeIds.has(`weight:${week}`))
-    add({ id: `weight:${week}`, scope: 'dag', category: 'Inköp', title: `Lägg in vikt på ${noWeight || 'alla'} plagg`, detail: 'Vikten styr frakten per plagg och kalkylen för nästa order.', benefit: 'Säkrare kalkyler', priority: 1, minutes: 5, progress: { cur: noWeight ? 0 : 1, target: 1 }, route: '#/ekonomi/kontroll' });
+    add({ id: `weight:${week}`, scope: 'dag', category: 'Inköp', title: `Lägg in vikt på ${noWeight || 'alla'} plagg`, detail: 'Vikten styr frakten per plagg och kalkylen för nästa order.', benefit: 'Frakten per plagg blir rätt', priority: 1, minutes: 5, progress: { cur: noWeight ? 0 : 1, target: 1 }, route: '#/ekonomi/kontroll' });
 
   // --- Lager ---
   const old = L.filter((l) => !isSold(l.item) && daysBetween(l.drop.date, today) > 60);

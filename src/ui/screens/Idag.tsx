@@ -202,7 +202,7 @@ function QuestStrip({ ds }: { ds: Dataset }) {
             </a>
           ))
         ) : (
-          <p className="m-0 p-4 text-[14px] text-muted">Inga uppdrag just nu. Allt är i fas.</p>
+          <p className="m-0 p-4 text-[14px] text-muted">Inga uppdrag just nu.</p>
         )}
       </Card>
     </Section>
@@ -244,7 +244,7 @@ function Tasks({ ds }: { ds: Dataset }) {
         )}
       </Card>
       <details className="card p-4">
-        <summary className="cursor-pointer font-semibold">Vad är aktuellt?</summary>
+        <summary className="cursor-pointer font-semibold">Lägg till flera uppgifter på en gång</summary>
         <p className="mb-2 mt-1 text-[13px] text-muted">Skriv fritt, en sak per rad. Varje rad blir en uppgift för idag.</p>
         <textarea className="field" value={bulk} onChange={(e) => setBulk(e.target.value)} placeholder={'Svara på Vinted-meddelanden\nFota 5 plagg\nHämta paket'} />
         <button
@@ -275,7 +275,7 @@ function TaskRow({ t }: { t: Task }) {
         role="checkbox"
         aria-checked={t.done}
         aria-label={t.done ? `Markera "${t.title}" som ej klar` : `Markera "${t.title}" som klar`}
-        onClick={() => void toggleTask(t.id).then((ok) => ok && !t.done && toast('Bra jobbat'))}
+        onClick={() => void toggleTask(t.id).then((ok) => ok && !t.done && toast('Bockad'))}
         className={cx('grid h-6 w-6 shrink-0 place-items-center rounded-md border-[1.8px]', t.done ? 'border-accent bg-accent text-surface' : 'border-line bg-bg')}
       >
         {t.done && <span className="text-[13px] font-bold">✓</span>}
