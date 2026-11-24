@@ -1,6 +1,6 @@
 import { productIdFrom } from '../domain/import-v14';
 import { baseRecord, newId } from '../domain/defaults';
-import { eventLines, EVENT_TYPES, nextVoucherNr } from '../domain/ledger';
+import { eventLines, EVENT_TYPES, lockedSaleConflict, nextVoucherNr } from '../domain/ledger';
 import { todayISO } from '../domain/dates';
 import type { ParsedRow } from '../domain/parse';
 import type {
@@ -23,6 +23,7 @@ import type {
   VoucherLine,
 } from '../domain/types';
 import { store, type Change } from './store';
+import { ValidationError } from './backend';
 
 const now = () => new Date().toISOString();
 const find = <T extends { id: string }>(xs: T[], id: string) => xs.find((x) => x.id === id);
@@ -237,9 +238,17 @@ export function linkSaleToItem(voucherId: string, itemId: string, amount: Ore): 
     const v = find(ds.vouchers, voucherId);
     const i = find(ds.items, itemId);
     if (!v || !i) return [];
+    const lock = ds.settings.lockedThrough;
+    if (lock && v.date <= lock)
+      throw new ValidationError(`Verifikatet V${v.nr} är daterat ${v.date}, i låst period (till och med ${lock}). Det kan inte kopplas till ett plagg.`);
+    const item: Item = { ...i, salePrice: amount, saleDate: v.date, saleBooking: 'individual', productId: i.productId || productIdFrom(v.text) };
+    const voucher: Voucher = { ...v, itemId: i.id, dropId: i.dropId };
+    const after: Dataset = { ...ds, items: ds.items.map((x) => (x.id === i.id ? item : x)), vouchers: ds.vouchers.map((x) => (x.id === v.id ? voucher : x)) };
+    const conflict = lockedSaleConflict(ds, after, i.id);
+    if (conflict) throw new ValidationError(conflict);
     return [
-      { collection: 'items', record: { ...i, salePrice: amount, saleDate: v.date, saleBooking: 'individual', productId: i.productId || productIdFrom(v.text) } as never },
-      { collection: 'vouchers', record: { ...v, itemId: i.id, dropId: i.dropId } as never },
+      { collection: 'items', record: item as never },
+      { collection: 'vouchers', record: voucher as never },
     ];
   });
 }

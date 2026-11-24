@@ -1,3 +1,4 @@
+import type { AgentRun } from '../domain/agents';
 import { isBalanced } from '../domain/ledger';
 import type { ChangeLogEntry, CollectionName, Dataset, GameState, Settings, Voucher } from '../domain/types';
 
@@ -39,6 +40,8 @@ export interface Backend {
   readonly kind: 'local' | 'memory' | 'supabase';
   /** Vem som är inne och när de senast var aktiva (bara när data delas, dvs. Supabase). */
   presence?: (cb: (list: PresenceInfo[]) => void) => () => void;
+  /** Agenternas körningar (Agentbyn). Finns bara med Supabase. */
+  agentRuns?: (limit: number) => Promise<AgentRun[]>;
   /** Inloggad användares e-post (Supabase). */
   readonly email?: string;
   readonly durable: boolean;

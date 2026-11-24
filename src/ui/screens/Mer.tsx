@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BookOpen, Calculator, CalendarClock, Clapperboard, Database, Eye, Gamepad2, History, Languages, LineChart, Settings as Cog, Upload, Wallet } from 'lucide-react';
+import { BookOpen, Calculator, CalendarClock, Clapperboard, Castle, Database, Eye, Gamepad2, History, Languages, LineChart, Settings as Cog, Upload, Wallet } from 'lucide-react';
 import { store, useData } from '../../data/store';
 import { updateSettings } from '../../data/actions';
 import type { BackupInfo } from '../../data/backend';
@@ -53,11 +53,10 @@ function Menu() {
             {item('#/planering/video', Clapperboard, 'Videoidéer', 'Idéer och bedömning av dina egna')}
           </Card>
         </Section>
-        {ds.settings.gameEnabled && (
-          <Card pad={false}>
-            {item('#/spelet', Gamepad2, 'Spelet', 'Uppdrag, världar och bossar')}
-          </Card>
-        )}
+        <Card pad={false}>
+          {item('#/byn', Castle, 'Agentbyn', 'Dina fem agenter och vad de har gjort')}
+          {ds.settings.gameEnabled && item('#/spelet', Gamepad2, 'Spelet', 'Uppdrag, världar och bossar')}
+        </Card>
         <Section title="Data">
           <Card pad={false}>
             {item('#/idag?v=kalender', CalendarClock, 'Kalender', 'Uppgifter, försäljning och bokföring per dag')}
@@ -95,15 +94,20 @@ function PasswordCard({ email }: { email: string }) {
             e.preventDefault();
             if (pw.length < 8 || pw !== pw2) return;
             setBusy(true);
-            const { setPassword } = await import('../../data/supabase');
-            const r = await setPassword(pw);
-            setBusy(false);
-            if (r) setMsg(r);
-            else {
-              setPw('');
-              setPw2('');
-              setMsg('');
-              toast('Lösenordet sparat');
+            try {
+              const { setPassword } = await import('../../data/supabase');
+              const r = await setPassword(pw);
+              if (r) setMsg(r);
+              else {
+                setPw('');
+                setPw2('');
+                setMsg('');
+                toast('Lösenordet sparat');
+              }
+            } catch (err) {
+              setMsg(`Kunde inte spara lösenordet: ${(err as Error)?.message ?? 'okänt fel'}. Kontrollera nätet och försök igen.`);
+            } finally {
+              setBusy(false);
             }
           }}
         >

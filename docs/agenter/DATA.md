@@ -67,16 +67,17 @@ select at, by, collection, action, summary from changelog where at > now() - int
 Varje körning sparas i tabellen `agent_runs` så att den syns i Agentbyn i appen (Mer → Agentbyn). Det är det enda agenterna får skriva till.
 
 ```bash
-cat > /tmp/rapport.md <<'MD'
+cat > /tmp/rapport-AGENT.md <<'MD'
 (hela rapporten i Markdown: rubriker med ##, listor med -, tabeller går bra)
 MD
 python3 scripts/agent-save.py --agent advisor --trigger schema \
   --title "Briefing vecka 48" \
   --summary "En till två meningar om det viktigaste, som visas i byn." \
-  --body-file /tmp/rapport.md \
+  --body-file /tmp/rapport-AGENT.md \
   --highlight "16 679 kr sålt i nov" --highlight "Beställ drop senast 26/11"
 ```
 
+- Byt `AGENT` i filnamnet mot ditt namn, så att två agenter som kör samtidigt inte skriver över varandras rapport.
 - `--trigger schema` om körningen startades av en schemalagd uppgift, `kommando` om användaren bad om den.
 - `--status varning` om något behöver åtgärdas snart, `fel` om körningen inte kunde göras klart (t.ex. ingen datatillgång). Spara även då, med förklaringen.
 - `--highlight`: 2–4 korta fakta, max 30 tecken var. De visas som etiketter.
