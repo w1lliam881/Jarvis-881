@@ -38,3 +38,7 @@ npm run migrate:report -- fil.json   # skriver docs/MIGRERINGSRAPPORT.md
 - Lokal lagring (IndexedDB) tills Supabase finns. Samma `Backend`-gränssnitt.
 - v14-plagg med `bk = 1` bokförs samlat per drop och månad. Nya försäljningar får alltid eget verifikat.
 - Spelet: XP bara för det som görs efter att spelet startats. Bossar kräver tre olika dagar.
+
+## Agenter
+
+Fem agenter finns i `.claude/agents/` och startas med `/builder`, `/reviewer`, `/advisor`, `/reminder` och `/noter`, eller genom att be om dem med namn. Advisor, Reminder och Noter läser data från Supabase enligt `docs/agenter/DATA.md`, bara med `select`. Det fungerar bara i molnmiljön Jarvis-881. Noter skriver journalen i `docs/journal/`.
