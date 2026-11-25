@@ -140,9 +140,12 @@ export function Handoff({ code, onContinue }: { code: string; onContinue: () => 
           <p className="m-0 text-[13px] text-muted">Koden fungerar en gång. När du kopierar den loggas Safari-fliken ut, så att bara appen är inloggad. Du kan stänga fliken.</p>
         </div>
         {!copied && (
-          <button className="mt-4 text-[14px] text-on-forest-muted underline" onClick={onContinue}>
-            Fortsätt i Safari istället
-          </button>
+          <div className="mt-4 flex flex-col gap-2 rounded-2xl bg-surface p-4 text-text">
+            <div className="font-semibold">Använder du inte appen på hemskärmen?</div>
+            <button className="btn btn-primary" onClick={onContinue}>
+              Fortsätt här i webbläsaren
+            </button>
+          </div>
         )}
       </div>
     </div>

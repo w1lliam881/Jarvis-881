@@ -579,3 +579,18 @@ textarea.field {
     }
   }
 }
+
+/* Introduktionen: luft mellan stycken och listor */
+.intro-body p {
+  margin: 0 0 10px;
+}
+.intro-body p:last-child {
+  margin-bottom: 0;
+}
+.intro-body ul {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}

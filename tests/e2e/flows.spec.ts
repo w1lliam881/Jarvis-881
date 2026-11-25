@@ -118,3 +118,20 @@ test('agentbyn visar fem hus och ett hus inifrån', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Här bor dina agenter' })).toBeVisible();
   await expect(page.getByText('Något gick fel')).toHaveCount(0);
 });
+
+test('introduktionen visas första gången och sedan inte igen', async ({ page }) => {
+  await importV14(page);
+  await page.evaluate(() => sessionStorage.setItem('jarvis-intro-test', 'Axel'));
+  await page.reload();
+  const dlg = page.getByRole('dialog', { name: 'Introduktion till Jarvis' });
+  await expect(dlg).toBeVisible();
+  await expect(dlg.getByText('Hej Axel, välkommen till Jarvis')).toBeVisible();
+  for (let i = 0; i < 5; i++) await dlg.getByRole('button', { name: 'Nästa' }).click();
+  await expect(dlg.getByRole('heading', { name: 'Välj ett lösenord' })).toBeVisible();
+  await dlg.getByRole('button', { name: 'Välj lösenord nu' }).click();
+  await expect(dlg).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Inställningar' })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Inställningar' })).toBeVisible();
+  await expect(page.getByRole('dialog', { name: 'Introduktion till Jarvis' })).toHaveCount(0);
+});

@@ -71,12 +71,14 @@ export function Boot({ children }: { children: ReactNode }) {
     let cancelled = false;
     (async () => {
       try {
-        // Kom vi hit från länken i mejlet, i Safari? Då visas en kod för att logga in i appen på hemskärmen.
+        // Kom vi hit från länken i mejlet, i Safari på iPhone? Då visas en kod för att logga in i appen på hemskärmen.
         const fromLink = /access_token=|[?&]code=|token_hash=/.test(location.href);
         const { backend, warning } = await pickBackend();
         if (fromLink && backend.kind === 'supabase') {
           const m = await import('../data/supabase');
-          if (!m.isStandalone()) {
+          // Koden behövs bara på iPhone/iPad, där appen på hemskärmen inte delar inloggning med Safari.
+          // På dator, Chromebook och Android loggas man in direkt.
+          if (!m.isStandalone() && m.isIOS()) {
             const c = await m.handoffCode();
             if (c && !cancelled) setHandoff(c);
           }
