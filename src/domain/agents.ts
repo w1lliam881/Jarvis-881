@@ -56,7 +56,7 @@ export const AGENTS: AgentDef[] = [
     ],
     never: 'Lägger inte in eller ändrar något själv. Du bestämmer.',
     command: '/reminder',
-    schedule: { days: EVERY_DAY, times: [[8, 20], [14, 20]], label: 'Varje dag 08:20 och 14:20' },
+    schedule: { days: EVERY_DAY, times: [[8, 20], [12, 40]], label: 'Varje dag 08:20 och 12:40' },
     colors: { hat: '#E9B44C', shirt: '#C97B5A', pants: '#2B3A4A', trim: '#FFE2A8' },
     roof: '#C97B5A',
     wall: '#F4E6C8',
@@ -78,7 +78,7 @@ export const AGENTS: AgentDef[] = [
     ],
     never: 'Sätter aldrig pris på enskilda plagg. Råd om bokföring och skatt bör granskas av en redovisningskunnig.',
     command: '/advisor',
-    schedule: { days: EVERY_DAY, times: [[9, 10]], label: 'Varje dag 09:10' },
+    schedule: { days: EVERY_DAY, times: [[8, 20]], label: 'Varje morgon 08:20 (efter Planner)' },
     colors: { hat: '#3B3670', shirt: '#6D8FB3', pants: '#1F2E40', trim: '#E9B44C' },
     roof: '#3B3670',
     wall: '#E6E3F2',
@@ -97,7 +97,7 @@ export const AGENTS: AgentDef[] = [
     ],
     never: 'Skriver aldrig ut köpares namn eller adresser.',
     command: '/noter',
-    schedule: { days: EVERY_DAY, times: [[21, 40]], label: 'Varje kväll 21:40 (veckojournal på söndagar)' },
+    schedule: { days: EVERY_DAY, times: [[20, 40]], label: 'Varje kväll 20:40 (veckojournal på söndagar)' },
     colors: { hat: '#6B3E1E', shirt: '#8FB9A8', pants: '#3E4C60', trim: '#F4F1E6' },
     roof: '#1F5A44',
     wall: '#F2EBDD',
@@ -116,7 +116,7 @@ export const AGENTS: AgentDef[] = [
     ],
     never: 'Ändrar ingenting. Det gör Builder när du sagt ja.',
     command: '/reviewer',
-    schedule: { days: [1, 3, 5], times: [[7, 40]], label: 'Måndag, onsdag och fredag 07:40' },
+    schedule: { days: [1, 3, 5], times: [[8, 20]], label: 'Måndag, onsdag och fredag 08:20' },
     colors: { hat: '#1A1A1A', shirt: '#E1EEE6', pants: '#2B3A4A', trim: '#9EDBB8' },
     roof: '#2B3A4A',
     wall: '#DDE6E0',
@@ -136,7 +136,7 @@ export const AGENTS: AgentDef[] = [
     ],
     never: 'Lägger inga beställningar och ändrar ingen data. Planerna är förslag tills du sagt ja.',
     command: '/planner',
-    schedule: { days: EVERY_DAY, times: [[8, 50], [20, 10]], label: 'Varje dag 08:50 och 20:10' },
+    schedule: { days: EVERY_DAY, times: [[8, 20], [20, 40]], label: 'Varje dag 08:20 och 20:40' },
     colors: { hat: '#2C5D8A', shirt: '#E9B44C', pants: '#2B3A4A', trim: '#F4F1E6' },
     roof: '#2C5D8A',
     wall: '#E4ECF2',
@@ -155,7 +155,7 @@ export const AGENTS: AgentDef[] = [
     ],
     never: 'Börjar inte ge idéer förrän du loggat minst 5 klipp med siffror. Idéerna bygger då på ditt eget innehåll.',
     command: '/marketer',
-    schedule: { days: EVERY_DAY, times: [[18, 40]], label: 'Varje dag 18:40 (när det finns klipp)' },
+    schedule: { days: EVERY_DAY, times: [[20, 40]], label: 'Varje kväll 20:40 (när det finns klipp)' },
     colors: { hat: '#1A1A1A', shirt: '#C2324A', pants: '#1F2E40', trim: '#25F4EE' },
     roof: '#C2324A',
     wall: '#F2E2E4',
@@ -369,8 +369,13 @@ export interface AgentMessage {
 
 export const dmThread = (id: AgentId): ChatThread => `dm:${id}`;
 
-/** Chattsvaren: varannan timme 08–22 svarar agenterna på det du skrivit (se docs/agenter/CHATT.md). */
-export const CHAT_SCHEDULE: AgentSchedule = { days: EVERY_DAY, times: [[8, 15], [10, 15], [12, 15], [14, 15], [16, 15], [18, 15], [20, 15], [22, 15]], label: 'Varannan timme 08–22' };
+/**
+ * Agenterna körs i fyra schemalagda rundor i Claude (molnmiljön Jarvis-881):
+ * morgonrundan 08:20 (Reminder, Planner, Advisor, Reviewer mån/ons/fre), lunchrundan 12:40 (Reminder och byrådet),
+ * kvällsrundan 20:40 (Marketer, Planner, Noter) och chattrundan varannan timme 10:15–22:15.
+ * Chattsvaren: på det du skrivit i telefonerna svarar agenterna i chattrundan och i morgonrundan.
+ */
+export const CHAT_SCHEDULE: AgentSchedule = { days: EVERY_DAY, times: [[8, 20], [10, 15], [12, 15], [14, 15], [16, 15], [18, 15], [20, 15], [22, 15]], label: 'Varannan timme 08–22' };
 
 /** Byrådet: agenterna pratar med varandra i gruppchatten en gång om dagen. */
 export const COUNCIL_SCHEDULE: AgentSchedule = { days: EVERY_DAY, times: [[12, 40]], label: 'Varje dag 12:40' };

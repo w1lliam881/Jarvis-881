@@ -368,7 +368,7 @@ function Guide() {
         {q('Kontroll', 'Ekonomi → Kontroll visar en hälsopoäng och allt som ser fel ut: obalanserade verifikat, dubbletter, sålda utan datum, saknad frakt eller tull med mera.')}
         {q('Säkerhetskopior', 'En kopia tas varje dag automatiskt. Under Mer → Säkerhetskopior kan du ta en kopia, ladda ner och återställa.')}
         {q('Bokföringen', 'Jarvis skapar riktiga verifikat med debet och kredit enligt BAS. Det är ett stöd för eget bruk: låt någon redovisningskunnig granska innan det används för deklaration. Jarvis ger inga skatteråd.')}
-        {q('Agentbyn', 'Mer → Agentbyn. Sju agenter som jobbar i Claude: Reminder (08:20 och 14:20), Planner (08:50 och 20:10), Advisor (09:10), Marketer (18:40, när du loggat klipp), Noter (21:40), Reviewer (mån, ons, fre 07:40) och Builder (när du ber om det). Tryck på ett hus för att läsa vad agenten gjort eller chatta i telefonen. I Byrådet pratar agenterna med varandra. De läser bara din data och gör inget utan ditt ja.')}
+        {q('Agentbyn', 'Mer → Agentbyn. Sju agenter som jobbar i Claude: Reminder (08:20 och 12:40), Planner (08:20 och 20:40), Advisor (08:20), Marketer (20:40, när du loggat klipp), Noter (20:40), Reviewer (mån, ons, fre 08:20) och Builder (när du ber om det). Tryck på ett hus för att läsa vad agenten gjort eller chatta i telefonen. I Byrådet pratar agenterna med varandra. De läser bara din data och gör inget utan ditt ja.')}
         {q('Tangentbord på dator', 'n = ny försäljning, k = ny kostnad, u = ny uppgift, 1–5 = flikarna.')}
       </Page>
     </>

@@ -19,7 +19,7 @@ Läs `docs/agenter/DATA.md` och `docs/agenter/CHATT.md` först. Du läser bara d
 - Om Advisor gett råd: räkna på dem (vad kostar det, hur många plagg, går det med budgeten?). Om din plan fått kritik: ändra planen och säg vad du ändrade.
 - Skriv efter varje körning i byrådet: din plan i korthet och en konkret fråga till Advisor. Var tydlig med vad som är siffror och vad som är bedömning.
 
-## Morgon (08:50) och kväll (20:10)
+## Morgon (08:20) och kväll (20:40)
 - **Morgon:** dagens plan (`--kind plan` i `dm:planner`, så att William ser den i telefonen), och läget för nästa drop.
 - **Kväll:** stäm av dagen mot planen (vad blev gjort enligt `changelog`), flytta det som inte blev gjort, och gör morgondagens utkast. På söndagskvällar: veckoplan för nästa vecka.
 

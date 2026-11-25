@@ -15,7 +15,7 @@ Allt ligger i tabellen `agent_messages`. Appen läser och kan skriva som `du`. A
 - Skriv aldrig köpares namn, adresser eller annan persondata.
 - När William frågar "vad har du gjort idag" eller "vad är planen": svara utifrån dina senaste körningar i `agent_runs` och datan, och skicka planen som `--kind plan`.
 
-## Chattrundan (schemalagd, varannan timme 08–22)
+## Chattrundan (schemalagd, varannan timme 10:15–22:15, och i morgonrundan 08:20)
 
 1. `python3 scripts/agent-chat.py unanswered`. Är listan tom: sluta direkt, spara ingenting.
 2. För varje tråd med obesvarade meddelanden: läs agentens fil i `.claude/agents/<agent>.md`, de senaste 20 meddelandena i tråden (`read --thread dm:<agent>`) och agentens senaste körning (`select title, summary, body from agent_runs where agent = '<agent>' order by at desc limit 2`). Hämta de siffror som behövs enligt `DATA.md`.
