@@ -42,6 +42,8 @@ export interface Backend {
   presence?: (cb: (list: PresenceInfo[]) => void) => () => void;
   /** Agenternas körningar (Agentbyn). Finns bara med Supabase. */
   agentRuns?: (limit: number) => Promise<AgentRun[]>;
+  /** Introduktionen första gången man loggar in (sparas på kontot, gäller alla enheter). */
+  intro?: { seen: boolean; name: string; markSeen: () => Promise<void> };
   /** Inloggad användares e-post (Supabase). */
   readonly email?: string;
   readonly durable: boolean;

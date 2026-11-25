@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { AgentRun } from '../domain/agents';
+import { isIOSDevice } from '../domain/device';
 import { defaultGame, defaultSettings, emptyDataset } from '../domain/defaults';
 import { COLLECTIONS, type ChangeLogEntry, type Dataset } from '../domain/types';
 import { ConflictError, datasetCounts, validateMutations, type Backend, type BackupInfo, type Mutation, type PresenceInfo } from './backend';
@@ -49,6 +50,11 @@ export async function deletePushSubscription(endpoint: string): Promise<void> {
   await sb().from('push_subscriptions').delete().eq('endpoint', endpoint);
 }
 
+/** iPhone eller iPad: bara där har appen på hemskärmen en egen inloggning som behöver en kod. */
+export function isIOS(): boolean {
+  return isIOSDevice(navigator.userAgent, navigator.platform, navigator.maxTouchPoints);
+}
+
 /** Är appen öppnad från hemskärmen (inte i Safari)? */
 export function isStandalone(): boolean {
   return window.matchMedia?.('(display-mode: standalone)').matches || (navigator as unknown as { standalone?: boolean }).standalone === true;
@@ -95,12 +101,29 @@ export class SupabaseBackend implements Backend {
   private myWrites = 0;
 
   email = '';
+  intro?: { seen: boolean; name: string; markSeen: () => Promise<void> };
 
   static async connect(): Promise<SupabaseBackend> {
     const { data } = await sb().auth.getSession();
     if (!data.session) throw new Error('LOGIN');
     const b = new SupabaseBackend();
     b.email = data.session.user.email ?? '';
+    const meta = (data.session.user.user_metadata ?? {}) as { intro_seen?: boolean };
+    let name = '';
+    try {
+      const { data: me } = await sb().from('allowed_users').select('name').ilike('email', b.email).maybeSingle();
+      name = (me as { name?: string } | null)?.name ?? '';
+    } catch {
+      /* namnet är bara för hälsningen */
+    }
+    b.intro = {
+      seen: !!meta.intro_seen,
+      name,
+      markSeen: async () => {
+        b.intro = { ...b.intro!, seen: true };
+        await sb().auth.updateUser({ data: { intro_seen: true } });
+      },
+    };
     sb()
       .channel('records')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'records' }, () => {

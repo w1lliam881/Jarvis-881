@@ -14,6 +14,7 @@ import { Spelet } from './screens/Spelet';
 import { Byn } from './screens/Byn';
 import { Welcome } from './screens/Welcome';
 import { Sidebar } from './components/Sidebar';
+import { Intro } from './components/Intro';
 import { deviceUser } from './Boot';
 
 const TABS = [
@@ -123,6 +124,7 @@ export function App() {
         </div>
       </nav>
       <QuickSheet kind={quick} setKind={setQuick} />
+      <Intro />
     </div>
   );
 }
