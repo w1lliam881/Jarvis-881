@@ -1,4 +1,4 @@
-import { BarChart3, BookOpen, Calculator, Clapperboard, Database, Gamepad2, History, Home, Languages, LineChart, Package, Plus, Settings as Cog, ShoppingBag, Upload, Wallet } from 'lucide-react';
+import { BarChart3, Castle, BookOpen, Calculator, Clapperboard, Database, Gamepad2, History, Home, Languages, LineChart, Package, Plus, Settings as Cog, ShoppingBag, Upload, Wallet } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useStore } from '../../data/store';
 import { kr } from '../../domain/money';
@@ -133,6 +133,7 @@ export function Sidebar({ route, onNew }: { route: Route; onNew: () => void }) {
         {MAIN.map((l) => (
           <Item key={l.href} l={l} route={route} />
         ))}
+        <Item l={{ href: '#/byn', label: 'Agentbyn', icon: Castle }} route={route} />
         {ds.settings.gameEnabled && <Item l={{ href: '#/spelet', label: 'Spelet', icon: Gamepad2 }} route={route} />}
       </nav>
 

@@ -1,6 +1,6 @@
 import { Component, type ReactNode } from 'react';
 
-/** Fångar oväntade fel så att skärmen aldrig blir svart. Din data påverkas inte. */
+/** Fångar oväntade fel så att skärmen aldrig blir svart. Det som redan sparats finns kvar. */
 export class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   state = { error: null as Error | null };
 
@@ -19,7 +19,7 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, { error: E
       <div style={{ minHeight: '100dvh', background: '#173f31', color: '#f4f1e6', fontFamily: 'Inter, system-ui, sans-serif', padding: '64px 20px' }}>
         <div style={{ maxWidth: 480, margin: '0 auto' }}>
           <h1 style={{ fontFamily: 'Fraunces, Georgia, serif', fontSize: 30, margin: 0 }}>Något gick fel</h1>
-          <p style={{ color: '#b9cbbf' }}>Jarvis stötte på ett fel. Din data är sparad och påverkas inte. Ladda om sidan. Om felet kommer tillbaka, skicka texten nedan till den som bygger appen.</p>
+          <p style={{ color: '#b9cbbf' }}>Jarvis stötte på ett fel. Det som redan sparats finns kvar, men en ändring du höll på med precis nu kan ha gått förlorad och behöva göras om. Ladda om sidan och kontrollera det du senast ändrade. Om felet kommer tillbaka, skicka texten nedan till den som bygger appen.</p>
           <button type="button" onClick={() => location.reload()} style={{ minHeight: 48, padding: '0 20px', borderRadius: 12, border: 0, background: '#e9b44c', color: '#2b1f05', fontWeight: 600, fontSize: 16, cursor: 'pointer' }}>
             Ladda om
           </button>

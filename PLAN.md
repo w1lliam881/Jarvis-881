@@ -74,3 +74,11 @@ Acceptans: försäljning under 15 sekunder (e2e-test), prisändring uppdaterar v
 1. Skapa Supabase-konto (guide i README). Jag kör databasschemat och kopplar appen.
 2. Skapa Vercel-konto och koppla GitHub. Jag publicerar.
 3. Ta en färsk export från v14 och importera.
+
+## Agenter och Agentbyn (2026-11-24) ✅
+
+- ✅ Fem agenter i `.claude/agents/`: Builder, Reviewer, Advisor, Reminder, Noter. Startas med `/namn` i Claude.
+- ✅ Schemalagda uppgifter med notis i telefonen: Reminder varje dag 10:30, Advisor måndagar 08:40, Noter söndagar 20:47, Reviewer fredagar 15:20. Builder bara på kommando.
+- ✅ Varje körning sparas i tabellen `agent_runs` (migrering `0002_agent_runs.sql`).
+- ✅ Agentbyn (`#/byn`): pixelby där agenterna går runt, med dag, kväll och natt. Varje hus visar jobb, schema och alla rapporter.
+- ✅ Alla fem testkörda mot riktig data. Reviewer hittade två fel som Builder rättade (koppling i låst period, tydligare kopplingsruta).

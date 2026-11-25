@@ -270,6 +270,34 @@ export function diffLedger(ds: Dataset): LedgerDiff {
   return diff;
 }
 
+/**
+ * Kontrollerar om en ändring av ett plaggs försäljning (t.ex. att en manuell
+ * försäljning kopplas till plagget) skulle krocka med en låst period. Låsta
+ * automatiska verifikat ändras eller tas aldrig bort, så om plaggets befintliga
+ * försäljningsverifikat (eget eller samlat per drop och månad) ligger i låst period,
+ * eller om det nya samlade verifikatet skulle hamna där, skulle försäljningen
+ * räknas två gånger. Returnerar ett felmeddelande, eller null om allt är ok.
+ */
+export function lockedSaleConflict(before: Dataset, after: Dataset, itemId: string): string | null {
+  const lock = before.settings.lockedThrough;
+  if (!lock) return null;
+  const item = before.items.find((i) => i.id === itemId);
+  if (!item) return null;
+  const keys = new Set<string>([`item:${item.id}:sale`]);
+  if (item.saleBooking === 'aggregate' && isSold(item)) {
+    const drop = before.drops.find((d) => d.id === item.dropId);
+    const date = item.saleDate || drop?.date || '';
+    if (date) keys.add(`drop:${item.dropId}:sales:${date.slice(0, 7)}`);
+  }
+  const old = before.vouchers.find((v) => !v.deletedAt && v.source === 'auto' && !!v.key && keys.has(v.key) && v.date <= lock);
+  if (old)
+    return `Plaggets försäljning är redan bokförd i V${old.nr} (${old.date}), som ligger i låst period (till och med ${lock}). Om försäljningen kopplas skulle den räknas två gånger. Låt bli att koppla, eller ta bort låsningen först.`;
+  const next = desiredAll(after).find((d) => keys.has(d.key) && d.date <= lock);
+  if (next)
+    return `Det samlade försäljningsverifikatet för plaggets drop skulle få datum ${next.date}, i låst period (till och med ${lock}). Kopplingen stoppades så att försäljningen inte räknas två gånger.`;
+  return null;
+}
+
 export function sameLines(a: VoucherLine[], b: VoucherLine[]): boolean {
   if (a.length !== b.length) return false;
   return a.every((x, i) => x.account === b[i].account && x.debit === b[i].debit && x.credit === b[i].credit);

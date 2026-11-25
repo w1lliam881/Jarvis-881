@@ -76,7 +76,16 @@ export class Store {
   save(label: string, build: (ds: Dataset) => Change[], opts: { undoable?: boolean } = {}): Promise<boolean> {
     const run = async () => {
       if (!this.ds) return false;
-      const changes = build(this.ds);
+      let changes: Change[];
+      try {
+        changes = build(this.ds);
+      } catch (e) {
+        if (!(e instanceof ValidationError)) throw e;
+        // Ett regelbrott som upptäcks innan något sparats: visa felet, inget har ändrats.
+        this.status = { state: 'error', at: this.status.at, message: e.message };
+        this.emit();
+        return false;
+      }
       if (!changes.length) return true;
       this.status = { state: 'saving', at: this.status.at, message: null };
       this.emit();

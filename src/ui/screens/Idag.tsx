@@ -15,6 +15,9 @@ import { Bars, Card, Money, Page, Pill, RoiPill, Section, Segmented, Spark, Stat
 import { openQuick } from '../App';
 import { Presence } from '../components/Presence';
 import { toast } from '../Boot';
+import { useAgentRuns } from './Byn';
+import { AgentSprite } from '../../game/village';
+import { agentById, agoText } from '../../domain/agents';
 
 export function Idag({ route }: { route: Route }) {
   const ds = useData();
@@ -130,6 +133,8 @@ function Overview({ ds, o }: { ds: Dataset; o: ReturnType<typeof overview> }) {
         </a>
       </div>
 
+      <AgentNote />
+
       <div className="desk-cols">
       <div className="desk-col">
       {ds.settings.gameEnabled && <QuestStrip ds={ds} />}
@@ -202,7 +207,7 @@ function QuestStrip({ ds }: { ds: Dataset }) {
             </a>
           ))
         ) : (
-          <p className="m-0 p-4 text-[14px] text-muted">Inga uppdrag just nu. Allt är i fas.</p>
+          <p className="m-0 p-4 text-[14px] text-muted">Inga uppdrag just nu.</p>
         )}
       </Card>
     </Section>
@@ -244,7 +249,7 @@ function Tasks({ ds }: { ds: Dataset }) {
         )}
       </Card>
       <details className="card p-4">
-        <summary className="cursor-pointer font-semibold">Vad är aktuellt?</summary>
+        <summary className="cursor-pointer font-semibold">Lägg till flera uppgifter på en gång</summary>
         <p className="mb-2 mt-1 text-[13px] text-muted">Skriv fritt, en sak per rad. Varje rad blir en uppgift för idag.</p>
         <textarea className="field" value={bulk} onChange={(e) => setBulk(e.target.value)} placeholder={'Svara på Vinted-meddelanden\nFota 5 plagg\nHämta paket'} />
         <button
@@ -275,7 +280,7 @@ function TaskRow({ t }: { t: Task }) {
         role="checkbox"
         aria-checked={t.done}
         aria-label={t.done ? `Markera "${t.title}" som ej klar` : `Markera "${t.title}" som klar`}
-        onClick={() => void toggleTask(t.id).then((ok) => ok && !t.done && toast('Bra jobbat'))}
+        onClick={() => void toggleTask(t.id).then((ok) => ok && !t.done && toast('Bockad'))}
         className={cx('grid h-6 w-6 shrink-0 place-items-center rounded-md border-[1.8px]', t.done ? 'border-accent bg-accent text-surface' : 'border-line bg-bg')}
       >
         {t.done && <span className="text-[13px] font-bold">✓</span>}
@@ -503,5 +508,29 @@ function Calendar({ ds }: { ds: Dataset }) {
         </Section>
       )}
     </>
+  );
+}
+
+/** Det senaste från agenterna, helst dagens påminnelser. Visas bara när det finns något. */
+function AgentNote() {
+  const { runs } = useAgentRuns();
+  if (!runs?.length) return null;
+  const fresh = (iso: string) => Date.now() - new Date(iso).getTime() < 36 * 3600000;
+  const r = runs.find((x) => x.agent === 'reminder' && fresh(x.at)) ?? runs.find((x) => fresh(x.at));
+  if (!r) return null;
+  const def = agentById(r.agent)!;
+  return (
+    <a href={`#/byn/${r.agent}`} className="card flex gap-3 p-3.5">
+      <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl" style={{ background: def.wall }}>
+        <AgentSprite def={def} size={38} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="flex items-baseline justify-between gap-2">
+          <span className="text-[13px] font-semibold">{def.name} {agoText(r.at)}</span>
+          <span className="shrink-0 text-[12px] font-medium text-accent">Agentbyn</span>
+        </span>
+        <span className="mt-0.5 block text-[14px] leading-snug">{r.summary}</span>
+      </span>
+    </a>
   );
 }

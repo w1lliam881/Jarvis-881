@@ -41,4 +41,4 @@ npm run migrate:report -- fil.json   # skriver docs/MIGRERINGSRAPPORT.md
 
 ## Agenter
 
-Fem agenter finns i `.claude/agents/` och startas med `/builder`, `/reviewer`, `/advisor`, `/reminder` och `/noter`, eller genom att be om dem med namn. Advisor, Reminder och Noter läser data från Supabase enligt `docs/agenter/DATA.md`, bara med `select`. Det fungerar bara i molnmiljön Jarvis-881. Noter skriver journalen i `docs/journal/`.
+Fem agenter finns i `.claude/agents/` och startas med `/builder`, `/reviewer`, `/advisor`, `/reminder` och `/noter`, eller genom att be om dem med namn. Advisor, Reminder och Noter läser data från Supabase enligt `docs/agenter/DATA.md`, bara med `select`. Det fungerar bara i molnmiljön Jarvis-881. Alla sparar sitt arbete i tabellen `agent_runs`, som visas i Agentbyn (`#/byn`).

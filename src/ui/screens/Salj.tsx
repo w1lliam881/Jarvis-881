@@ -58,7 +58,7 @@ export function Salj() {
                     </span>
                   </span>
                   <Money v={saleAmount(v)} className="text-[14px]" />
-                  <button className="btn btn-soft h-9 min-h-0 px-3 text-[13px]" onClick={() => setLink(v.id)}>
+                  <button type="button" className="btn btn-soft shrink-0 px-4 text-[14px]" onClick={() => setLink(v.id)}>
                     Koppla
                   </button>
                 </div>
@@ -172,6 +172,8 @@ function LinkSheet({ voucherId, onClose }: { voucherId: string; onClose: () => v
       <Card pad={false}>
         {list.map((l) => {
           const sold = isSold(l.item);
+          const newDate = sold && l.item.saleDate !== v.date;
+          const newAmount = sold && l.item.salePrice !== amt;
           return (
             <button key={l.item.id} type="button" onClick={() => void linkSaleToItem(v.id, l.item.id, amt).then((ok) => ok && onClose())} className="flex min-h-[52px] w-full items-center justify-between gap-3 border-b border-line-2 px-4 py-2 text-left last:border-0">
               <span className="min-w-0">
@@ -179,8 +181,16 @@ function LinkSheet({ voucherId, onClose }: { voucherId: string; onClose: () => v
                 <span className="block text-[12px] text-muted">
                   {l.drop.name}
                   {l.item.productId ? ` · ${l.item.productId}` : ''}
-                  {sold ? ` · redan såld ${l.item.saleDate ?? ''} för ${kr(l.item.salePrice)}` : ''}
+                  {sold && !newDate && !newAmount ? ` · redan såld ${l.item.saleDate ?? ''} för ${kr(l.item.salePrice)}` : ''}
                 </span>
+                {(newDate || newAmount) && (
+                  <span className="block text-[12px] font-medium text-hi">
+                    Redan såld. Ändras:
+                    {newDate ? ` säljdatum ${l.item.saleDate ?? 'saknas'} → ${v.date}` : ''}
+                    {newDate && newAmount ? ',' : ''}
+                    {newAmount ? ` belopp ${kr(l.item.salePrice)} → ${kr(amt)}` : ''}
+                  </span>
+                )}
               </span>
               <Money v={l.landed} className="text-[13px] text-muted" />
             </button>

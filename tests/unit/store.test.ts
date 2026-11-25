@@ -138,4 +138,84 @@ describe('ändringslogg', () => {
     const it2 = s.ds!.items.find((i) => i.id === item.id)!;
     expect(it2).toMatchObject({ saleDate: '2026-10-24', salePrice: 80000, productId: 'TS-GAR-2026-170' });
   });
+
+  const income = () => live(s.ds!.vouchers).reduce((sum, v) => sum + v.lines.reduce((a, l) => (l.account === 3001 ? a + l.credit - l.debit : a), 0), 0);
+  const lockThrough = (date: string) => s.save('lås', (ds) => [{ settings: { ...ds.settings, lockedThrough: date } }]);
+  const manualSale = async (date: string, amount: number) => {
+    await saveManualVoucher({ date, text: 'Swish försäljning', lines: [{ account: 1930, debit: amount, credit: 0 }, { account: 3001, debit: 0, credit: amount }] });
+    return live(s.ds!.vouchers).filter((v) => v.source !== 'auto').at(-1)!;
+  };
+
+  it('kopplingen stoppas om plaggets eget försäljningsverifikat ligger i låst period', async () => {
+    await createDrop({ name: 'P', date: '2026-09-01' }, parseLines('Jeans 100'));
+    const item = s.ds!.items[0];
+    await sellItem(item.id, 80000, '2026-09-10', 'Vinted');
+    const manual = await manualSale('2026-11-05', 80000);
+    await lockThrough('2026-09-30');
+    const before = income();
+    expect(await linkSaleToItem(manual.id, item.id, 80000)).toBe(false);
+    expect(s.status.state).toBe('error');
+    expect(s.status.message).toMatch(/låst period/);
+    expect(s.status.message).toMatch(/två gånger/);
+    expect(income()).toBe(before);
+    expect(s.ds!.vouchers.find((v) => v.id === manual.id)!.itemId).toBeNull();
+    expect(s.ds!.items.find((i) => i.id === item.id)!.saleDate).toBe('2026-09-10');
+  });
+
+  it('kopplingen stoppas om verifikatet självt ligger i låst period', async () => {
+    await createDrop({ name: 'P', date: '2026-09-01' }, parseLines('Jeans 100'));
+    const item = s.ds!.items[0];
+    const manual = await manualSale('2026-09-15', 80000);
+    await lockThrough('2026-09-30');
+    expect(await linkSaleToItem(manual.id, item.id, 80000)).toBe(false);
+    expect(s.status.message).toMatch(/låst period/);
+    expect(s.ds!.items.find((i) => i.id === item.id)!.salePrice).toBe(0);
+  });
+
+  it('samlat bokfört plagg (bk = 1): kopplingen ger inte dubbel intäkt', async () => {
+    await createDrop({ name: 'Gammal', date: '2026-08-01' }, parseLines('Jeans 100\nJacka 100'));
+    const [a, b] = s.ds!.items;
+    await s.save('test', (ds) => [
+      { collection: 'items', record: { ...ds.items[0], saleBooking: 'aggregate', salePrice: 50000, saleDate: '2026-10-10' } as never },
+      { collection: 'items', record: { ...ds.items[1], saleBooking: 'aggregate', salePrice: 30000, saleDate: '2026-10-12' } as never },
+    ]);
+    expect(income()).toBe(80000);
+    const manual = await manualSale('2026-10-20', 50000);
+    expect(income()).toBe(130000);
+    expect(await linkSaleToItem(manual.id, a.id, 50000)).toBe(true);
+    expect(income()).toBe(80000);
+    const agg = live(s.ds!.vouchers).filter((v) => v.key?.includes(':sales:'));
+    expect(agg).toHaveLength(1);
+    expect(agg[0].lines.find((l) => l.account === 3001)!.credit).toBe(30000);
+    expect(s.ds!.items.find((i) => i.id === b.id)!.saleBooking).toBe('aggregate');
+    for (const v of live(s.ds!.vouchers)) expect(isBalanced(v.lines)).toBe(true);
+  });
+
+  it('samlat bokfört plagg (bk = 1): kopplingen stoppas om det samlade verifikatet ligger i låst period', async () => {
+    await createDrop({ name: 'Gammal', date: '2026-08-01' }, parseLines('Jeans 100'));
+    const a = s.ds!.items[0];
+    await s.save('test', (ds) => [{ collection: 'items', record: { ...ds.items[0], saleBooking: 'aggregate', salePrice: 50000, saleDate: '2026-09-10' } as never }]);
+    const manual = await manualSale('2026-11-02', 50000);
+    await lockThrough('2026-09-30');
+    const before = income();
+    expect(await linkSaleToItem(manual.id, a.id, 50000)).toBe(false);
+    expect(s.status.message).toMatch(/två gånger/);
+    expect(income()).toBe(before);
+    expect(s.ds!.items.find((i) => i.id === a.id)!.saleBooking).toBe('aggregate');
+  });
+
+  it('samlat bokfört plagg (bk = 1): stoppas om det samlade verifikatet skulle flyttas in i låst period', async () => {
+    await createDrop({ name: 'Gammal', date: '2026-08-01' }, parseLines('Jeans 100\nJacka 100'));
+    const a = s.ds!.items[0];
+    await s.save('test', (ds) => [
+      { collection: 'items', record: { ...ds.items[0], saleBooking: 'aggregate', salePrice: 50000, saleDate: '2026-10-20' } as never },
+      { collection: 'items', record: { ...ds.items[1], saleBooking: 'aggregate', salePrice: 30000, saleDate: '2026-10-05' } as never },
+    ]);
+    const manual = await manualSale('2026-11-02', 50000);
+    await lockThrough('2026-10-15');
+    const before = income();
+    expect(await linkSaleToItem(manual.id, a.id, 50000)).toBe(false);
+    expect(s.status.message).toMatch(/låst period/);
+    expect(income()).toBe(before);
+  });
 });

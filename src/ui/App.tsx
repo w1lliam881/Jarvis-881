@@ -11,6 +11,7 @@ import { Ekonomi } from './screens/Ekonomi';
 import { Mer } from './screens/Mer';
 import { Planering } from './screens/Planering';
 import { Spelet } from './screens/Spelet';
+import { Byn } from './screens/Byn';
 import { Welcome } from './screens/Welcome';
 import { Sidebar } from './components/Sidebar';
 import { deviceUser } from './Boot';
@@ -61,7 +62,7 @@ export function App() {
   if (empty || (!deviceUser() && !store().backend.email)) return <Welcome />;
 
   const top = route.path[0] ?? 'idag';
-  const tab = ['planering', 'spelet'].includes(top) ? 'mer' : top;
+  const tab = ['planering', 'spelet', 'byn'].includes(top) ? 'mer' : top;
   let screen;
   switch (top) {
     case 'lager':
@@ -78,6 +79,9 @@ export function App() {
       break;
     case 'spelet':
       screen = <Spelet />;
+      break;
+    case 'byn':
+      screen = <Byn route={route} />;
       break;
     case 'mer':
       screen = <Mer route={route} />;

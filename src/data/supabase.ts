@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import type { AgentRun } from '../domain/agents';
 import { defaultGame, defaultSettings, emptyDataset } from '../domain/defaults';
 import { COLLECTIONS, type ChangeLogEntry, type Dataset } from '../domain/types';
 import { ConflictError, datasetCounts, validateMutations, type Backend, type BackupInfo, type Mutation, type PresenceInfo } from './backend';
@@ -24,7 +25,7 @@ export async function signInWithPassword(email: string, password: string): Promi
   const { error } = await sb().auth.signInWithPassword({ email, password });
   if (!error) return null;
   if (error.status === 429 || /rate limit/i.test(error.message)) return 'För många försök. Vänta en stund och försök igen.';
-  if (/invalid login credentials/i.test(error.message) || error.status === 400) return 'Fel e-post eller lösenord. Har du inte valt något lösenord än? Logga in med länken och välj ett under Mer → Inställningar.';
+  if (error.code === 'invalid_credentials' || /invalid login credentials/i.test(error.message)) return 'Fel e-post eller lösenord. Har du inte valt något lösenord än? Logga in med länken och välj ett under Mer → Inställningar.';
   return `Kunde inte logga in: ${error.message}`;
 }
 
@@ -217,6 +218,12 @@ export class SupabaseBackend implements Backend {
     this.listeners.add(cb);
     return () => this.listeners.delete(cb);
   }
+
+  agentRuns = async (limit: number): Promise<AgentRun[]> => {
+    const { data, error } = await sb().from('agent_runs').select('*').order('at', { ascending: false }).limit(limit);
+    if (error) throw new Error(error.message);
+    return (data ?? []).map((r) => ({ ...r, highlights: Array.isArray(r.highlights) ? r.highlights : [] })) as AgentRun[];
+  };
 
   async changelog(limit: number): Promise<ChangeLogEntry[]> {
     const { data } = await sb().from('changelog').select('*').order('at', { ascending: false }).limit(limit);
