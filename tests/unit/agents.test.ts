@@ -13,10 +13,11 @@ describe('agentbyn: tider i svensk tid', () => {
     expect(nextRun(s, new Date('2026-11-24T08:00:00Z'))!.toISOString()).toBe('2026-11-24T09:30:00.000Z');
     expect(nextRun(s, new Date('2026-11-24T10:00:00Z'))!.toISOString()).toBe('2026-11-25T09:30:00.000Z');
   });
-  it('nästa körning för Advisor (måndagar 08:40) och Noter (söndagar 20:47)', () => {
+  it('nästa körning för Advisor och Reviewer (mån och fre 08:40) och Noter (söndagar 20:00)', () => {
     const now = new Date('2026-11-24T12:00:00Z'); // tisdag
-    expect(nextRun(AGENTS.find((a) => a.id === 'advisor')!.schedule, now)!.toISOString()).toBe('2026-11-30T07:40:00.000Z');
-    expect(nextRun(AGENTS.find((a) => a.id === 'noter')!.schedule, now)!.toISOString()).toBe('2026-11-29T19:47:00.000Z');
+    expect(nextRun(AGENTS.find((a) => a.id === 'advisor')!.schedule, now)!.toISOString()).toBe('2026-11-27T07:40:00.000Z');
+    expect(nextRun(AGENTS.find((a) => a.id === 'reviewer')!.schedule, new Date('2026-11-27T08:00:00Z'))!.toISOString()).toBe('2026-11-30T07:40:00.000Z');
+    expect(nextRun(AGENTS.find((a) => a.id === 'noter')!.schedule, now)!.toISOString()).toBe('2026-11-29T19:00:00.000Z');
   });
   it('Builder har inget schema', () => {
     expect(nextRun(AGENTS.find((a) => a.id === 'builder')!.schedule)).toBeNull();
