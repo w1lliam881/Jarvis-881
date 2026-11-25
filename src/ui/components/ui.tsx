@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import { kr, parseKr, toOre } from '../../domain/money';
 import type { Ore } from '../../domain/types';
 
@@ -30,7 +31,7 @@ export function TopBand({ title, sub, right, children, back }: { title: string; 
 }
 
 export function Page({ children }: { children: ReactNode }) {
-  return <div className="page mx-auto flex w-full max-w-[720px] flex-col gap-5 px-4 pb-32 pt-4 lg:max-w-[1280px] lg:gap-6 lg:px-8 lg:pb-[72px] lg:pt-7">{children}</div>;
+  return <div className="page mx-auto flex w-full max-w-[720px] flex-col gap-5 px-4 pb-[calc(140px+env(safe-area-inset-bottom))] pt-4 lg:max-w-[1280px] lg:gap-6 lg:px-8 lg:pb-[72px] lg:pt-7">{children}</div>;
 }
 
 export function Section({ title, action, children, id }: { title?: ReactNode; action?: ReactNode; children: ReactNode; id?: string }) {
@@ -340,16 +341,21 @@ export function Sheet({ open, onClose, title, children, footer }: { open: boolea
     const prev = document.activeElement as HTMLElement | null;
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     window.addEventListener('keydown', onKey);
+    // Byter man sida (bakåtknapp eller länk) stängs arket, annars blev det liggande kvar över nästa sida
+    window.addEventListener('hashchange', onClose);
     document.body.style.overflow = 'hidden';
     setTimeout(() => ref.current?.querySelector<HTMLElement>('input,select,textarea,button')?.focus({ preventScroll: true }), 50);
     return () => {
       window.removeEventListener('keydown', onKey);
+      window.removeEventListener('hashchange', onClose);
       document.body.style.overflow = '';
       prev?.focus?.({ preventScroll: true });
     };
   }, [open, onClose]);
   if (!open) return null;
-  return (
+  // Läggs direkt i <body> så att arket alltid hamnar överst och täcker allt, även om det öppnas inifrån
+  // en rubrik eller sidomeny som har egen stapelordning (annars syntes sidan igenom och menyn i botten låg över).
+  return createPortal(
     <div className="fixed inset-0 z-[90] flex items-end justify-center lg:items-stretch lg:justify-end" role="dialog" aria-modal="true" aria-label={title}>
       <button type="button" aria-label="Stäng" className="fade-in absolute inset-0 bg-black/45" onClick={onClose} />
       <div ref={ref} className="sheet-enter safe-bottom relative flex max-h-[92dvh] w-full max-w-[560px] flex-col rounded-t-[22px] bg-surface lg:h-full lg:max-h-none lg:max-w-[540px] lg:rounded-none lg:rounded-l-[24px] lg:pt-3 lg:shadow-2xl">
@@ -363,7 +369,8 @@ export function Sheet({ open, onClose, title, children, footer }: { open: boolea
         <div className="flex-1 overflow-y-auto px-5 pb-4">{children}</div>
         {footer && <div className="border-t border-line-2 px-5 pt-3">{footer}</div>}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

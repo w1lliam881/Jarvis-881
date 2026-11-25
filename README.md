@@ -40,7 +40,7 @@ Driftkostnad: 0 kr i månaden (se `ARCHITECTURE.md`).
 
 ### Påminnelser och Gmail-import (uppsatt)
 
-- **Påminnelser:** funktionen `daily-reminder` körs varje timme (pg_cron). Nycklarna för notiser ligger som hemligheter i Supabase. Slå på i appen: öppna Jarvis från hemskärmen → Mer → Inställningar → Påminnelser.
+- **Påminnelser och agentnotiser:** funktionen `daily-reminder` körs varje timme (pg_cron-jobbet `jarvis-reminders`) och skickar alltid en notis vid den tid du valt. Den skickar också direkt när en agent har jobbat, svarat i telefonen eller vill ha ditt ja. Uppsättning: `scripts/setup-notiser.sh` i molnmiljön Jarvis-881 (kör migration 0003, lägger nyckeln i Vault och deployar funktionen). Slå på i appen: öppna Jarvis från hemskärmen → Mer → Inställningar → Påminnelser, och tryck Skicka testnotis.
 - **Gmail:** skriptet `scripts/gmail-till-jarvis.gs` körs i ditt Google-konto på script.google.com och skickar mejl från Vinted, Plick och Doorzo till funktionen `ingest-mail`. De hamnar i godkännandekön. Nyckeln (`INGEST_TOKEN`) finns bara i Supabase och i ditt skript, aldrig i koden.
 
 ### Inloggning

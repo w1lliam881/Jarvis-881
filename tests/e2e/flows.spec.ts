@@ -94,8 +94,9 @@ test('spelet visar uppdrag från riktig data', async ({ page }) => {
   await expect(page.getByText(/dubbletter/).first()).toBeVisible();
 });
 
-test('agentbyn visar fem hus och ett hus inifrån', async ({ page }) => {
+test('agentbyn visar sju hus och ett hus inifrån', async ({ page }) => {
   await importV14(page);
+  await page.evaluate(() => localStorage.setItem('jarvis-byn-tema', 'av'));
   await page.evaluate(() =>
     sessionStorage.setItem(
       'jarvis-agent-runs',
@@ -104,7 +105,7 @@ test('agentbyn visar fem hus och ett hus inifrån', async ({ page }) => {
   );
   await page.goto('/#/byn');
   await expect(page.getByRole('heading', { name: 'Här bor dina agenter' })).toBeVisible();
-  for (const n of ['Reminder', 'Advisor', 'Noter', 'Reviewer', 'Builder']) await expect(page.getByText(n, { exact: true }).first()).toBeVisible();
+  for (const n of ['Reminder', 'Advisor', 'Planner', 'Marketer', 'Noter', 'Reviewer', 'Builder']) await expect(page.getByText(n, { exact: true }).first()).toBeVisible();
   await expect(page.getByText('Att göra idag').first()).toBeVisible();
   await page.getByRole('link', { name: /Reminder/ }).first().click();
   await expect(page.getByRole('heading', { name: /Reminder/ })).toBeVisible();
@@ -117,6 +118,56 @@ test('agentbyn visar fem hus och ett hus inifrån', async ({ page }) => {
   await page.goBack();
   await expect(page.getByRole('heading', { name: 'Här bor dina agenter' })).toBeVisible();
   await expect(page.getByText('Något gick fel')).toHaveCount(0);
+});
+
+test('vintertema, telefonen i huset, gruppchatten och Marketers klipp', async ({ page }) => {
+  await importV14(page);
+  await page.evaluate(() => localStorage.setItem('jarvis-byn-tema', 'på'));
+  await page.goto('/#/byn');
+  await expect(page.getByRole('heading', { name: 'God jul från agentbyn' })).toBeVisible();
+  await expect(page.getByRole('img', { name: /i vinterskrud/ })).toBeVisible();
+  // Temat går att stänga av
+  await page.getByRole('button', { name: /Vinter på/ }).click();
+  await expect(page.getByRole('heading', { name: 'Här bor dina agenter' })).toBeVisible();
+  // Gruppchatten: skriv till alla
+  await expect(page.getByText('Byrådet', { exact: true })).toBeVisible();
+  await page.getByLabel('Meddelande till byrådet').fill('Hej allihop');
+  await page.getByRole('button', { name: 'Skicka till alla' }).click();
+  await expect(page.getByText('Hej allihop')).toBeVisible();
+  // Telefonen i Planners hus
+  await page.goto('/#/byn/planner');
+  await expect(page.getByRole('heading', { name: /Planner/ })).toBeVisible();
+  await page.getByRole('button', { name: /Öppna telefonen/ }).click();
+  const phone = page.getByRole('dialog', { name: /chatt med Planner/ });
+  await expect(phone).toBeVisible();
+  await phone.getByLabel('Meddelande till Planner').fill('Vad är planen för juldroppen?');
+  await phone.getByRole('button', { name: 'Skicka' }).click();
+  await expect(phone.getByText('Vad är planen för juldroppen?')).toBeVisible();
+  await expect(phone.getByText(/Väntar på svar/)).toBeVisible();
+  await phone.getByRole('button', { name: 'Lägg ner telefonen' }).first().click();
+  await expect(phone).toHaveCount(0);
+  // Marketer väntar på klipp och har kryss-formuläret
+  await page.goto('/#/byn/marketer');
+  await expect(page.getByText('Marketer väntar på dig.')).toBeVisible();
+  await page.getByRole('button', { name: 'Logga klipp' }).click();
+  await page.getByRole('button', { name: 'På kropp / try-on' }).click();
+  await page.getByLabel('Visningar').fill('1200');
+  await page.getByRole('button', { name: 'Spara klippet' }).click();
+  await expect(page.getByText('1 200 visn.')).toBeVisible();
+  await expect(page.getByText('Något gick fel')).toHaveCount(0);
+});
+
+test('vem är inne visas ovanpå allt på telefonen', async ({ page }) => {
+  await importV14(page);
+  await page.getByRole('button', { name: /Tryck för mer/ }).first().click();
+  const sheet = page.getByRole('dialog', { name: 'Vem är inne' });
+  await expect(sheet).toBeVisible();
+  // Arket ligger direkt i body och täcker menyn i botten
+  expect(await sheet.evaluate((el) => el.parentElement === document.body)).toBe(true);
+  const nav = page.getByRole('navigation', { name: 'Huvudmeny' });
+  const box = await nav.boundingBox();
+  const hit = await page.evaluate(([x, y]) => document.elementFromPoint(x, y)?.closest('[role=dialog]') != null, [box!.x + box!.width / 2, box!.y + box!.height / 2]);
+  expect(hit).toBe(true);
 });
 
 test('introduktionen visas första gången och sedan inte igen', async ({ page }) => {

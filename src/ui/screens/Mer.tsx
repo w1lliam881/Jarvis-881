@@ -13,7 +13,7 @@ import { longDate } from '../../domain/dates';
 import { Importer } from './Welcome';
 import { deviceUser, setDeviceUser, toast } from '../Boot';
 import { Presence } from '../components/Presence';
-import { disablePush, enablePush, pushActive, pushBlocker, type PushPrefs } from '../../data/push';
+import { disablePush, enablePush, pushActive, pushBlocker, testPush, type PushPrefs } from '../../data/push';
 
 export function Mer({ route }: { route: Route }) {
   const sub = route.path[1];
@@ -54,7 +54,7 @@ function Menu() {
           </Card>
         </Section>
         <Card pad={false}>
-          {item('#/byn', Castle, 'Agentbyn', 'Dina fem agenter och vad de har gjort')}
+          {item('#/byn', Castle, 'Agentbyn', 'Dina sju agenter, deras chatt och vad de har gjort')}
           {ds.settings.gameEnabled && item('#/spelet', Gamepad2, 'Spelet', 'Uppdrag, världar och bossar')}
         </Card>
         <Section title="Data">
@@ -368,7 +368,7 @@ function Guide() {
         {q('Kontroll', 'Ekonomi → Kontroll visar en hälsopoäng och allt som ser fel ut: obalanserade verifikat, dubbletter, sålda utan datum, saknad frakt eller tull med mera.')}
         {q('Säkerhetskopior', 'En kopia tas varje dag automatiskt. Under Mer → Säkerhetskopior kan du ta en kopia, ladda ner och återställa.')}
         {q('Bokföringen', 'Jarvis skapar riktiga verifikat med debet och kredit enligt BAS. Det är ett stöd för eget bruk: låt någon redovisningskunnig granska innan det används för deklaration. Jarvis ger inga skatteråd.')}
-        {q('Agentbyn', 'Mer → Agentbyn. Fem agenter som jobbar i Claude: Reminder (varje dag 10:30), Advisor och Reviewer (måndagar och fredagar 08:40), Noter (söndagar 20:00) och Builder (när du ber om det). Tryck på ett hus för att läsa vad agenten gjort. Agenterna läser bara din data, de ändrar den aldrig.')}
+        {q('Agentbyn', 'Mer → Agentbyn. Sju agenter som jobbar i Claude: Reminder (08:20 och 14:20), Planner (08:50 och 20:10), Advisor (09:10), Marketer (18:40, när du loggat klipp), Noter (21:40), Reviewer (mån, ons, fre 07:40) och Builder (när du ber om det). Tryck på ett hus för att läsa vad agenten gjort eller chatta i telefonen. I Byrådet pratar agenterna med varandra. De läser bara din data och gör inget utan ditt ja.')}
         {q('Tangentbord på dator', 'n = ny försäljning, k = ny kostnad, u = ny uppgift, 1–5 = flikarna.')}
       </Page>
     </>
@@ -386,7 +386,17 @@ function Reminders() {
       return { time: '18:00', kinds: { daily: true, inbox: true, oldStock: true } };
     }
   });
-  useEffect(() => void pushActive().then(setOn), []);
+  useEffect(
+    () =>
+      void pushActive().then((active) => {
+        setOn(active);
+        // Registrera telefonen på nytt varje gång appen öppnas. iPhone byter ibland adress för notiser,
+        // och då kom inga notiser fram fast reglaget var på.
+        if (active) void enablePush(prefs);
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
   const save = async (p: PushPrefs, enable: boolean) => {
     setPrefs(p);
     try {
@@ -406,7 +416,7 @@ function Reminders() {
   return (
     <Section title="Påminnelser">
       <Card className="flex flex-col">
-        <Toggle label="Skicka påminnelser som notiser" sub={blocked ?? `Varje dag kl ${prefs.time} om det finns något att göra`} checked={on} onChange={(v) => !blocked && !busy && void save(prefs, v)} />
+        <Toggle label="Skicka påminnelser som notiser" sub={blocked ?? `Varje dag kl ${prefs.time}, och när en agent har jobbat eller svarat`} checked={on} onChange={(v) => !blocked && !busy && void save(prefs, v)} />
         {!blocked && (
           <>
             <Field label="Tid">
@@ -420,6 +430,22 @@ function Reminders() {
             <Toggle label="Utkast i godkännandekön" checked={prefs.kinds.inbox} onChange={(v) => void save({ ...prefs, kinds: { ...prefs.kinds, inbox: v } }, on)} />
             <Toggle label="Gamla plagg (måndagar)" checked={prefs.kinds.oldStock} onChange={(v) => void save({ ...prefs, kinds: { ...prefs.kinds, oldStock: v } }, on)} />
             <Toggle label="Bevakningar" checked={prefs.kinds.watch !== false} onChange={(v) => void save({ ...prefs, kinds: { ...prefs.kinds, watch: v } }, on)} />
+            <Toggle label="Agenterna (när de jobbat, svarat eller vill ha ditt ja)" checked={prefs.kinds.agents !== false} onChange={(v) => void save({ ...prefs, kinds: { ...prefs.kinds, agents: v } }, on)} />
+            {on && (
+              <button
+                type="button"
+                className="btn btn-soft mt-2 self-start"
+                disabled={busy}
+                onClick={async () => {
+                  setBusy(true);
+                  const err = await testPush();
+                  setBusy(false);
+                  toast(err ?? 'Testnotis skickad. Den ska dyka upp om några sekunder.', err ? 'error' : 'ok');
+                }}
+              >
+                Skicka testnotis
+              </button>
+            )}
           </>
         )}
       </Card>

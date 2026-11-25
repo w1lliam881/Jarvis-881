@@ -1,4 +1,4 @@
-import type { AgentRun } from '../domain/agents';
+import type { AgentMessage, AgentRun, ChatThread } from '../domain/agents';
 import { isBalanced } from '../domain/ledger';
 import type { ChangeLogEntry, CollectionName, Dataset, GameState, Settings, Voucher } from '../domain/types';
 
@@ -42,6 +42,12 @@ export interface Backend {
   presence?: (cb: (list: PresenceInfo[]) => void) => () => void;
   /** Agenternas körningar (Agentbyn). Finns bara med Supabase. */
   agentRuns?: (limit: number) => Promise<AgentRun[]>;
+  /** Chatten med agenterna (telefonen i husen och gruppchatten). Finns bara med Supabase. */
+  agentChat?: {
+    list: (limit: number) => Promise<AgentMessage[]>;
+    send: (thread: ChatThread, body: string) => Promise<void>;
+    decide: (id: string, status: 'godkänd' | 'avvisad') => Promise<void>;
+  };
   /** Introduktionen första gången man loggar in (sparas på kontot, gäller alla enheter). */
   intro?: { seen: boolean; name: string; markSeen: () => Promise<void> };
   /** Inloggad användares e-post (Supabase). */

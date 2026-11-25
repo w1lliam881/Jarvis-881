@@ -3,6 +3,7 @@ import { Bookmark, Check, Copy, Plus, Trash2, X } from 'lucide-react';
 import { useData } from '../../data/store';
 import { deleteSearch, saveWatch, buyCandidate, deleteCandidate, deleteGoal, deleteVideo, saveCandidate, saveGoal, saveSearch, saveVideo, setIdea, updateSettings } from '../../data/actions';
 import { evaluateCandidate, maxPriceFor, orderPlan, rates } from '../../domain/calc';
+import { growthBudget, SEASON_LABEL, SEASON_TIP } from '../../domain/season';
 import { buildSearch } from '../../domain/doorzo';
 import { watchView } from '../../domain/watch';
 import { todayISO } from '../../domain/dates';
@@ -205,6 +206,7 @@ function Framtid() {
   const ds = useData();
   const today = todayISO();
   const plan = useMemo(() => orderPlan(ds, today), [ds, today]);
+  const grow = useMemo(() => growthBudget(ds, today), [ds, today]);
   const H = useMemo(() => history(ds, today), [ds, today]);
   const s = ds.settings;
   const goals = live(ds.goals);
@@ -213,6 +215,31 @@ function Framtid() {
   const [gKind, setGKind] = useState<'monthRevenue' | 'monthProfit' | 'monthSold' | 'manual'>('monthRevenue');
   return (
     <div className="desk-flow">
+      <Section title="Säsong och storlek på nästa drop">
+        <Card className="flex flex-col gap-3">
+          <div className="flex items-center gap-2">
+            <Pill tone="lo">{SEASON_LABEL[plan.season]}</Pill>
+            <span className="text-[13px] text-muted">Säsongen plaggen säljs i, ungefär en månad framåt</span>
+          </div>
+          <p className="m-0 text-[14px]">{SEASON_TIP[plan.season]}</p>
+          <div className="grid grid-cols-2 gap-2.5">
+            <Stat label="Senaste dropen kostade" value={kr(grow.lastCost)} />
+            <Stat label="Förslag nästa drop" value={<span className="text-pos">{kr(grow.suggested)}</span>} sub={grow.recent.length ? `${grow.growthPct > 0 ? '+' : ''}${grow.growthPct} %` : undefined} />
+            {grow.reserve != null && <Stat label="Kvar som buffert" value={kr(grow.reserve)} sub="av din budget" />}
+            {plan.avgLanded > 0 && grow.suggested > 0 && <Stat label="Ungefär antal plagg" value={`${Math.floor(grow.suggested / plan.avgLanded)} st`} sub={`snitt ${kr(plan.avgLanded)}/st hem`} />}
+          </div>
+          <ul className="m-0 flex list-disc flex-col gap-1 pl-5 text-[13px] text-muted">
+            {grow.reasons.map((r) => (
+              <li key={r}>{r}</li>
+            ))}
+          </ul>
+          {grow.recent.length > 1 && (
+            <div className="text-[12px] text-muted">
+              Senaste droppen: {grow.recent.map((d) => `${d.name} ${kr(d.cost)} (${d.count} st, ${Math.round(d.sellThrough * 100)} % sålt)`).join(' · ')}
+            </div>
+          )}
+        </Card>
+      </Section>
       <Section title="Budget för nästa drop">
         <Card className="flex flex-col gap-3">
           <Field label="Budget" hint="Lämna tomt för att räkna antal utifrån försäljningstakten istället.">
@@ -256,7 +283,7 @@ function Framtid() {
           </table>
         </Card>
         <p className="m-0 px-1 text-[12px] text-muted">
-          Maxpris = högsta inköpspris före frakt och tull som ger minst {s.minRoiPct} % ROI och {kr(s.minProfit)} vinst vid ditt snittpris i kategorin. Frakt {Math.round(rates(H, s).shippingPerKg / 100)} kr/kg. Fördelningen viktas efter vinst och hur stor andel som säljs. Jarvis sätter aldrig pris på enskilda plagg.
+          Maxpris = högsta inköpspris före frakt och tull som ger minst {s.minRoiPct} % ROI och {kr(s.minProfit)} vinst vid ditt snittpris i kategorin. Frakt {Math.round(rates(H, s).shippingPerKg / 100)} kr/kg. Fördelningen viktas efter vinst, hur stor andel som säljs och säsongen ({SEASON_LABEL[plan.season].toLowerCase()}). Jarvis sätter aldrig pris på enskilda plagg.
         </p>
       </Section>
       <details className="card p-4">

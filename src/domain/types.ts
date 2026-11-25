@@ -161,6 +161,14 @@ export interface VideoPost extends BaseRecord {
   itemIds: ID[];
   ideaKey: string | null;
   note: string;
+  /** Länk till klippet, t.ex. https://www.tiktok.com/@konto/video/123 */
+  url?: string;
+  /** Det du kryssade i om hur klippet är gjort (se FORMATS i domain/tiktok.ts). */
+  formats?: string[];
+  /** Hur klippet börjar (se HOOKS i domain/tiktok.ts). */
+  hook?: string;
+  /** Miniatyrbild från TikTok, om den gick att hämta. */
+  thumb?: string;
 }
 
 export const VIDEO_TYPES = ['Unboxing', 'Process', 'Tips', 'Styling', 'Berättelse', 'Trend/humor', 'Försäljning', 'Bakom kulisserna'] as const;
