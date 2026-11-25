@@ -521,7 +521,9 @@ function HouseView({ def, data }: { def: AgentDef; data: Data }) {
     const t = setInterval(() => setFrame((f) => (f + 1) % 2), 600);
     return () => clearInterval(t);
   }, []);
-  useEffect(() => window.scrollTo(0, 0), [def.id]);
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [def.id]);
 
   return (
     <>

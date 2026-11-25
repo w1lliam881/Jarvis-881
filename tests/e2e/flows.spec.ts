@@ -110,4 +110,11 @@ test('agentbyn visar fem hus och ett hus inifrån', async ({ page }) => {
   await expect(page.getByRole('heading', { name: /Reminder/ })).toBeVisible();
   await expect(page.getByText('Beställ', { exact: true })).toBeVisible();
   await expect(page.getByText('/reminder', { exact: true })).toBeVisible();
+  // Tillbaka till byn får inte krascha (useEffect som returnerade ett Promise)
+  await page.getByText('Tillbaka till byn').click();
+  await expect(page.getByRole('heading', { name: 'Här bor dina agenter' })).toBeVisible();
+  await page.getByRole('link', { name: /Advisor/ }).first().click();
+  await page.goBack();
+  await expect(page.getByRole('heading', { name: 'Här bor dina agenter' })).toBeVisible();
+  await expect(page.getByText('Något gick fel')).toHaveCount(0);
 });
