@@ -83,7 +83,7 @@ function steps(name: string): Step[] {
       title: 'Välj ett lösenord',
       body: (
         <>
-          <p>Sista steget. Du kom in med en länk i mejlet. Välj ett lösenord nu, så loggar du in med e-post och lösenord nästa gång, även i appen på hemskärmen.</p>
+          <p>Sista steget. Välj ett eget lösenord nu, så att bara du vet det. Sedan loggar du in med e-post och ditt lösenord, även i appen på hemskärmen.</p>
           <p>Du hittar det under <b>Mer → Inställningar → Lösenord</b>. Minst 8 tecken.</p>
         </>
       ),
