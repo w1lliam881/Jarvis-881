@@ -1,4 +1,4 @@
-// Direktlänkar till sajterna du jobbar på. Loggan hämtas från sajten själv (dess ikon), med bokstaven som reserv.
+// Direktlänkar till dina profiler på sajterna (Doorzo: startsidan). Loggan hämtas från sajten själv (dess ikon), med bokstaven som reserv.
 import { useState } from 'react';
 import { cx } from './ui';
 
@@ -12,9 +12,9 @@ export interface Site {
 }
 
 export const SITES: Site[] = [
-  { id: 'vinted', name: 'Vinted', url: 'https://www.vinted.se', icon: 'https://www.vinted.se/favicon.ico', color: '#09B1BA', ink: '#FFFFFF' },
-  { id: 'plick', name: 'Plick', url: 'https://plick.se', icon: 'https://plick.se/favicon.ico', color: '#111111', ink: '#FFFFFF' },
-  { id: 'tiktok', name: 'TikTok', url: 'https://www.tiktok.com', icon: 'https://www.tiktok.com/favicon.ico', color: '#010101', ink: '#25F4EE' },
+  { id: 'vinted', name: 'Vinted', url: 'https://www.vinted.se/member/197017030', icon: 'https://www.vinted.se/favicon.ico', color: '#09B1BA', ink: '#FFFFFF' },
+  { id: 'plick', name: 'Plick', url: 'https://plick.se/profiler/w1lliam881', icon: 'https://plick.se/favicon.ico', color: '#111111', ink: '#FFFFFF' },
+  { id: 'tiktok', name: 'TikTok', url: 'https://www.tiktok.com/@w1lliam881', icon: 'https://www.tiktok.com/favicon.ico', color: '#010101', ink: '#25F4EE' },
   { id: 'doorzo', name: 'Doorzo', url: 'https://www.doorzo.com', icon: 'https://www.doorzo.com/favicon.ico', color: '#FF6A00', ink: '#FFFFFF' },
 ];
 

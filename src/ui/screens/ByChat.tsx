@@ -264,7 +264,7 @@ export function PhoneButton({ def, runs, xmas }: { def: AgentDef; runs: AgentRun
   );
 }
 
-function Phone({ def, runs, chat, onClose, xmas }: { def: AgentDef; runs: AgentRun[]; chat: Chat; onClose: () => void; xmas: boolean }) {
+export function Phone({ def, runs, chat, onClose, xmas }: { def: AgentDef; runs: AgentRun[]; chat: Chat; onClose: () => void; xmas: boolean }) {
   const [leaving, setLeaving] = useState(false);
   const list = useRef<HTMLDivElement>(null);
   const now = new Date();
@@ -299,7 +299,7 @@ function Phone({ def, runs, chat, onClose, xmas }: { def: AgentDef; runs: AgentR
           <span className="min-w-0 flex-1">
             <span className="block text-[15px] font-semibold text-[#E9EEEA]">{def.name}</span>
             <span className="block text-[11px]" style={{ color: MUTED }}>
-              {def.house} · {waiting ? `svarar ${nextReply ? whenText(nextReply, now) : 'snart'}` : 'svarar varannan timme 08–22'}
+              {def.house} · {waiting ? `svarar ${nextReply ? whenText(nextReply, now) : 'snart'}` : 'svarar inom 30 min, dygnet runt'}
             </span>
           </span>
         </>
@@ -324,7 +324,7 @@ function Phone({ def, runs, chat, onClose, xmas }: { def: AgentDef; runs: AgentR
             <div className="font-pixel mb-2 text-[9px]" style={{ color: SUN }}>
               Ny kontakt
             </div>
-            Skriv vad du undrar. {def.name} läser och svarar nästa gång agenterna går sin runda, varannan timme mellan 08 och 22. Ibland frågar {def.name} dig något här.
+            Skriv vad du undrar. {def.name} läser och svarar inom en halvtimme, dygnet runt. Ibland frågar {def.name} dig något här.
           </div>
         )}
         {lines.map((l) => (

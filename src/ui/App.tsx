@@ -16,6 +16,7 @@ import { Welcome } from './screens/Welcome';
 import { Sidebar } from './components/Sidebar';
 import { Intro } from './components/Intro';
 import { QuickFab } from './components/QuickFab';
+import { MorningBriefing } from './components/MorningBriefing';
 import { deviceUser } from './Boot';
 import { recordVisit } from '../data/actions';
 import { meKey } from './me';
@@ -127,6 +128,7 @@ export function App() {
       </nav>
       <QuickSheet kind={quick} setKind={setQuick} />
       <Intro />
+      <MorningBriefing enabled={ready && (store().backend.intro?.seen ?? true)} />
     </div>
   );
 }

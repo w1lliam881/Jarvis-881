@@ -104,4 +104,6 @@ Acceptans: försäljning under 15 sekunder (e2e-test), prisändring uppdaterar v
 - ✅ Scout borttagen. Economizer i Banken (Sälj, Lager, Ekonomi). Coach Claude i Gymmet ger betyg varje söndag 18:30 (tabellen agent_training).
 - ✅ Anslagstavlan på torget: veckans mål och uppgifter att bocka av, och Rådets tips från Noter
 - ✅ Agenterna äger sidor (knappen "ansvarar · be om något"), Advisor är navet, chattstil, tuffare och kritiska
-- ✅ Chattrundan varje timme 08:15–23:15, veckomöte fredagar 15:00, Noter skriver Rådets tips på kvällen
+- ✅ Chattrundan dygnet runt var 30:e minut, veckomöte fredagar 15:00, Noter skriver Rådets tips på kvällen
+- ✅ Morgonbriefing från Advisor fälls upp som chatt när du öppnar Jarvis (en gång per dag)
+- ✅ Snabbåtkomsten länkar till dina egna profiler på TikTok, Plick och Vinted

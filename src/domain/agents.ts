@@ -437,12 +437,12 @@ export const dmThread = (id: AgentId): ChatThread => `dm:${id}`;
  * Agenterna körs i schemalagda rundor i Claude (molnmiljön Jarvis-881):
  * morgonrundan 08:20 (Reminder, Planner, Advisor, Economizer, Reviewer mån/ons/fre), lunchrundan 12:40 (Reminder och byrådet),
  * kvällsrundan 20:40 (Marketer, Planner, Noter med rådets tips), veckomötet fredag 15:00, träningen söndag 18:30
- * och chattrundan varje timme 08:15–23:15.
+ * och chattrundan dygnet runt var 30:e minut (:15 och :45).
  */
 export const CHAT_SCHEDULE: AgentSchedule = {
   days: EVERY_DAY,
-  times: Array.from({ length: 16 }, (_, i) => [8 + i, 15] as [number, number]),
-  label: 'Varje timme 08–23',
+  times: Array.from({ length: 48 }, (_, i) => [Math.floor(i / 2), i % 2 ? 45 : 15] as [number, number]),
+  label: 'Dygnet runt, var 30:e minut',
 };
 
 /** Veckomötet i byrådet: fredagar kl 15. */
@@ -450,6 +450,20 @@ export const MEETING_SCHEDULE: AgentSchedule = { days: [5], times: [[15, 0]], la
 
 /** Byrådet: agenterna pratar med varandra i gruppchatten en gång om dagen. */
 export const COUNCIL_SCHEDULE: AgentSchedule = { days: EVERY_DAY, times: [[12, 40]], label: 'Varje dag 12:40' };
+
+/**
+ * Dagens morgonbriefing från Advisor: en plan (kind = plan) i dm:advisor skickad idag (svensk tid).
+ * Visas som en popup första gången du öppnar Jarvis efter att den kommit.
+ */
+export function todaysBriefing(msgs: AgentMessage[], now: Date = new Date()): AgentMessage | null {
+  const t = stockholmParts(now);
+  const same = (iso: string) => {
+    const p = stockholmParts(new Date(iso));
+    return p.y === t.y && p.mo === t.mo && p.d === t.d;
+  };
+  const list = msgs.filter((m) => m.thread === 'dm:advisor' && m.sender === 'advisor' && m.kind === 'plan' && same(m.at)).sort((a, b) => (a.at < b.at ? 1 : -1));
+  return list[0] ?? null;
+}
 
 /** Dina meddelanden i en tråd som ingen agent har svarat på än. */
 export function unanswered(msgs: AgentMessage[], thread: ChatThread): AgentMessage[] {

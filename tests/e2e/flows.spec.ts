@@ -103,6 +103,9 @@ test('startsidan hälsar, visar streak och snabbknappen har sajterna', async ({ 
   await expect(page.getByRole('button', { name: 'Ny registrering' })).toHaveCount(0);
   await page.getByRole('button', { name: /^Snabbval/ }).click();
   for (const s of ['Vinted', 'Plick', 'TikTok', 'Doorzo']) await expect(page.getByRole('menuitem', { name: `Öppna ${s}` })).toBeVisible();
+  await expect(page.getByRole('menuitem', { name: 'Öppna TikTok' })).toHaveAttribute('href', 'https://www.tiktok.com/@w1lliam881');
+  await expect(page.getByRole('menuitem', { name: 'Öppna Plick' })).toHaveAttribute('href', 'https://plick.se/profiler/w1lliam881');
+  await expect(page.getByRole('menuitem', { name: 'Öppna Vinted' })).toHaveAttribute('href', 'https://www.vinted.se/member/197017030');
   await page.keyboard.press('Escape');
   await expect(page.getByRole('menuitem', { name: 'Öppna Vinted' })).toHaveCount(0);
   // Spelet: dagens kista och ett sidouppdrag som läggs i Att göra
@@ -112,6 +115,26 @@ test('startsidan hälsar, visar streak och snabbknappen har sajterna', async ({ 
   await page.getByRole('button', { name: /^Lägg ".+" i Att göra$/ }).first().click();
   await expect(page.getByText('Lagt i Att göra. Bocka av där när det är gjort.')).toBeVisible();
   await expect(page.getByText('Något gick fel')).toHaveCount(0);
+});
+
+test('morgonbriefingen från Advisor fälls upp en gång per dag', async ({ page }) => {
+  await importV14(page);
+  await page.evaluate(() =>
+    localStorage.setItem(
+      'jarvis-agent-chat',
+      JSON.stringify([{ id: 'brief1', at: new Date().toISOString(), thread: 'dm:advisor', sender: 'advisor', author: null, body: 'Morgonbriefing: 2 sålda igår. Beställ juldroppen idag.', kind: 'plan', status: null, replyTo: null }]),
+    ),
+  );
+  await page.reload();
+  const phone = page.getByRole('dialog', { name: 'Telefonen: chatt med Advisor' });
+  await expect(phone).toBeVisible();
+  await expect(phone.getByText(/Beställ juldroppen idag/)).toBeVisible();
+  await phone.getByRole('button', { name: 'Lägg ner telefonen' }).first().click();
+  await expect(phone).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole('heading', { name: /^Hej/ })).toBeVisible();
+  await page.waitForTimeout(800);
+  await expect(phone).toHaveCount(0);
 });
 
 test('agentbyn utan jul: nio hus och ett hus inifrån', async ({ page }) => {
