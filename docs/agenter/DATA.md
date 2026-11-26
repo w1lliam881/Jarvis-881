@@ -21,6 +21,7 @@ Kör **bara `select`**. Aldrig `insert`, `update`, `delete`, `drop`, `alter` ell
 - `changelog(id, at, by, collection, record_id, action, summary, before, after)`: varje ändring, vem och när. `by` är e-post eller namn.
 - `presence(email, last_seen)`: när var och en senast var inne.
 - `backups`: säkerhetskopior. Läs inte `data`-kolumnen, den är stor.
+- `agent_training(week, agent, score, good, improve, goal)`: Coach Claudes veckobetyg (1–10) och träningsmål per agent.
 
 ## Samlingar (`records.collection`) och fält i `data`
 
@@ -61,6 +62,19 @@ select at, by, collection, action, summary from changelog where at > now() - int
 - Föreslå aldrig ett pris på ett enskilt plagg. Kategorinivå (snitt, maxpris) går bra.
 - Bokföringen är ett stöd. Påminn om att en redovisningskunnig bör granska den när du ger råd om bokföring.
 - Inga betalda API:er och inga nya kostnader.
+- **Var tuff och kritisk.** Håll inte med för att vara snäll. Säg emot William och de andra agenterna när siffrorna säger något annat, och föreslå något bättre.
+- **Kort.** I chatten: chattstil enligt CHATT.md. I rapporter: det viktigaste först, inga utfyllnadsmeningar.
+- **Advisor är navet.** Förslag till William kommenteras av Advisor innan han tar ställning (CHATT.md).
+
+## Träningen (alla agenter)
+
+Coach Claude tränar agenterna varje söndag i Gymmet och sätter ett träningsmål för veckan. Läs ditt senaste mål innan du börjar jobba, och följ det:
+
+```sql
+select week, score, improve, goal from agent_training where agent = 'DITT_NAMN' order by week desc limit 1
+```
+
+Finns inget mål än: jobba som vanligt.
 
 ## Spara ditt arbete (alla agenter)
 

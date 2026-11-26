@@ -529,7 +529,7 @@ export async function recordVisit(who: string): Promise<void> {
     }
   }
   const next = withVisit(ds.game, who, today, seed);
-  if (next) await s.save('Inne idag', () => [{ game: next }], { undoable: false });
+  if (next) await s.save('Inne idag', () => [{ game: next }], { undoable: false, quiet: true });
 }
 
 export function openDailyChest(who: string, streak: number): Promise<boolean> {

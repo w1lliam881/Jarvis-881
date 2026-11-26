@@ -119,7 +119,7 @@ function Note({ pin, title, children }: { pin: number; title: string; children: 
   return (
     <section className="relative p-4 pt-5 shadow-[3px_4px_0_rgba(0,0,0,.25)]" style={{ background: PAPER, color: INK, transform: `rotate(${[-0.6, 0.5, -0.3][pin % 3]}deg)` }}>
       <i className="absolute left-1/2 top-1.5 block h-3 w-3 -translate-x-1/2 rounded-full" style={{ background: PIN[pin % PIN.length], boxShadow: '0 1px 0 rgba(0,0,0,.4)' }} aria-hidden />
-      <h2 className="font-pixel m-0 mb-3 text-[11px] uppercase">{title}</h2>
+      <h2 className="m-0 mb-3 text-[13px] font-bold uppercase tracking-[0.08em]">{title}</h2>
       {children}
     </section>
   );

@@ -434,12 +434,19 @@ export interface AgentMessage {
 export const dmThread = (id: AgentId): ChatThread => `dm:${id}`;
 
 /**
- * Agenterna körs i fyra schemalagda rundor i Claude (molnmiljön Jarvis-881):
- * morgonrundan 08:20 (Reminder, Planner, Advisor, Reviewer mån/ons/fre), lunchrundan 12:40 (Reminder och byrådet),
- * kvällsrundan 20:40 (Marketer, Planner, Noter) och chattrundan varannan timme 10:15–22:15.
- * Chattsvaren: på det du skrivit i telefonerna svarar agenterna i chattrundan och i morgonrundan.
+ * Agenterna körs i schemalagda rundor i Claude (molnmiljön Jarvis-881):
+ * morgonrundan 08:20 (Reminder, Planner, Advisor, Economizer, Reviewer mån/ons/fre), lunchrundan 12:40 (Reminder och byrådet),
+ * kvällsrundan 20:40 (Marketer, Planner, Noter med rådets tips), veckomötet fredag 15:00, träningen söndag 18:30
+ * och chattrundan varje timme 08:15–23:15.
  */
-export const CHAT_SCHEDULE: AgentSchedule = { days: EVERY_DAY, times: [[8, 20], [10, 15], [12, 15], [14, 15], [16, 15], [18, 15], [20, 15], [22, 15]], label: 'Varannan timme 08–22' };
+export const CHAT_SCHEDULE: AgentSchedule = {
+  days: EVERY_DAY,
+  times: Array.from({ length: 16 }, (_, i) => [8 + i, 15] as [number, number]),
+  label: 'Varje timme 08–23',
+};
+
+/** Veckomötet i byrådet: fredagar kl 15. */
+export const MEETING_SCHEDULE: AgentSchedule = { days: [5], times: [[15, 0]], label: 'Fredagar 15:00' };
 
 /** Byrådet: agenterna pratar med varandra i gruppchatten en gång om dagen. */
 export const COUNCIL_SCHEDULE: AgentSchedule = { days: EVERY_DAY, times: [[12, 40]], label: 'Varje dag 12:40' };

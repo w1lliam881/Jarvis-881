@@ -94,3 +94,14 @@ Acceptans: försäljning under 15 sekunder (e2e-test), prisändring uppdaterar v
 - ✅ Marketer ser klippen: 6 bildrutor tas ur videon i webbläsaren och sparas i agent_media
 - ✅ Agenterna kan ställa frågor med svarsknappar
 - ✅ Agentbyn: större med fler gator, bageri, kyrka, torghandel och hamn; snö som faller och lägger sig i drivor 20 nov–julafton, jultema och tyst julmusik (går att stänga av); byrådet som telefon högt upp
+
+## Spelet, snabbknappen, Economizer, Coach och anslagstavlan (2026-11-26) ✅
+
+- ✅ Startsidan: "Hej namn!", streakikon uppe till höger (länk till spelet), loggor till Vinted, Plick, TikTok och Doorzo. "Ny registrering" borttagen.
+- ✅ Snabbknappen nere till höger rullar upp Sålt något, Nytt inköp och sajterna
+- ✅ Snabbsälj: bara pris och plattform (senaste plattformen kommer ihåg). Produkt-ID fortsätter serien automatiskt vid inköp.
+- ✅ Spelet: streak per person efter besök (felet med 0 dagar rättat), streakbonusar, dagens kista, sidouppdrag till Att göra (t.ex. kolla Doorzo), XP för klara uppgifter, säsongsteman
+- ✅ Scout borttagen. Economizer i Banken (Sälj, Lager, Ekonomi). Coach Claude i Gymmet ger betyg varje söndag 18:30 (tabellen agent_training).
+- ✅ Anslagstavlan på torget: veckans mål och uppgifter att bocka av, och Rådets tips från Noter
+- ✅ Agenterna äger sidor (knappen "ansvarar · be om något"), Advisor är navet, chattstil, tuffare och kritiska
+- ✅ Chattrundan varje timme 08:15–23:15, veckomöte fredagar 15:00, Noter skriver Rådets tips på kvällen
