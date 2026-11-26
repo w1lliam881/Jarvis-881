@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, Copy, Flame, Plus, Sparkles, Trash2 } from 'lucide-react';
 import { SiteLinks } from '../components/SiteLinks';
+import { OwnerChip } from '../components/OwnerChip';
 import { useData, useStore } from '../../data/store';
 import { addTask, addTasks, deleteTask, toggleTask } from '../../data/actions';
 import { addDays, daysInMonth, longDate, monthName, nextMonth, prevMonth, todayISO, weekStart, weekdayShort } from '../../domain/dates';
@@ -238,7 +239,7 @@ function Tasks({ ds }: { ds: Dataset }) {
     if (await addTask(text.trim())) setText('');
   };
   return (
-    <Section title="Att göra" action={<span className="text-muted">{open.length} kvar</span>}>
+    <Section id="att-gora" title="Att göra" action={<span className="flex items-center gap-2"><span className="text-muted">{open.length} kvar</span><OwnerChip agent="planner" className="hidden sm:inline-flex" /></span>}>
       <Card pad={false}>
         <div className="flex gap-2 border-b border-line-2 p-3">
           <input className="field" placeholder="Ny uppgift…" value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && add()} aria-label="Ny uppgift" />

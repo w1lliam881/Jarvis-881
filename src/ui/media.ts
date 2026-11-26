@@ -58,7 +58,7 @@ export async function videoFrames(file: File, count = 6, max = 480): Promise<{ d
   }
 }
 
-/** Bilderna för en sak (en Scout-sökning eller ett klipp). Fungerar bara med Supabase. */
+/** Bilderna för en sak (bildrutor ur ett klipp). Fungerar bara med Supabase. */
 export function useMedia(kind: MediaKind, refId: string | null) {
   const media = store().backend.media;
   const [items, setItems] = useState<MediaItem[]>([]);

@@ -13,7 +13,7 @@ och genomförs aldrig förrän William tryckt Godkänn i appen. Kräver molnmilj
 """
 import argparse, json, subprocess, sys
 
-AGENTS = ['builder', 'reviewer', 'advisor', 'reminder', 'noter', 'planner', 'marketer', 'scout']
+AGENTS = ['builder', 'reviewer', 'advisor', 'reminder', 'noter', 'planner', 'marketer', 'economizer', 'coach']
 URL = 'https://api.supabase.com/v1/projects/vyvzsurwnjuiwdmdccir/database/query'
 
 

@@ -208,14 +208,6 @@ export interface SearchSaved extends BaseRecord {
   category?: Category | null;
   /** Eget maxpris i ören. Null = räknas ut från dina krav och din historik. */
   maxPrice?: Ore | null;
-  /** Scout: sökningen används av agenten Scout varje morgon */
-  scout?: boolean;
-  /** Scout: pausad sökning söks inte */
-  paused?: boolean;
-  /** Scout: storlek eller mått att leta efter, t.ex. "W32" */
-  size?: string;
-  /** Scout: vad du vill ha och inte ha, med egna ord */
-  note?: string;
 }
 
 export type DraftStatus = 'väntar' | 'godkänd' | 'avvisad';

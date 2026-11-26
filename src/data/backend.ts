@@ -40,6 +40,8 @@ export interface Backend {
   readonly kind: 'local' | 'memory' | 'supabase';
   /** Vem som är inne och när de senast var aktiva (bara när data delas, dvs. Supabase). */
   presence?: (cb: (list: PresenceInfo[]) => void) => () => void;
+  /** Coachens betyg för agenterna (Gymmet). Finns bara med Supabase. */
+  agentTraining?: (limit: number) => Promise<TrainingRow[]>;
   /** Agenternas körningar (Agentbyn). Finns bara med Supabase. */
   agentRuns?: (limit: number) => Promise<AgentRun[]>;
   /** Chatten med agenterna (telefonen i husen och gruppchatten). Finns bara med Supabase. */
@@ -48,7 +50,7 @@ export interface Backend {
     send: (thread: ChatThread, body: string, replyTo?: string | null) => Promise<void>;
     decide: (id: string, status: 'godkänd' | 'avvisad') => Promise<void>;
   };
-  /** Bilder till agenterna (referensbilder för Scout, bildrutor ur klipp för Marketer). Bara med Supabase. */
+  /** Bilder till agenterna (bildrutor ur klipp för Marketer). Bara med Supabase. */
   media?: {
     list: (kind: MediaKind, refId: string) => Promise<MediaItem[]>;
     add: (kind: MediaKind, refId: string, images: { data: string; note?: string }[]) => Promise<void>;
@@ -128,4 +130,15 @@ export interface MediaItem {
   idx: number;
   data: string;
   note: string;
+}
+
+export interface TrainingRow {
+  id: string;
+  at: string;
+  week: string;
+  agent: string;
+  score: number;
+  good: string;
+  improve: string;
+  goal: string;
 }

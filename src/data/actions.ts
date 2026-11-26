@@ -430,16 +430,6 @@ export function saveWatch(w: { query: string; category: Category | null; maxPric
   });
 }
 
-export function saveScoutSearch(w: { query: string; category: Category | null; maxPrice: Ore | null; size: string; note: string; paused?: boolean }, id?: string): Promise<string | null> {
-  const newId = id ?? baseRecord().id;
-  return store()
-    .save(id ? 'Scout-sökning ändrad' : 'Scout-sökning sparad', (ds) => {
-      const cur = id ? find(ds.searches, id) : undefined;
-      return [{ collection: 'searches', record: (cur ? { ...cur, ...w, scout: true } : { ...baseRecord(newId), ...w, scout: true }) as never }];
-    })
-    .then((ok) => (ok ? newId : null));
-}
-
 export function deleteSearch(id: string): Promise<boolean> {
   return store().save('Borttagen', (ds) => {
     const x = find(ds.searches, id);

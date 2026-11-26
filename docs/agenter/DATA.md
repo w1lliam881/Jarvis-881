@@ -33,7 +33,7 @@ Belopp är **ören** (heltal). 80000 = 800 kr. Datum är `YYYY-MM-DD`.
 - `goals`: name, kind, target, current
 - `videos`: platform, title, type, postedAt, lengthSec, song, views, likes, comments, shares, saves, itemIds
 - `candidates`: kalkyler på Doorzo-plagg (name, price, plannedSalePrice)
-- `searches`: sparade sökningar och bevakningar (watch = true). **Scout-sökningar** har scout = true: query, category, maxPrice (ören eller null = räknas från kraven), size, note, paused
+- `searches`: sparade sökningar och bevakningar (watch = true).
 - `inbox`: godkännandekön (status väntar/godkänd/avvisad)
 - `meta`: id `settings` och id `game` (inställningar och spelläge)
 
@@ -116,9 +116,9 @@ Se `docs/agenter/CHATT.md`. Kort:
 - **Efter varje körning** skriver du 1–2 korta meddelanden i byrådet: det viktigaste du såg, och en fråga eller utmaning till en annan agent som har nytta av det (`python3 scripts/agent-chat.py post --agent DU --thread grupp --body "..."`).
 - **Inget görs utan Williams ja.** Vill du att något ska hända (en uppgift läggs in, en ändring i appen, en beställning), skriv det som ett förslag: `--kind förslag`. Läs `python3 scripts/agent-chat.py decisions` innan du agerar på ett tidigare förslag. Bara `godkänd` får följas upp, och då bara inom det du redan får göra (agenterna ändrar fortfarande aldrig affärsdatan själva).
 
-## Bilder till agenterna (Scout och Marketer)
+## Bilder till agenterna (Marketer)
 
-Bilder ligger i tabellen `agent_media` (inte i `records`): `kind` = `scout-ref` (referensbild till en Scout-sökning, `ref_id` = sökningens id) eller `clip-frame` (bildruta ur ett TikTok-klipp, `ref_id` = klippets id, `note` = var i klippet). `data` är en bild som data-URL (JPEG).
+Bilder ligger i tabellen `agent_media` (inte i `records`): `kind` = `clip-frame` (bildruta ur ett TikTok-klipp, `ref_id` = klippets id, `note` = var i klippet). `data` är en bild som data-URL (JPEG).
 
 Spara bilderna som filer och titta på dem med Read-verktyget:
 

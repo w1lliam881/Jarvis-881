@@ -3,7 +3,7 @@ import type { AgentMessage, AgentRun, ChatThread } from '../domain/agents';
 import { isIOSDevice } from '../domain/device';
 import { defaultGame, defaultSettings, emptyDataset } from '../domain/defaults';
 import { COLLECTIONS, type ChangeLogEntry, type Dataset } from '../domain/types';
-import { ConflictError, datasetCounts, validateMutations, type Backend, type BackupInfo, type MediaItem, type MediaKind, type Mutation, type PresenceInfo } from './backend';
+import { ConflictError, datasetCounts, validateMutations, type Backend, type BackupInfo, type MediaItem, type MediaKind, type Mutation, type TrainingRow, type PresenceInfo } from './backend';
 
 let client: SupabaseClient | null = null;
 function sb(): SupabaseClient {
@@ -272,6 +272,12 @@ export class SupabaseBackend implements Backend {
       const { error } = await sb().from('agent_media').delete().eq('id', id);
       if (error) throw new Error(`Kunde inte ta bort bilden: ${error.message}`);
     },
+  };
+
+  agentTraining = async (limit: number): Promise<TrainingRow[]> => {
+    const { data, error } = await sb().from('agent_training').select('*').order('at', { ascending: false }).limit(limit);
+    if (error) throw new Error(error.message);
+    return (data ?? []) as TrainingRow[];
   };
 
   agentRuns = async (limit: number): Promise<AgentRun[]> => {

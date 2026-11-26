@@ -10,7 +10,7 @@ async function importV14(page: Page) {
   await page.setInputFiles('input[type=file]', fixture);
   await expect(page.getByText('Alla siffror stämmer mot v14')).toBeVisible();
   await page.getByRole('button', { name: 'Godkänn och importera' }).click();
-  await expect(page.getByRole('heading', { name: 'Idag' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /^Hej/ })).toBeVisible();
   await expect(page.getByText(/Bokföringen avstämd efter import/)).toBeVisible();
 }
 

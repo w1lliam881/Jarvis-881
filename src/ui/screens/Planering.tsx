@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { OwnerChip } from '../components/OwnerChip';
 import { Bookmark, Check, Copy, Plus, Trash2, X } from 'lucide-react';
 import { useData } from '../../data/store';
 import { deleteSearch, saveWatch, buyCandidate, deleteCandidate, deleteGoal, deleteVideo, saveCandidate, saveGoal, saveSearch, saveVideo, setIdea, updateSettings } from '../../data/actions';
@@ -40,6 +41,7 @@ export function Planering({ route }: { route: Route }) {
         </div>
       </TopBand>
       <Page>
+        {(view === 'framtid' || view === 'marknad' || view === 'video') && <OwnerChip agent={view === 'framtid' ? 'planner' : 'marketer'} className="self-start" />}
         {view === 'kalkyl' && <Kalkyl />}
         {view === 'framtid' && <Framtid />}
         {view === 'doorzo' && <Doorzo />}
