@@ -1,6 +1,7 @@
 // Scouts inställningar i Hamnen: vad Scout ska leta efter på Doorzo, maxpris och referensbilder.
 import { useMemo, useRef, useState, type ReactNode } from 'react';
-import { ImagePlus, Pause, Play, Plus, Trash2 } from 'lucide-react';
+import { ExternalLink, ImagePlus, Pause, Play, Plus, Send, Trash2 } from 'lucide-react';
+import { watchView } from '../../domain/watch';
 import { deleteSearch, saveScoutSearch } from '../../data/actions';
 import { useData } from '../../data/store';
 import { maxPriceFor } from '../../domain/calc';
@@ -33,7 +34,7 @@ export function ScoutSettings() {
             Det här letar jag efter
           </h2>
           <p className="m-0 mt-1 text-[12px]" style={{ color: MUTED }}>
-            Scout söker på Doorzo varje morgon 07:40 efter de här. Referensbilder gör att jag känner igen rätt plagg, till exempel tvätt, passform eller detaljer.
+            Varje morgon 07:40 gör Scout färdiga söklänkar och bedömer fynden du lämnat, mot dina referensbilder och ditt maxpris. Referensbilder gör att Scout känner igen rätt plagg: tvätt, passform och detaljer.
           </p>
         </div>
         {!adding && (
@@ -46,6 +47,7 @@ export function ScoutSettings() {
       {list.map((s) => (
         <SearchCard key={s.id} s={s} />
       ))}
+      {list.length > 0 && <LeaveFind searches={list} />}
       {!list.length && !adding && (
         <p className="m-0 border-2 p-3 text-[13px]" style={{ borderColor: LINE, background: PANEL, color: MUTED }}>
           Inga sökningar än. Lägg till en så börjar Scout leta i morgon bitti.
@@ -182,6 +184,7 @@ function SearchCard({ s }: { s: SearchSaved }) {
         <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={(e) => void addImages(e.target.files).then(() => (e.target.value = ''))} />
       </div>
       {media.err && <p className="m-0 text-[12px] text-[#F4A08F]">{media.err}</p>}
+      <SearchLinks s={s} />
       <button type="button" onClick={() => setEdit(true)} className="self-start text-[13px] underline" style={{ color: MINT }}>
         Ändra sökningen
       </button>
@@ -197,3 +200,94 @@ function IconBtn({ label, onClick, children }: { label: string; onClick: () => v
   );
 }
 
+
+/** Färdiga söklänkar med japanska sökord och maxpris i yen. Inget hämtas automatiskt. */
+function SearchLinks({ s }: { s: SearchSaved }) {
+  const ds = useData();
+  const H = useMemo(() => history(ds, todayISO()), [ds]);
+  const v = watchView(s, H, ds.settings);
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="text-[12px]" style={{ color: MUTED }}>
+        Sök själv: {v.terms.slice(0, 3).map((t) => t.ja).join(' · ') || s.query}
+        {v.maxYen ? ` · max ${v.maxYen.toLocaleString('sv-SE')} yen` : ''}
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {v.links.map((l) => (
+          <a key={l.label} href={l.url} target="_blank" rel="noreferrer" className="flex min-h-[38px] items-center gap-1.5 border-2 px-2.5 text-[13px] text-[#E9EEEA]" style={{ borderColor: LINE }}>
+            <ExternalLink size={13} aria-hidden /> {l.label}
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Lämna ett fynd till Scout: en länk från Doorzo eller Mercari och/eller en skärmbild. Scout bedömer det nästa morgon. */
+function LeaveFind({ searches }: { searches: SearchSaved[] }) {
+  const [sid, setSid] = useState(searches[0]?.id ?? '');
+  const [link, setLink] = useState('');
+  const [text, setText] = useState('');
+  const [img, setImg] = useState('');
+  const media = useMedia('scout-fynd', sid || null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const send = async () => {
+    if (!link.trim() && !img) return toast('Klistra in en länk eller välj en skärmbild', 'error');
+    const ok = await media.add([{ data: img, note: [link.trim(), text.trim()].filter(Boolean).join('\n') }]);
+    if (ok) {
+      toast('Scout bedömer fyndet i morgon 07:40 och svarar i telefonen');
+      setLink('');
+      setText('');
+      setImg('');
+    }
+  };
+  if (!media.available) return null;
+  return (
+    <div className="flex flex-col gap-2.5 border-2 p-3" style={{ borderColor: LINE, background: PANEL }}>
+      <div>
+        <div className="text-[14px] font-semibold text-[#F4F1E6]">Hittat något? Låt Scout bedöma det</div>
+        <div className="text-[12px]" style={{ color: MUTED }}>
+          Klistra in länken från Doorzo eller Mercari, eller ta en skärmbild. Scout jämför med dina referensbilder, räknar hemkostnad mot maxpriset och svarar i telefonen.
+        </div>
+      </div>
+      <div className="grid gap-2 sm:grid-cols-[1fr_200px]">
+        <input className={field} style={fieldStyle} value={link} onChange={(e) => setLink(e.target.value)} placeholder="https://www.doorzo.com/… eller https://jp.mercari.com/item/…" inputMode="url" />
+        <select className={field} style={fieldStyle} value={sid} onChange={(e) => setSid(e.target.value)} aria-label="Vilken sökning gäller fyndet">
+          {searches.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.query}
+            </option>
+          ))}
+        </select>
+      </div>
+      <input className={field} style={fieldStyle} value={text} onChange={(e) => setText(e.target.value)} placeholder="Något Scout ska veta? (valfritt), t.ex. pris eller mått" />
+      <div className="flex flex-wrap items-center gap-2">
+        <button type="button" onClick={() => fileRef.current?.click()} className="flex min-h-[44px] items-center gap-1.5 border-2 px-3 text-[13px] text-[#E9EEEA]" style={{ borderColor: LINE }}>
+          <ImagePlus size={15} aria-hidden /> {img ? 'Byt skärmbild' : 'Skärmbild'}
+        </button>
+        {img && <img src={img} alt="Vald skärmbild" className="h-11 w-11 border-2 object-cover" style={{ borderColor: LINE }} />}
+        <input ref={fileRef} type="file" accept="image/*" hidden onChange={async (e) => { const f = e.target.files?.[0]; if (f) setImg(await downscaleImage(f, 900)); e.target.value = ''; }} />
+        <button type="button" disabled={media.busy} onClick={() => void send()} className="ml-auto flex min-h-[44px] items-center gap-1.5 border-2 px-4 text-[14px] font-semibold" style={{ background: MINT, color: INK, borderColor: INK }}>
+          <Send size={15} aria-hidden /> Lämna till Scout
+        </button>
+      </div>
+      {media.items.length > 0 && (
+        <div className="flex flex-col gap-1.5 border-t-2 pt-2" style={{ borderColor: LINE }}>
+          <div className="text-[12px]" style={{ color: MUTED }}>
+            Väntar på Scout ({media.items.length})
+          </div>
+          {media.items.map((m) => (
+            <div key={m.id} className="flex items-center gap-2 text-[13px]">
+              {m.data ? <img src={m.data} alt="" className="h-9 w-9 shrink-0 object-cover" /> : <ExternalLink size={14} className="shrink-0" style={{ color: MUTED }} aria-hidden />}
+              <span className="min-w-0 flex-1 truncate text-[#D5DDD8]">{m.note || 'Skärmbild'}</span>
+              <button type="button" onClick={() => void media.remove(m.id)} className="grid h-9 w-9 place-items-center text-[#E9EEEA]" aria-label="Ta bort fyndet">
+                <Trash2 size={14} aria-hidden />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+      {media.err && <p className="m-0 text-[12px] text-[#F4A08F]">{media.err}</p>}
+    </div>
+  );
+}

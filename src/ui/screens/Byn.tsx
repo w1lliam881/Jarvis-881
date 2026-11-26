@@ -206,6 +206,7 @@ function Village({ data, theme, music }: { data: Data; theme: ReturnType<typeof 
                 className="font-pixel flex h-9 items-center gap-1.5 border-2 px-2.5 text-[9px]"
                 style={{ borderColor: music.on ? RED : LINE, background: music.on ? 'rgba(194,50,74,.25)' : PANEL, color: music.on ? '#FFD6DC' : MUTED }}
                 aria-pressed={music.on}
+                aria-label={music.on ? 'Julmusik på' : 'Julmusik av'}
                 title="Julmusiken spelar tyst i bakgrunden. Den startar när du rör vid sidan."
               >
                 {music.on ? <Music size={13} aria-hidden /> : <VolumeX size={13} aria-hidden />} <span className="hidden sm:inline">{music.on ? 'Julmusik på' : 'Julmusik av'}</span><span className="sm:hidden">{music.on ? 'På' : 'Av'}</span>

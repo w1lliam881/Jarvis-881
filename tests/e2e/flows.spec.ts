@@ -94,9 +94,9 @@ test('spelet visar uppdrag från riktig data', async ({ page }) => {
   await expect(page.getByText(/dubbletter/).first()).toBeVisible();
 });
 
-test('agentbyn visar sju hus och ett hus inifrån', async ({ page }) => {
+test('agentbyn utan jul: åtta hus och ett hus inifrån', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-07-10T12:00:00+02:00'));
   await importV14(page);
-  await page.evaluate(() => localStorage.setItem('jarvis-byn-tema', 'av'));
   await page.evaluate(() =>
     sessionStorage.setItem(
       'jarvis-agent-runs',
@@ -105,7 +105,8 @@ test('agentbyn visar sju hus och ett hus inifrån', async ({ page }) => {
   );
   await page.goto('/#/byn');
   await expect(page.getByRole('heading', { name: 'Här bor dina agenter' })).toBeVisible();
-  for (const n of ['Reminder', 'Advisor', 'Planner', 'Marketer', 'Noter', 'Reviewer', 'Builder']) await expect(page.getByText(n, { exact: true }).first()).toBeVisible();
+  for (const n of ['Reminder', 'Advisor', 'Planner', 'Marketer', 'Noter', 'Reviewer', 'Builder', 'Scout']) await expect(page.getByText(n, { exact: true }).first()).toBeVisible();
+  await expect(page.getByRole('button', { name: /Julmusik/ })).toHaveCount(0);
   await expect(page.getByText('Att göra idag').first()).toBeVisible();
   await page.getByRole('link', { name: /Reminder/ }).first().click();
   await expect(page.getByRole('heading', { name: /Reminder/ })).toBeVisible();
@@ -117,44 +118,77 @@ test('agentbyn visar sju hus och ett hus inifrån', async ({ page }) => {
   await page.getByRole('link', { name: /Advisor/ }).first().click();
   await page.goBack();
   await expect(page.getByRole('heading', { name: 'Här bor dina agenter' })).toBeVisible();
+  // Scouts hamn: sökning med söklänkar
+  await page.goto('/#/byn/scout');
+  await page.getByPlaceholder("t.ex. Levi's 501 vintage mörk tvätt").fill('Levis 501 vintage');
+  await page.getByRole('button', { name: 'Spara', exact: true }).click();
+  await expect(page.getByText('Levis 501 vintage').first()).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Mercari' })).toBeVisible();
   await expect(page.getByText('Något gick fel')).toHaveCount(0);
 });
 
-test('vintertema, telefonen i huset, gruppchatten och Marketers klipp', async ({ page }) => {
+test('jul i byn, byrådet i telefonen, frågor och godkända förslag blir uppgifter', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-12-10T12:00:00+01:00'));
   await importV14(page);
-  await page.evaluate(() => localStorage.setItem('jarvis-byn-tema', 'på'));
+  await page.evaluate(() =>
+    localStorage.setItem(
+      'jarvis-agent-chat',
+      JSON.stringify([
+        { id: 'q1', at: '2026-12-10T10:00:00Z', thread: 'grupp', sender: 'reminder', author: null, body: 'Ska beställningen in som uppgift till lördag?', kind: 'fråga', status: null, replyTo: null, options: ['Ja, lördag', 'Nej'] },
+        { id: 'p1', at: '2026-12-10T10:01:00Z', thread: 'grupp', sender: 'planner', author: null, body: 'Förslag: Beställ juldroppen på lördag. Det ger en dags marginal.', kind: 'förslag', status: 'väntar', replyTo: null },
+      ]),
+    ),
+  );
   await page.goto('/#/byn');
   await expect(page.getByRole('heading', { name: 'God jul från agentbyn' })).toBeVisible();
-  await expect(page.getByRole('img', { name: /i vinterskrud/ })).toBeVisible();
-  // Temat går att stänga av
-  await page.getByRole('button', { name: /Vinter på/ }).click();
-  await expect(page.getByRole('heading', { name: 'Här bor dina agenter' })).toBeVisible();
-  // Gruppchatten: skriv till alla
-  await expect(page.getByText('Byrådet', { exact: true })).toBeVisible();
-  await page.getByLabel('Meddelande till byrådet').fill('Hej allihop');
-  await page.getByRole('button', { name: 'Skicka till alla' }).click();
-  await expect(page.getByText('Hej allihop')).toBeVisible();
+  await expect(page.getByRole('img', { name: /medan snön faller/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Julmusik/ })).toBeVisible();
+  // Byrådet ligger högt upp: på telefonen en knapp som fäller upp byrådets telefon
+  await page.getByRole('button', { name: /Öppna byrådet, 2 väntar på dig/ }).click();
+  const council = page.getByRole('dialog', { name: 'Byrådet, agenternas gruppchatt' });
+  await expect(council).toBeVisible();
+  await council.getByRole('button', { name: 'Ja, lördag' }).click();
+  await expect(council.getByText('Du svarade:')).toBeVisible();
+  await council.getByRole('button', { name: 'Godkänn' }).click();
+  await expect(page.getByText('Godkänt och tillagt i Att göra')).toBeVisible();
+  await council.getByLabel('Skriv till alla agenter…').fill('Hej allihop');
+  await council.getByRole('button', { name: 'Skicka' }).click();
+  await expect(council.getByText('Hej allihop')).toBeVisible();
+  await council.getByRole('button', { name: 'Lägg ner telefonen' }).first().click();
+  // Uppgiften finns på Idag
+  await page.goto('/#/idag');
+  await expect(page.getByText('Beställ juldroppen på lördag. (Planner)').first()).toBeVisible();
   // Telefonen i Planners hus
   await page.goto('/#/byn/planner');
-  await expect(page.getByRole('heading', { name: /Planner/ })).toBeVisible();
   await page.getByRole('button', { name: /Öppna telefonen/ }).click();
   const phone = page.getByRole('dialog', { name: /chatt med Planner/ });
   await expect(phone).toBeVisible();
-  await phone.getByLabel('Meddelande till Planner').fill('Vad är planen för juldroppen?');
+  await phone.getByLabel('Skriv till Planner…').fill('Vad är planen för juldroppen?');
   await phone.getByRole('button', { name: 'Skicka' }).click();
   await expect(phone.getByText('Vad är planen för juldroppen?')).toBeVisible();
-  await expect(phone.getByText(/Väntar på svar/)).toBeVisible();
   await phone.getByRole('button', { name: 'Lägg ner telefonen' }).first().click();
   await expect(phone).toHaveCount(0);
-  // Marketer väntar på klipp och har kryss-formuläret
+  // Marketer: kryss och siffror
   await page.goto('/#/byn/marketer');
-  await expect(page.getByText('Marketer väntar på dig.')).toBeVisible();
   await page.getByRole('button', { name: 'Logga klipp' }).click();
   await page.getByRole('button', { name: 'På kropp / try-on' }).click();
   await page.getByLabel('Visningar').fill('1200');
   await page.getByRole('button', { name: 'Spara klippet' }).click();
   await expect(page.getByText('1 200 visn.')).toBeVisible();
   await expect(page.getByText('Något gick fel')).toHaveCount(0);
+});
+
+test('dropmallen och månadsmålet', async ({ page }) => {
+  await importV14(page);
+  await page.goto('/#/lager/drops');
+  await page.locator('a[href^="#/lager/drop/"]').first().click();
+  await page.getByRole('button', { name: 'Gör plan' }).click();
+  await page.getByRole('button', { name: 'Spara plan' }).click();
+  await expect(page.getByText('Plan mot utfall')).toBeVisible();
+  await expect(page.getByText('Antal plagg')).toBeVisible();
+  await page.goto('/#/ekonomi/manad');
+  await expect(page.getByText(/Försäljning mot målet/)).toBeVisible();
+  await expect(page.getByText('Sex månader')).toBeVisible();
 });
 
 test('vem är inne visas ovanpå allt på telefonen', async ({ page }) => {

@@ -120,7 +120,7 @@ export function datasetCounts(d: Dataset): string {
   return `${live(d.drops)} drops, ${live(d.items)} plagg, ${live(d.vouchers)} verifikat`;
 }
 
-export type MediaKind = 'scout-ref' | 'clip-frame';
+export type MediaKind = 'scout-ref' | 'clip-frame' | 'scout-fynd';
 export interface MediaItem {
   id: string;
   kind: MediaKind;
