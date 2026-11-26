@@ -31,6 +31,7 @@ const MAIN: Link[] = [
       { href: '#/ekonomi/verifikat', label: 'Verifikat' },
       { href: '#/ekonomi/rapporter', label: 'Rapporter' },
       { href: '#/ekonomi/analys', label: 'Analys' },
+      { href: '#/ekonomi/manad', label: 'Månadsmål' },
       { href: '#/ekonomi/kvartal', label: 'Kvartal' },
       { href: '#/ekonomi/kontroll', label: 'Kontroll' },
     ],

@@ -136,30 +136,37 @@ export function growthBudget(ds: Dataset, today: ISODate): GrowthBudget {
   return { recent: drops, lastCost: last.cost, growthPct, suggested, cap, reserve: budget != null ? budget - suggested : null, reasons };
 }
 
-// ---------- Utseende: vinter- och jultema i Agentbyn ----------
-
-export type ThemePref = 'auto' | 'på' | 'av';
+// ---------- Utseende: jul och snö i Agentbyn ----------
 
 export interface VillageTheme {
-  /** Snö på marken, taken och träden, frusen damm. */
-  winter: boolean;
-  /** Julgran, ljusslingor, kransar och tomteluvor. */
+  /** Julpynt: julgran, ljusslingor, kransar, tomteluvor och julmusik. */
   xmas: boolean;
+  /** Det snöar (fallande snö). */
+  snowing: boolean;
+  /** Hur mycket snö som lagt sig, 0–1, innan sidan varit öppen en stund. */
+  snowBase: number;
 }
+
+const DAY = 86400000;
 
 /**
- * Auto: vinter 15 nov–28 feb och jul 20 nov–6 jan. "på" tvingar båda, "av" stänger av allt.
+ * Jul och snö från 20 november till och med julafton. Snön faller hela tiden under perioden och lägger
+ * sig gradvis: lite i början, mer för varje dag, och lite mer under dagen. Efter julafton: ingen jul, ingen snö.
  */
-export function villageTheme(today: ISODate, pref: ThemePref = 'auto'): VillageTheme {
-  if (pref === 'av') return { winter: false, xmas: false };
-  if (pref === 'på') return { winter: true, xmas: true };
-  const md = today.slice(5);
-  const winter = md >= '11-15' || md <= '02-28' || md === '02-29';
-  const xmas = md >= '11-20' || md <= '01-06';
-  return { winter, xmas };
+export function villageTheme(now: Date): VillageTheme {
+  const parts = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Stockholm', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(now);
+  const p = Object.fromEntries(parts.map((x) => [x.type, x.value]));
+  const md = `${p.month}-${p.day}`;
+  const on = md >= '11-20' && md <= '12-24';
+  if (!on) return { xmas: false, snowing: false, snowBase: 0 };
+  const start = Date.UTC(+p.year, 10, 20);
+  const days = Math.floor((Date.UTC(+p.year, +p.month - 1, +p.day) - start) / DAY);
+  const dayFrac = (+p.hour * 60 + +p.minute) / 1440;
+  return { xmas: true, snowing: true, snowBase: Math.min(0.72, Math.round((0.1 + days * 0.018 + dayFrac * 0.05) * 1000) / 1000) };
 }
 
-/** Snöar det just nu? Lite grann ibland: 18 av varje 30 minuter, inte hela tiden. */
-export function snowingAt(h: number, m: number): boolean {
-  return (h * 60 + m) % 30 < 18;
+/** Snön som lagt sig: grunden plus det som fallit medan sidan varit öppen (upp till +0,3). */
+export function snowLevel(theme: VillageTheme, secondsOpen: number): number {
+  if (!theme.snowing) return 0;
+  return Math.min(1, theme.snowBase + Math.min(0.3, secondsOpen * 0.0015));
 }

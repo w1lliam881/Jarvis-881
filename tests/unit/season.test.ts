@@ -71,20 +71,34 @@ describe('nästa drops storlek', () => {
   });
 });
 
-import { snowingAt, villageTheme } from '../../src/domain/season';
-describe('vintertema i byn', () => {
-  it('auto följer datumet', () => {
-    expect(villageTheme('2026-11-25')).toEqual({ winter: true, xmas: true });
-    expect(villageTheme('2027-01-20')).toEqual({ winter: true, xmas: false });
-    expect(villageTheme('2027-06-01')).toEqual({ winter: false, xmas: false });
-    expect(villageTheme('2026-11-10')).toEqual({ winter: false, xmas: false });
+import { snowLevel, villageTheme } from '../../src/domain/season';
+
+describe('jul och snö i Agentbyn', () => {
+  it('från 20 november till och med julafton, sedan inte', () => {
+    expect(villageTheme(new Date('2026-11-19T12:00:00Z')).xmas).toBe(false);
+    expect(villageTheme(new Date('2026-11-20T12:00:00Z'))).toMatchObject({ xmas: true, snowing: true });
+    expect(villageTheme(new Date('2026-12-24T20:00:00Z')).xmas).toBe(true);
+    expect(villageTheme(new Date('2026-12-25T08:00:00Z'))).toEqual({ xmas: false, snowing: false, snowBase: 0 });
+    expect(villageTheme(new Date('2027-06-01T12:00:00Z')).snowing).toBe(false);
   });
-  it('går att stänga av och tvinga på', () => {
-    expect(villageTheme('2026-12-24', 'av')).toEqual({ winter: false, xmas: false });
-    expect(villageTheme('2027-07-01', 'på')).toEqual({ winter: true, xmas: true });
+  it('snön lägger sig mer för varje dag och medan sidan är öppen', () => {
+    const a = villageTheme(new Date('2026-11-21T09:00:00Z')).snowBase;
+    const b = villageTheme(new Date('2026-12-05T09:00:00Z')).snowBase;
+    const c = villageTheme(new Date('2026-12-05T20:00:00Z')).snowBase;
+    expect(b).toBeGreaterThan(a);
+    expect(c).toBeGreaterThan(b);
+    const t = villageTheme(new Date('2026-12-05T09:00:00Z'));
+    expect(snowLevel(t, 60)).toBeGreaterThan(snowLevel(t, 0));
+    expect(snowLevel(t, 100000)).toBeCloseTo(Math.min(1, t.snowBase + 0.3));
+    expect(snowLevel({ xmas: false, snowing: false, snowBase: 0 }, 500)).toBe(0);
   });
-  it('snöar ibland, inte hela tiden', () => {
-    expect(snowingAt(10, 5)).toBe(true);
-    expect(snowingAt(10, 25)).toBe(false);
+});
+
+import { MELODY, MELODY_BEATS } from '../../src/game/music';
+describe('julmusiken', () => {
+  it('refrängen går jämnt upp i takter om fyra slag', () => {
+    expect(MELODY_BEATS % 4).toBe(0);
+    expect(MELODY_BEATS).toBe(64);
+    expect(MELODY.every(([n]) => /^[A-G]\d$/.test(n))).toBe(true);
   });
 });

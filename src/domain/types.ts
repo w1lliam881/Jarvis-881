@@ -34,6 +34,22 @@ export interface Drop extends BaseRecord {
   status: DropStatus;
   note: string;
   ok: CheckStatus;
+  /** Planen för dropen (Planners mall), sparad innan den köps. Jämförs med utfallet. */
+  plan?: DropPlan | null;
+}
+
+export interface DropPlan {
+  /** Planerat antal plagg */
+  count: number;
+  /** Planerad total kostnad hem (inköp, frakt, tull, förpackning) */
+  budget: Ore;
+  /** Förväntad försäljning när allt är sålt */
+  expectedRevenue: Ore;
+  /** Förväntad andel sålda efter 30 och 60 dagar (0–1) */
+  sold30: number;
+  sold60: number;
+  madeAt: ISODate;
+  note: string;
 }
 
 /** individual = eget verifikat per försäljning. aggregate = ingår i dropens samlade försäljningsverifikat (äldre v14-data). */
@@ -236,6 +252,10 @@ export interface Settings {
   /** Ungefärlig växelkurs för bevakningar: yen per krona */
   yenPerSek: number;
   adModelWeight: number;
+  /** Månadsmål: försäljning mellan min och max (ören) och vinstmarginal i procent. Saknas = 14 000–17 000 kr och 37 %. */
+  monthGoalMin?: Ore;
+  monthGoalMax?: Ore;
+  marginGoalPct?: number;
   updatedAt: string;
 }
 

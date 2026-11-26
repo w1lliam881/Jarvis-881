@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { ArrowLeft, Clock, RefreshCw, Snowflake, Terminal } from 'lucide-react';
+import { ArrowLeft, Clock, Music, RefreshCw, Terminal, VolumeX } from 'lucide-react';
 import { store } from '../../data/store';
 import { AGENTS, agentById, agoText, inlineParts, latestByAgent, mood, nextRun, parseMarkdown, stockholmParts, whenText, type AgentDef, type AgentId, type AgentRun } from '../../domain/agents';
 import { AgentSprite, DOORS, House, Interior, Scenery, Snowfall, SPOTS, VH, VW, nodeAt, route as streetRoute, type Pt } from '../../game/village';
-import { snowingAt, villageTheme, type ThemePref, type VillageTheme } from '../../domain/season';
-import { todayISO } from '../../domain/dates';
-import { GroupChat, PhoneButton } from './ByChat';
+import { snowLevel, villageTheme, type VillageTheme } from '../../domain/season';
+import { startXmasMusic, stopXmasMusic } from '../../game/music';
+import { CouncilBar, CouncilPhone, PhoneButton } from './ByChat';
 import { MarketerStudio } from './MarketerStudio';
 import { go, type Route } from '../router';
 import { cx } from '../components/ui';
@@ -68,31 +68,56 @@ function useNow(ms = 30000) {
   return now;
 }
 
-// ---------- Vinter- och jultema (kan stängas av, sparas på enheten) ----------
+// ---------- Jul och snö (20 november till julafton) och julmusiken ----------
 
-const THEME_KEY = 'jarvis-byn-tema';
-function readPref(): ThemePref {
-  try {
-    const v = localStorage.getItem(THEME_KEY);
-    return v === 'på' || v === 'av' ? v : 'auto';
-  } catch {
-    return 'auto';
-  }
+function useVillageTheme(): VillageTheme & { snow: number } {
+  const [now, setNow] = useState(() => new Date());
+  const [opened] = useState(() => Date.now());
+  useEffect(() => {
+    // Snön lägger sig medan sidan är öppen: räkna om var femte sekund
+    const t = setInterval(() => setNow(new Date()), 5000);
+    return () => clearInterval(t);
+  }, []);
+  const theme = villageTheme(now);
+  return { ...theme, snow: snowLevel(theme, (now.getTime() - opened) / 1000) };
 }
-function useVillageTheme(): { theme: VillageTheme; pref: ThemePref; toggle: () => void } {
-  const [pref, setPref] = useState<ThemePref>(readPref);
-  const theme = villageTheme(todayISO(), pref);
-  const toggle = () => {
-    // På → av, av → på. Auto räknas som på eller av beroende på datumet.
-    const next: ThemePref = theme.winter || theme.xmas ? 'av' : 'på';
-    setPref(next);
+
+const MUSIC_KEY = 'jarvis-byn-musik';
+/** Julmusiken: på som standard under julen, startar när du rör vid sidan, går att stänga av. */
+function useXmasMusic(active: boolean) {
+  const [on, setOn] = useState(() => {
     try {
-      localStorage.setItem(THEME_KEY, next);
+      return localStorage.getItem(MUSIC_KEY) !== 'av';
     } catch {
-      /* ingen lagring: gäller tills sidan laddas om */
+      return true;
     }
+  });
+  useEffect(() => {
+    if (!active || !on) {
+      stopXmasMusic();
+      return;
+    }
+    const start = () => startXmasMusic();
+    window.addEventListener('pointerdown', start, { once: true });
+    window.addEventListener('keydown', start, { once: true });
+    return () => {
+      window.removeEventListener('pointerdown', start);
+      window.removeEventListener('keydown', start);
+      stopXmasMusic();
+    };
+  }, [active, on]);
+  const toggle = () => {
+    const next = !on;
+    setOn(next);
+    try {
+      localStorage.setItem(MUSIC_KEY, next ? 'på' : 'av');
+    } catch {
+      /* ingen lagring */
+    }
+    if (next) startXmasMusic();
+    else stopXmasMusic();
   };
-  return { theme, pref, toggle };
+  return { on, toggle };
 }
 
 const RED = '#C2324A';
@@ -134,20 +159,20 @@ export function Byn({ route }: { route: Route }) {
   const id = route.path[1];
   const data = useAgentRuns();
   const def = id ? agentById(id) : undefined;
-  const th = useVillageTheme();
+  const theme = useVillageTheme();
+  const music = useXmasMusic(theme.xmas);
   const blink = useBlink();
   return (
-    <div className="min-h-dvh pb-[calc(150px+env(safe-area-inset-bottom))] lg:pb-16" style={{ background: th.theme.xmas ? '#0F1D17' : BG, color: '#E9EEEA' }}>
-      {th.theme.xmas && <Garland t={blink} />}
-      {def ? <HouseView def={def} data={data} theme={th.theme} /> : <Village data={data} th={th} />}
+    <div className="min-h-dvh pb-[calc(150px+env(safe-area-inset-bottom))] lg:pb-16" style={{ background: theme.xmas ? '#0F1D17' : BG, color: '#E9EEEA' }}>
+      {theme.xmas && <Garland t={blink} />}
+      {def ? <HouseView def={def} data={data} theme={theme} /> : <Village data={data} theme={theme} music={music} />}
     </div>
   );
 }
 
 type Data = ReturnType<typeof useAgentRuns>;
 
-function Village({ data, th }: { data: Data; th: ReturnType<typeof useVillageTheme> }) {
-  const { theme } = th;
+function Village({ data, theme, music }: { data: Data; theme: ReturnType<typeof useVillageTheme>; music: ReturnType<typeof useXmasMusic> }) {
   const now = useNow();
   const runs = data.runs ?? [];
   const latest = useMemo(() => latestByAgent(runs), [runs]);
@@ -169,20 +194,22 @@ function Village({ data, th }: { data: Data; th: ReturnType<typeof useVillageThe
             </div>
             <h1 className="m-0 mt-2 font-serif text-[30px] font-semibold leading-tight">{theme.xmas ? 'God jul från agentbyn' : 'Här bor dina agenter'}</h1>
             <p className="m-0 mt-1 max-w-[560px] text-[14px]" style={{ color: MUTED }}>
-              Sju hus, sju jobb. Tryck på ett hus för att gå in, se vad agenten har gjort och chatta i telefonen.
+              {AGENTS.length} hus, {AGENTS.length} jobb. Tryck på ett hus för att gå in, se vad agenten har gjort och chatta i telefonen.
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={th.toggle}
-              className="font-pixel flex h-9 items-center gap-1.5 border-2 px-2.5 text-[9px]"
-              style={{ borderColor: theme.winter ? RED : LINE, background: theme.winter ? 'rgba(194,50,74,.25)' : PANEL, color: theme.winter ? '#FFD6DC' : MUTED }}
-              aria-pressed={theme.winter}
-              title="Slå av eller på vinter- och jultemat (sparas på den här enheten)"
-            >
-              <Snowflake size={13} aria-hidden /> {theme.winter ? 'Vinter på' : 'Vinter av'}
-            </button>
+            {theme.xmas && (
+              <button
+                type="button"
+                onClick={music.toggle}
+                className="font-pixel flex h-9 items-center gap-1.5 border-2 px-2.5 text-[9px]"
+                style={{ borderColor: music.on ? RED : LINE, background: music.on ? 'rgba(194,50,74,.25)' : PANEL, color: music.on ? '#FFD6DC' : MUTED }}
+                aria-pressed={music.on}
+                title="Julmusiken spelar tyst i bakgrunden. Den startar när du rör vid sidan."
+              >
+                {music.on ? <Music size={13} aria-hidden /> : <VolumeX size={13} aria-hidden />} {music.on ? 'Julmusik på' : 'Julmusik av'}
+              </button>
+            )}
             <span className="font-pixel rounded-none border-2 px-2.5 py-1.5 text-[10px]" style={{ borderColor: LINE, background: PANEL }}>
               {day} {clock} · {night ? 'natt' : isDusk(now) ? 'kväll' : 'dag'}
             </span>
@@ -203,39 +230,44 @@ function Village({ data, th }: { data: Data; th: ReturnType<typeof useVillageThe
           </p>
         )}
 
-        <div className="flex flex-col gap-6 xl:grid xl:grid-cols-[minmax(0,1.75fr)_minmax(0,1fr)] xl:items-start xl:gap-x-8 xl:gap-y-6">
+        <div className="xl:hidden">
+          <CouncilBar xmas={theme.xmas} />
+        </div>
+
+        <div className="flex flex-col gap-6 xl:grid xl:grid-cols-[minmax(0,2.3fr)_minmax(320px,1fr)] xl:items-start xl:gap-x-6 xl:gap-y-6">
           <div className="xl:col-start-1 xl:row-start-1">
             <VillageScene now={now} latest={latest} theme={theme} />
             <p className="m-0 mt-2 text-[12px] sm:hidden" style={{ color: MUTED }}>
               Dra i sidled för att se hela byn.
             </p>
           </div>
-          <div className="xl:col-start-2 xl:row-span-2 xl:row-start-1">
-          <PSection title="Invånarna" sub={next ? `Nästa i tur: ${next.a.name}, ${whenText(next.at!, now)}` : undefined}>
-            <div className="flex flex-col gap-2">
-              {AGENTS.map((a) => (
-                <ResidentRow key={a.id} def={a} last={latest[a.id]} now={now} />
-              ))}
-            </div>
-          </PSection>
+
+          <div className="hidden xl:col-start-2 xl:row-start-1 xl:block">
+            <CouncilPhone xmas={theme.xmas} embedded />
           </div>
 
           <div className="xl:col-start-1 xl:row-start-2">
-          <PSection title="Senaste i byn" sub="Det agenterna har gjort, nyast först.">
-            {runs.length ? (
+            <PSection title="Invånarna" sub={next ? `Nästa i tur: ${next.a.name}, ${whenText(next.at!, now)}` : undefined}>
               <div className="grid gap-2 lg:grid-cols-2">
-                {runs.slice(0, 8).map((r) => (
-                  <FeedItem key={r.id} r={r} now={now} />
+                {AGENTS.map((a) => (
+                  <ResidentRow key={a.id} def={a} last={latest[a.id]} now={now} />
                 ))}
               </div>
-            ) : (
-              <Empty shared={data.shared} loading={data.runs == null} />
-            )}
-          </PSection>
+            </PSection>
           </div>
 
-          <div className="xl:col-start-1 xl:row-start-3">
-            <GroupChat xmas={theme.xmas} />
+          <div className="xl:col-start-2 xl:row-start-2">
+            <PSection title="Senaste i byn" sub="Det agenterna har gjort, nyast först.">
+              {runs.length ? (
+                <div className="flex flex-col gap-2">
+                  {runs.slice(0, 6).map((r) => (
+                    <FeedItem key={r.id} r={r} now={now} />
+                  ))}
+                </div>
+              ) : (
+                <Empty shared={data.shared} loading={data.runs == null} />
+              )}
+            </PSection>
           </div>
         </div>
 
@@ -388,7 +420,7 @@ interface Walker {
 
 const SPEED = 11; // pixlar per sekund i byns mått
 
-function VillageScene({ now, latest, theme }: { now: Date; latest: Partial<Record<AgentId, AgentRun>>; theme: VillageTheme }) {
+function VillageScene({ now, latest, theme }: { now: Date; latest: Partial<Record<AgentId, AgentRun>>; theme: ReturnType<typeof useVillageTheme> }) {
   const night = isNight(now);
   const dusk = isDusk(now);
   const reduce = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
@@ -483,14 +515,14 @@ function VillageScene({ now, latest, theme }: { now: Date; latest: Partial<Recor
 
   return (
     <div ref={scroller} className="relative select-none overflow-x-auto border-2 [scrollbar-width:none]" style={{ borderColor: theme.xmas ? 'rgba(194,50,74,.7)' : LINE, boxShadow: '0 0 0 4px rgba(0,0,0,.25)' }}>
-      <div className="relative w-full min-w-[620px] sm:min-w-0" style={{ aspectRatio: `${VW} / ${VH}` }}>
-        <svg viewBox={`0 0 ${VW} ${VH}`} className="pixel absolute inset-0 h-full w-full" role="img" aria-label={`Agentbyn med sju hus och agenterna som går runt${theme.winter ? ', i vinterskrud' : ''}`}>
-          <Scenery t={t} night={night} winter={theme.winter} xmas={theme.xmas} />
+      <div className="relative w-full min-w-[860px] md:min-w-0" style={{ aspectRatio: `${VW} / ${VH}` }}>
+        <svg viewBox={`0 0 ${VW} ${VH}`} className="pixel absolute inset-0 h-full w-full" role="img" aria-label={`Agentbyn med ${AGENTS.length} hus och agenterna som går runt${theme.snowing ? ', medan snön faller' : ''}`}>
+          <Scenery t={t} night={night} snow={theme.snow} xmas={theme.xmas} />
           {AGENTS.map((a) => {
             const w = ws.find((x) => x.id === a.id)!;
             return (
               <g key={a.id} className="cursor-pointer" onClick={() => go(`#/byn/${a.id}`)} onMouseEnter={() => setHover(a.id)} onMouseLeave={() => setHover(null)}>
-                <House def={a} night={night || dusk} home={w.home} t={t} smoke={moods[a.id] === 'jobbar' || (a.id === 'noter' && !night) || (theme.winter && !night)} winter={theme.winter} xmas={theme.xmas} />
+                <House def={a} night={night || dusk} home={w.home} t={t} smoke={moods[a.id] === 'jobbar' || (a.id === 'noter' && !night) || (theme.snow > 0.3 && !night)} winter={theme.snow > 0.25} xmas={theme.xmas} />
               </g>
             );
           })}
@@ -516,7 +548,7 @@ function VillageScene({ now, latest, theme }: { now: Date; latest: Partial<Recor
           {dusk && <rect x={0} y={0} width={VW} height={VH} fill="#C97B5A" opacity={0.12} pointerEvents="none" />}
           {night && <rect x={0} y={0} width={VW} height={VH} fill="#0A1430" opacity={0.42} pointerEvents="none" />}
           {night && <NightLights t={t} />}
-          {theme.winter && !reduce && snowingAt(stockholmParts(now).h, stockholmParts(now).mi) && <Snowfall tick={tick} />}
+          {theme.snowing && !reduce && <Snowfall tick={tick} />}
         </svg>
 
         {/* Skyltar och pratbubblor ovanpå (vanlig text, skarp i alla storlekar) */}
@@ -580,7 +612,7 @@ function NightLights({ t }: { t: number }) {
 
 // ---------- Ett hus inifrån ----------
 
-function HouseView({ def, data, theme }: { def: AgentDef; data: Data; theme: VillageTheme }) {
+function HouseView({ def, data, theme }: { def: AgentDef; data: Data; theme: ReturnType<typeof useVillageTheme> }) {
   const now = useNow();
   const [frame, setFrame] = useState(0);
   const runs = (data.runs ?? []).filter((r) => r.agent === def.id);

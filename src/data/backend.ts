@@ -45,8 +45,14 @@ export interface Backend {
   /** Chatten med agenterna (telefonen i husen och gruppchatten). Finns bara med Supabase. */
   agentChat?: {
     list: (limit: number) => Promise<AgentMessage[]>;
-    send: (thread: ChatThread, body: string) => Promise<void>;
+    send: (thread: ChatThread, body: string, replyTo?: string | null) => Promise<void>;
     decide: (id: string, status: 'godkänd' | 'avvisad') => Promise<void>;
+  };
+  /** Bilder till agenterna (referensbilder för Scout, bildrutor ur klipp för Marketer). Bara med Supabase. */
+  media?: {
+    list: (kind: MediaKind, refId: string) => Promise<MediaItem[]>;
+    add: (kind: MediaKind, refId: string, images: { data: string; note?: string }[]) => Promise<void>;
+    remove: (id: string) => Promise<void>;
   };
   /** Introduktionen första gången man loggar in (sparas på kontot, gäller alla enheter). */
   intro?: { seen: boolean; name: string; markSeen: () => Promise<void> };
@@ -112,4 +118,14 @@ export function applyMutations(ds: Dataset, muts: Mutation[]): Dataset {
 export function datasetCounts(d: Dataset): string {
   const live = <T extends { deletedAt?: string | null }>(x: T[]) => x.filter((y) => !y.deletedAt).length;
   return `${live(d.drops)} drops, ${live(d.items)} plagg, ${live(d.vouchers)} verifikat`;
+}
+
+export type MediaKind = 'scout-ref' | 'clip-frame';
+export interface MediaItem {
+  id: string;
+  kind: MediaKind;
+  refId: string;
+  idx: number;
+  data: string;
+  note: string;
 }

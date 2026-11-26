@@ -62,18 +62,18 @@ export function useAgentChat() {
     return () => clearInterval(t);
   }, [load]);
 
-  const send = async (thread: ChatThread, body: string): Promise<string | null> => {
+  const send = async (thread: ChatThread, body: string, replyTo: string | null = null): Promise<string | null> => {
     const text = body.trim();
     if (!text) return null;
     if (!chat) {
-      const m: AgentMessage = { id: `local-${Date.now()}`, at: new Date().toISOString(), thread, sender: 'du', author: null, body: text, kind: 'chatt', status: null, replyTo: null };
+      const m: AgentMessage = { id: `local-${Date.now()}`, at: new Date().toISOString(), thread, sender: 'du', author: null, body: text, kind: 'chatt', status: null, replyTo };
       const next = [...readLocal(), m];
       writeLocal(next);
       setMsgs(next);
       return null;
     }
     try {
-      await chat.send(thread, text);
+      await chat.send(thread, text, replyTo);
       await load();
       return null;
     } catch (e) {
