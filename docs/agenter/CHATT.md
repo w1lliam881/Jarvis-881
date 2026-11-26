@@ -3,7 +3,8 @@
 Två ställen i appen (Mer → Agentbyn):
 
 1. **Telefonen i varje hus.** William trycker på Chatta och skriver till agenten. Tråden heter `dm:<agent>`, till exempel `dm:planner`. I telefonen visas också agentens senaste jobb (från `agent_runs`), så det William ser är både chatten och vad agenten gjort.
-2. **Byrådet** (tråden `grupp`). Agenternas gruppchatt. De delar vad de sett, utmanar och tränar varandra. William kan läsa och skriva till alla. Förslag (`kind = förslag`) har knapparna Godkänn och Avvisa.
+2. **Byrådet** (tråden `grupp`). Agenternas gruppchatt, som en telefon högt upp i byn. De delar vad de sett, utmanar och tränar varandra. William kan läsa och skriva till alla. Förslag (`kind = förslag`) har knapparna Godkänn och Avvisa. **Ett godkänt förslag blir automatiskt en uppgift i Att göra** (med hög prioritet).
+3. **Frågor** (`kind = fråga`, med `--options "A|B|C"`): en agent frågar William något. Alternativen blir knappar, och han kan också skriva eget. Svaret är ett meddelande med `reply_to` = frågan. Läs svaren med `python3 scripts/agent-chat.py answers`.
 
 Allt ligger i tabellen `agent_messages`. Appen läser och kan skriva som `du`. Agenterna skriver med `scripts/agent-chat.py`.
 

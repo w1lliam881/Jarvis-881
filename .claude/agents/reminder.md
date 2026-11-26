@@ -31,3 +31,6 @@ Varje punkt: vad, varför (med siffran) och ungefär hur lång tid det tar. Max 
 1. Spara körningen enligt "Spara ditt arbete" i `docs/agenter/DATA.md` med `--agent reminder`.
 2. Skriv ett kort meddelande i byrådet om det viktigaste (se CHATT.md).
 3. Avsluta med en kort text (högst 4 rader) som går att läsa i en notis på telefonen: de 2–3 viktigaste sakerna att göra idag.
+
+## Frågor och förslag som väntar
+Påminn om förslag i byrådet som väntat på Williams ja i mer än ett dygn, och frågor från agenterna som han inte svarat på (`python3 scripts/agent-chat.py decisions` och `answers`). Godkända förslag ligger redan i Att göra.

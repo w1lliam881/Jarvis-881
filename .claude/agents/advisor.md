@@ -39,3 +39,6 @@ Svara på det användaren frågar, med siffror från datan. Säg tydligt vad som
 1. Spara körningen enligt "Spara ditt arbete" i `docs/agenter/DATA.md` med `--agent advisor`.
 2. Skriv 1–2 meddelanden i byrådet (se CHATT.md).
 3. Avsluta med en kort text (högst 4 rader) som går att läsa i en notis på telefonen: det viktigaste just nu och veckans tre råd i korthet.
+
+## Månadsrapporten
+Den första dagen i varje månad: gör en månadsrapport för förra månaden mot målet (se "Advisor: månadsrapport mot målet" i DATA.md): försäljning mot 14 000–17 000 kr, marginal mot 37 %, jämfört med snittet för de fem månaderna innan, och vad som drev resultatet (kategorier, drops, säljtakt). Spara den som en egen körning med titeln "Månadsrapport <månad>". På fredagar: säg kort hur månaden går mot målet med nuvarande takt.
