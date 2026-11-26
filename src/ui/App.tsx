@@ -99,6 +99,7 @@ export function App() {
       </main>
       <SaveStatus />
       <Toasts />
+      {!(top === 'byn' && route.path[1]) && (
       <button
         type="button"
         onClick={() => setQuick('menu')}
@@ -107,6 +108,7 @@ export function App() {
       >
         <Plus size={20} strokeWidth={2.4} aria-hidden /> Ny
       </button>
+      )}
       <nav className="no-print safe-bottom fixed lg:hidden inset-x-0 bottom-0 z-30 border-t border-line bg-surface/95 backdrop-blur" aria-label="Huvudmeny">
         <div className="mx-auto grid max-w-[720px] grid-cols-5 px-2 pt-2">
           {TABS.map((t) => {

@@ -1,5 +1,6 @@
 import { daysBetween } from './dates';
 import { allLanded, history, isSold, type History } from './metrics';
+import { buyingSeason, seasonalShares, type Season } from './season';
 import type { Category, Dataset, ISODate, Ore, Settings } from './types';
 
 /** Standardvikt per kategori (kg) när historik saknas. Från v14. */
@@ -142,6 +143,8 @@ export interface OrderPlan {
   expectedProfit: Ore;
   rows: OrderPlanRow[];
   fromBudget: boolean;
+  /** Säsongen plaggen säljs i. Fördelningen är viktad efter den. */
+  season: Season;
 }
 
 export function orderPlan(ds: Dataset, today: ISODate): OrderPlan {
@@ -164,10 +167,16 @@ export function orderPlan(ds: Dataset, today: ISODate): OrderPlan {
   const avgLanded = H.n ? Math.round(H.landed / H.n) : 0;
 
   const cats = (Object.keys(H.byCat) as Category[]).filter((k) => (H.byCat[k]?.sold ?? 0) > 0 && k !== 'Skor');
-  const weights = cats.map((k) => {
-    const c = H.byCat[k]!;
-    return (Math.max(c.profit, 0) * c.sold) / c.n;
-  });
+  // Historikens vikt (vinst × andel sålda), sedan justerad för säsongen plaggen kommer att säljas i
+  const season = buyingSeason(today, s.leadWeeks, s.coverWeeks);
+  const hist = Object.fromEntries(
+    cats.map((k) => {
+      const c = H.byCat[k]!;
+      return [k, (Math.max(c.profit, 0) * c.sold) / c.n];
+    }),
+  ) as Partial<Record<Category, number>>;
+  const shares = seasonalShares(hist, season);
+  const weights = cats.map((k) => shares[k] ?? 0);
   const tw = weights.reduce((a, b) => a + b, 0);
   const fromBudget = s.budget > 0;
   if (fromBudget && avgLanded > 0) qty = Math.floor(s.budget / avgLanded);
@@ -202,5 +211,6 @@ export function orderPlan(ds: Dataset, today: ISODate): OrderPlan {
     expectedProfit,
     rows,
     fromBudget,
+    season,
   };
 }

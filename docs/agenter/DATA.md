@@ -82,3 +82,36 @@ python3 scripts/agent-save.py --agent advisor --trigger schema \
 - `--status varning` om något behöver åtgärdas snart, `fel` om körningen inte kunde göras klart (t.ex. ingen datatillgång). Spara även då, med förklaringen.
 - `--highlight`: 2–4 korta fakta, max 30 tecken var. De visas som etiketter.
 - Titel och sammanfattning på enkel svenska, utan emojis.
+
+## Säsong och storlek på nästa drop (Advisor, Planner, Reminder)
+
+Inköp ska passa säsongen plaggen **säljs** i, ungefär en månad framåt (leverans plus några veckors försäljning). Sista veckan i november köper man alltså för vinter. Samma regler finns i appen (`src/domain/season.ts`, Planering → Framtid), så att agenterna och appen säger samma sak.
+
+| Säsong (månader) | Mer av | Mindre av |
+|---|---|---|
+| Vinter (dec–feb) | jeans (×1,25), jackor (×1,6), tröjor (×1,4) | t-shirts (×0,4), skjortor (×0,8) |
+| Vår (mars–maj) | jeans, skjortor, lätta jackor | tjocka tröjor |
+| Sommar (juni–aug) | t-shirts (×1,6), skjortor, ljusa jeans | jackor (×0,5), tröjor (×0,6) |
+| Höst (sep–nov) | jeans, jackor, tröjor | t-shirts (×0,6) |
+
+Siffrorna multipliceras med historikens vikt per kategori (vinst × andel sålda), så att din egen historik fortfarande väger tyngst.
+
+**Nästa drops storlek** (väx försiktigt, slösa inte hela budgeten):
+- Utgå från senaste dropens totala kostnad (inköp + frakt + tull + förpackning). Var den ovanligt liten, utgå från den största av de tre senaste (högst 1,5 × den senaste).
+- Jämför hur mycket den sålt med vad som är väntat för dess ålder (ungefär 70 % efter 45 dagar):
+  snabbare än väntat **+15 %**, ungefär som väntat **+10 %**, lite långsamt **0 %**, dåligt **−10 %**.
+- Aldrig mer än **80 % av budgeten** (`meta/settings → budget`), så att 20 % finns kvar som buffert. Är ingen budget satt: säg det och föreslå ändå en storlek utifrån reglerna ovan.
+- Avrunda till hela 100 kr. Säg alltid vilken siffra förslaget bygger på.
+
+## Känd plan att räkna med (från William, november 2026)
+
+- Köper från Doorzo (Japan), säljer på Vinted och Plick, ungefär 14 000–17 000 kr i månaden med cirka 37 % marginal.
+- **Juldrop 27 december** som släpps på en egen **Shopify**-hemsida. Beställningen från Doorzo måste läggas **senast 29 november**.
+
+## Chatten och byrådet (alla agenter)
+
+Se `docs/agenter/CHATT.md`. Kort:
+- **Telefonen** i varje hus: William skriver till en agent i appen. Svar ges av den schemalagda chattrundan (varannan timme 08–22), eller av agenten själv när den jobbar.
+- **Byrådet** (gruppchatten `grupp`): agenterna pratar med varandra, pushar och tränar varandra. William läser.
+- **Efter varje körning** skriver du 1–2 korta meddelanden i byrådet: det viktigaste du såg, och en fråga eller utmaning till en annan agent som har nytta av det (`python3 scripts/agent-chat.py post --agent DU --thread grupp --body "..."`).
+- **Inget görs utan Williams ja.** Vill du att något ska hända (en uppgift läggs in, en ändring i appen, en beställning), skriv det som ett förslag: `--kind förslag`. Läs `python3 scripts/agent-chat.py decisions` innan du agerar på ett tidigare förslag. Bara `godkänd` får följas upp, och då bara inom det du redan får göra (agenterna ändrar fortfarande aldrig affärsdatan själva).

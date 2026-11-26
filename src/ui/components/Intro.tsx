@@ -73,7 +73,7 @@ function steps(name: string): Step[] {
       title: 'Agentbyn',
       body: (
         <p>
-          Under Mer → Agentbyn bor fem agenter som läser era siffror och skriver påminnelser, råd och en veckojournal. De ändrar aldrig något själva. Tryck på
+          Under Mer → Agentbyn bor sju agenter som läser era siffror och skriver påminnelser, råd, planer och en journal. Du kan chatta med dem i telefonen i varje hus. De ändrar aldrig något själva. Tryck på
           ett hus för att läsa vad de skrivit.
         </p>
       ),

@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import type { AgentRun } from '../domain/agents';
+import type { AgentMessage, AgentRun, ChatThread } from '../domain/agents';
 import { isIOSDevice } from '../domain/device';
 import { defaultGame, defaultSettings, emptyDataset } from '../domain/defaults';
 import { COLLECTIONS, type ChangeLogEntry, type Dataset } from '../domain/types';
@@ -44,6 +44,15 @@ export async function savePushSubscription(sub: PushSubscriptionJSON, prefs: { t
   const email = data.session?.user.email ?? '';
   const { error } = await sb().from('push_subscriptions').upsert({ endpoint: sub.endpoint, email, subscription: sub, remind_at: prefs.time, kinds: prefs.kinds });
   return error ? `Kunde inte spara: ${error.message}` : null;
+}
+
+export async function sendTestPush(): Promise<string | null> {
+  const { data, error } = await sb().functions.invoke('daily-reminder', { body: { mode: 'test' } });
+  if (error) return `Kunde inte skicka testnotisen: ${error.message}. Notisfunktionen kanske inte är uppdaterad än.`;
+  const r = data as { sent?: number; devices?: number };
+  if (!r?.devices) return 'Den här enheten finns inte registrerad för notiser. Slå av och på påminnelser igen.';
+  if (!r.sent) return 'Notisen kunde inte levereras. Slå av och på påminnelser igen så registreras telefonen på nytt.';
+  return null;
 }
 
 export async function deletePushSubscription(endpoint: string): Promise<void> {
@@ -222,7 +231,11 @@ export class SupabaseBackend implements Backend {
       if (status === 'SUBSCRIBED') void ch.track({ at: new Date().toISOString() });
     });
     beat();
-    const t = setInterval(beat, 60000);
+    // Hämta också de andras "senast inne" en gång i minuten, så att tiden inte står still
+    const t = setInterval(() => {
+      beat();
+      if (document.visibilityState === 'visible') void refresh();
+    }, 60000);
     const vis = () => {
       beat();
       if (document.visibilityState === 'visible') void ch.track({ at: new Date().toISOString() });
@@ -246,6 +259,22 @@ export class SupabaseBackend implements Backend {
     const { data, error } = await sb().from('agent_runs').select('*').order('at', { ascending: false }).limit(limit);
     if (error) throw new Error(error.message);
     return (data ?? []).map((r) => ({ ...r, highlights: Array.isArray(r.highlights) ? r.highlights : [] })) as AgentRun[];
+  };
+
+  agentChat = {
+    list: async (limit: number): Promise<AgentMessage[]> => {
+      const { data, error } = await sb().from('agent_messages').select('*').order('at', { ascending: false }).limit(limit);
+      if (error) throw new Error(/does not exist|schema cache/i.test(error.message) ? 'Chatten är inte uppsatt i databasen än (migration 0003).' : error.message);
+      return (data ?? []).map((r) => ({ id: r.id, at: r.at, thread: r.thread, sender: r.sender, author: r.author, body: r.body, kind: r.kind, status: r.status, replyTo: r.reply_to })) as AgentMessage[];
+    },
+    send: async (thread: ChatThread, body: string): Promise<void> => {
+      const { error } = await sb().from('agent_messages').insert({ thread, sender: 'du', author: this.email, body: body.slice(0, 2000), kind: 'chatt' });
+      if (error) throw new Error(`Kunde inte skicka: ${error.message}`);
+    },
+    decide: async (id: string, status: 'godkänd' | 'avvisad'): Promise<void> => {
+      const { error } = await sb().from('agent_messages').update({ status, decided_at: new Date().toISOString(), decided_by: this.email }).eq('id', id).eq('kind', 'förslag');
+      if (error) throw new Error(`Kunde inte spara ditt svar: ${error.message}`);
+    },
   };
 
   async changelog(limit: number): Promise<ChangeLogEntry[]> {

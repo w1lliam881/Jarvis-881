@@ -5,7 +5,7 @@ const VAPID_PUBLIC_KEY = (import.meta.env.VITE_VAPID_PUBLIC_KEY as string | unde
 
 export interface PushPrefs {
   time: string; // "HH:MM"
-  kinds: { daily: boolean; inbox: boolean; oldStock: boolean; watch?: boolean };
+  kinds: { daily: boolean; inbox: boolean; oldStock: boolean; watch?: boolean; agents?: boolean };
 }
 
 /** Varför påminnelser inte kan slås på här, eller null om det går. */
@@ -49,4 +49,12 @@ export async function pushActive(): Promise<boolean> {
   if (pushBlocker()) return false;
   const reg = await navigator.serviceWorker.getRegistration();
   return !!(await reg?.pushManager.getSubscription());
+}
+
+/** Skickar en testnotis till dina egna enheter. Returnerar ett felmeddelande eller null. */
+export async function testPush(): Promise<string | null> {
+  const blocked = pushBlocker();
+  if (blocked) return blocked;
+  const { sendTestPush } = await import('./supabase');
+  return sendTestPush();
 }

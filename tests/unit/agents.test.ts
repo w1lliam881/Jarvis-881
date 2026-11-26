@@ -8,16 +8,22 @@ describe('agentbyn: tider i svensk tid', () => {
     expect(stockholmToDate(2026, 11, 24, 10, 30).toISOString()).toBe('2026-11-24T09:30:00.000Z');
     expect(stockholmToDate(2026, 6, 15, 10, 30).toISOString()).toBe('2026-06-15T08:30:00.000Z');
   });
-  it('nästa körning för Reminder (varje dag 10:30)', () => {
+  it('nästa körning för Reminder (varje dag 08:20 och 12:40)', () => {
     const s = AGENTS.find((a) => a.id === 'reminder')!.schedule;
-    expect(nextRun(s, new Date('2026-11-24T08:00:00Z'))!.toISOString()).toBe('2026-11-24T09:30:00.000Z');
-    expect(nextRun(s, new Date('2026-11-24T10:00:00Z'))!.toISOString()).toBe('2026-11-25T09:30:00.000Z');
+    expect(nextRun(s, new Date('2026-11-24T06:00:00Z'))!.toISOString()).toBe('2026-11-24T07:20:00.000Z');
+    expect(nextRun(s, new Date('2026-11-24T08:00:00Z'))!.toISOString()).toBe('2026-11-24T11:40:00.000Z');
+    expect(nextRun(s, new Date('2026-11-24T12:00:00Z'))!.toISOString()).toBe('2026-11-25T07:20:00.000Z');
   });
-  it('nästa körning för Advisor och Reviewer (mån och fre 08:40) och Noter (söndagar 20:00)', () => {
+  it('nästa körning för Advisor (varje morgon 08:20), Reviewer (mån, ons, fre 08:20) och Noter (varje kväll 20:40)', () => {
     const now = new Date('2026-11-24T12:00:00Z'); // tisdag
-    expect(nextRun(AGENTS.find((a) => a.id === 'advisor')!.schedule, now)!.toISOString()).toBe('2026-11-27T07:40:00.000Z');
-    expect(nextRun(AGENTS.find((a) => a.id === 'reviewer')!.schedule, new Date('2026-11-27T08:00:00Z'))!.toISOString()).toBe('2026-11-30T07:40:00.000Z');
-    expect(nextRun(AGENTS.find((a) => a.id === 'noter')!.schedule, now)!.toISOString()).toBe('2026-11-29T19:00:00.000Z');
+    expect(nextRun(AGENTS.find((a) => a.id === 'advisor')!.schedule, now)!.toISOString()).toBe('2026-11-25T07:20:00.000Z');
+    expect(nextRun(AGENTS.find((a) => a.id === 'reviewer')!.schedule, now)!.toISOString()).toBe('2026-11-25T07:20:00.000Z');
+    expect(nextRun(AGENTS.find((a) => a.id === 'reviewer')!.schedule, new Date('2026-11-27T08:00:00Z'))!.toISOString()).toBe('2026-11-30T07:20:00.000Z');
+    expect(nextRun(AGENTS.find((a) => a.id === 'noter')!.schedule, now)!.toISOString()).toBe('2026-11-24T19:40:00.000Z');
+  });
+  it('alla sju agenter finns, Planner och Marketer har schema', () => {
+    expect(AGENTS.map((a) => a.id).sort()).toEqual(['advisor', 'builder', 'marketer', 'noter', 'planner', 'reminder', 'reviewer']);
+    expect(nextRun(AGENTS.find((a) => a.id === 'planner')!.schedule, new Date('2026-11-24T12:00:00Z'))!.toISOString()).toBe('2026-11-24T19:40:00.000Z');
   });
   it('Builder har inget schema', () => {
     expect(nextRun(AGENTS.find((a) => a.id === 'builder')!.schedule)).toBeNull();
@@ -44,9 +50,9 @@ describe('agentbyn: körningar', () => {
   it('figurens läge', () => {
     const rem = AGENTS.find((a) => a.id === 'reminder')!;
     const bld = AGENTS.find((a) => a.id === 'builder')!;
-    expect(mood(rem, undefined, new Date('2026-11-24T09:25:00Z'))).toBe('jobbar');
-    expect(mood(rem, run({ at: '2026-11-24T09:31:00Z' }), new Date('2026-11-24T11:00:00Z'))).toBe('nyss klar');
-    expect(mood(rem, run({ at: '2026-11-23T09:31:00Z' }), new Date('2026-11-24T15:00:00Z'))).toBe('vilar');
+    expect(mood(rem, undefined, new Date('2026-11-24T07:15:00Z'))).toBe('jobbar');
+    expect(mood(rem, run({ at: '2026-11-24T07:21:00Z' }), new Date('2026-11-24T09:00:00Z'))).toBe('nyss klar');
+    expect(mood(rem, run({ at: '2026-11-23T11:41:00Z' }), new Date('2026-11-24T10:00:00Z'))).toBe('vilar');
     expect(mood(bld, undefined, new Date('2026-11-24T15:00:00Z'))).toBe('väntar');
   });
 });

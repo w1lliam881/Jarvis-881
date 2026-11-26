@@ -1,6 +1,6 @@
 // Offline-läsning: appens filer cachas så att senaste datan (som ligger lokalt) går att läsa utan nät.
 // Nya registreringar kräver nät när Supabase används, så att inget kan skrivas över.
-const CACHE = 'jarvis-v2';
+const CACHE = 'jarvis-v3';
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(['./', './index.html', './manifest.webmanifest', './icon.svg'])).then(() => self.skipWaiting()));
 });

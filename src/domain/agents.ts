@@ -1,7 +1,7 @@
 // Agenterna i Agentbyn: vilka de är, när de jobbar och hur deras arbete sammanfattas.
 // Själva agenterna körs i Claude Code (se .claude/agents). Appen visar bara vad de gjort.
 
-export type AgentId = 'builder' | 'reviewer' | 'advisor' | 'reminder' | 'noter';
+export type AgentId = 'builder' | 'reviewer' | 'advisor' | 'reminder' | 'noter' | 'planner' | 'marketer';
 
 export interface AgentRun {
   id: string;
@@ -15,13 +15,14 @@ export interface AgentRun {
   highlights: string[];
 }
 
-/** Schema i svensk tid. days: 0 = söndag … 6 = lördag. */
+/** Schema i svensk tid. days: 0 = söndag … 6 = lördag. times: klockslag [timme, minut], en eller flera per dag. */
 export interface AgentSchedule {
   days: number[];
-  h: number;
-  m: number;
+  times: [number, number][];
   label: string;
 }
+
+const EVERY_DAY = [0, 1, 2, 3, 4, 5, 6];
 
 export interface AgentDef {
   id: AgentId;
@@ -55,7 +56,7 @@ export const AGENTS: AgentDef[] = [
     ],
     never: 'Lägger inte in eller ändrar något själv. Du bestämmer.',
     command: '/reminder',
-    schedule: { days: [0, 1, 2, 3, 4, 5, 6], h: 10, m: 30, label: 'Varje dag 10:30' },
+    schedule: { days: EVERY_DAY, times: [[8, 20], [12, 40]], label: 'Varje dag 08:20 och 12:40' },
     colors: { hat: '#E9B44C', shirt: '#C97B5A', pants: '#2B3A4A', trim: '#FFE2A8' },
     roof: '#C97B5A',
     wall: '#F4E6C8',
@@ -67,15 +68,17 @@ export const AGENTS: AgentDef[] = [
     house: 'Observatoriet',
     line: 'Läser siffrorna och säger vad du borde göra härnäst.',
     job: [
-      'Briefing på måndag och fredag: försäljning, vinst och resultat jämfört med förra månaden',
+      'Kort råd varje morgon, briefing inför veckan på måndag och avstämning på fredag',
+      'Säsongsanpassade inköpsråd: vinter mer jeans, jackor och tröjor, färre t-shirts',
       'Hur länge lagret räcker och när nästa drop bör beställas',
       'Vilka kategorier och märken som ger mest vinst',
       'Vilka typer av klipp som fungerar',
-      'Tre konkreta råd för veckan, med siffran de bygger på',
+      'Tre konkreta råd, med siffran de bygger på',
+      'Granskar Planners planer och tränar honom (och tvärtom) i gruppchatten',
     ],
     never: 'Sätter aldrig pris på enskilda plagg. Råd om bokföring och skatt bör granskas av en redovisningskunnig.',
     command: '/advisor',
-    schedule: { days: [1, 5], h: 8, m: 40, label: 'Måndagar och fredagar 08:40' },
+    schedule: { days: EVERY_DAY, times: [[8, 20]], label: 'Varje morgon 08:20 (efter Planner)' },
     colors: { hat: '#3B3670', shirt: '#6D8FB3', pants: '#1F2E40', trim: '#E9B44C' },
     roof: '#3B3670',
     wall: '#E6E3F2',
@@ -90,11 +93,11 @@ export const AGENTS: AgentDef[] = [
       'Läser ändringsloggen och ser vad du och kompisen gjort, dag för dag',
       'Räknar plagg, försäljning, verifikat, uppgifter och klipp',
       'Jämför med förra veckan',
-      'Skriver framsteg och vad som är viktigast nästa vecka',
+      'Skriver en kort dagsanteckning varje kväll och hela veckans journal på söndagar',
     ],
     never: 'Skriver aldrig ut köpares namn eller adresser.',
     command: '/noter',
-    schedule: { days: [0], h: 20, m: 0, label: 'Söndagar 20:00' },
+    schedule: { days: EVERY_DAY, times: [[20, 40]], label: 'Varje kväll 20:40 (veckojournal på söndagar)' },
     colors: { hat: '#6B3E1E', shirt: '#8FB9A8', pants: '#3E4C60', trim: '#F4F1E6' },
     roof: '#1F5A44',
     wall: '#F2EBDD',
@@ -113,10 +116,49 @@ export const AGENTS: AgentDef[] = [
     ],
     never: 'Ändrar ingenting. Det gör Builder när du sagt ja.',
     command: '/reviewer',
-    schedule: { days: [1, 5], h: 8, m: 40, label: 'Måndagar och fredagar 08:40' },
+    schedule: { days: [1, 3, 5], times: [[8, 20]], label: 'Måndag, onsdag och fredag 08:20' },
     colors: { hat: '#1A1A1A', shirt: '#E1EEE6', pants: '#2B3A4A', trim: '#9EDBB8' },
     roof: '#2B3A4A',
     wall: '#DDE6E0',
+  },
+  {
+    id: 'planner',
+    name: 'Planner',
+    title: 'Planeraren',
+    house: 'Kartkammaren',
+    line: 'Din personliga planerare: antal, budget och tidsplan, med siffrorna i ryggen.',
+    job: [
+      'Planerar antal och budget för nästa drop utifrån säljtakt, säsong och senaste droppens storlek',
+      'Växer lite för varje drop men aldrig mer än att det finns en buffert kvar',
+      'Gör dags- och veckoplaner med datum, till exempel juldroppen och den nya hemsidan',
+      'Räknar baklänges från deadlines: när du måste beställa, fota och publicera',
+      'Jobbar ihop med Advisor: Advisor granskar planerna och Planner räknar på Advisors råd',
+    ],
+    never: 'Lägger inga beställningar och ändrar ingen data. Planerna är förslag tills du sagt ja.',
+    command: '/planner',
+    schedule: { days: EVERY_DAY, times: [[8, 20], [20, 40]], label: 'Varje dag 08:20 och 20:40' },
+    colors: { hat: '#2C5D8A', shirt: '#E9B44C', pants: '#2B3A4A', trim: '#F4F1E6' },
+    roof: '#2C5D8A',
+    wall: '#E4ECF2',
+  },
+  {
+    id: 'marketer',
+    name: 'Marketer',
+    title: 'Marknadsföraren',
+    house: 'Studion',
+    line: 'Planerar din TikTok och läser av vad som fungerar, utifrån det du själv lägger in.',
+    job: [
+      'Läser klippen du loggat: vad du gjorde (kryssen) och hur det gick (visningar, likes, sparade)',
+      'Visar vilka format, längder och tider som ger mest för just ditt konto',
+      'Planerar när och hur ofta du bör lägga upp',
+      'Kopplar klipp till försäljning: sålde plaggen du visade?',
+    ],
+    never: 'Börjar inte ge idéer förrän du loggat minst 5 klipp med siffror. Idéerna bygger då på ditt eget innehåll.',
+    command: '/marketer',
+    schedule: { days: EVERY_DAY, times: [[20, 40]], label: 'Varje kväll 20:40 (när det finns klipp)' },
+    colors: { hat: '#1A1A1A', shirt: '#C2324A', pants: '#1F2E40', trim: '#25F4EE' },
+    roof: '#C2324A',
+    wall: '#F2E2E4',
   },
   {
     id: 'builder',
@@ -166,14 +208,17 @@ export function stockholmToDate(y: number, mo: number, d: number, h: number, mi:
 
 /** Nästa gång agenten jobbar enligt schemat, eller null om den bara jobbar på kommando. */
 export function nextRun(s: AgentSchedule | null, now: Date = new Date()): Date | null {
-  if (!s || !s.days.length) return null;
+  if (!s || !s.days.length || !s.times.length) return null;
   const p = stockholmParts(now);
+  const times = [...s.times].sort((a, b) => a[0] * 60 + a[1] - (b[0] * 60 + b[1]));
   for (let i = 0; i <= 7; i++) {
     const base = new Date(Date.UTC(p.y, p.mo - 1, p.d + i, 12));
     const wd = base.getUTCDay();
     if (!s.days.includes(wd)) continue;
-    const at = stockholmToDate(base.getUTCFullYear(), base.getUTCMonth() + 1, base.getUTCDate(), s.h, s.m);
-    if (at.getTime() > now.getTime()) return at;
+    for (const [h, m] of times) {
+      const at = stockholmToDate(base.getUTCFullYear(), base.getUTCMonth() + 1, base.getUTCDate(), h, m);
+      if (at.getTime() > now.getTime()) return at;
+    }
   }
   return null;
 }
@@ -300,4 +345,59 @@ export function inlineParts(s: string): { text: string; bold: boolean }[] {
   }
   if (last < s.length) out.push({ text: s.slice(last), bold: false });
   return out.map((p) => ({ ...p, text: p.text.replace(/`([^`]+)`/g, '$1') }));
+}
+
+// ---------- Chatt: telefonen i varje hus och gruppchatten i byn ----------
+
+/** 'grupp' = byns gruppchatt. 'dm:advisor' osv. = telefonen i agentens hus. */
+export type ChatThread = 'grupp' | `dm:${AgentId}`;
+
+export interface AgentMessage {
+  id: string;
+  at: string; // ISO-tid
+  thread: ChatThread;
+  /** Agenten som skrev, eller 'du' när det är du (eller kompisen) som skrivit i appen. */
+  sender: AgentId | 'du';
+  /** Vem av er som skrev, när sender är 'du' (e-post eller namn). */
+  author?: string | null;
+  body: string;
+  /** chatt = vanligt meddelande. plan = dagens/veckans plan. förslag = något agenten vill göra och som kräver ditt ja. */
+  kind: 'chatt' | 'plan' | 'förslag';
+  status: 'väntar' | 'godkänd' | 'avvisad' | null;
+  replyTo: string | null;
+}
+
+export const dmThread = (id: AgentId): ChatThread => `dm:${id}`;
+
+/**
+ * Agenterna körs i fyra schemalagda rundor i Claude (molnmiljön Jarvis-881):
+ * morgonrundan 08:20 (Reminder, Planner, Advisor, Reviewer mån/ons/fre), lunchrundan 12:40 (Reminder och byrådet),
+ * kvällsrundan 20:40 (Marketer, Planner, Noter) och chattrundan varannan timme 10:15–22:15.
+ * Chattsvaren: på det du skrivit i telefonerna svarar agenterna i chattrundan och i morgonrundan.
+ */
+export const CHAT_SCHEDULE: AgentSchedule = { days: EVERY_DAY, times: [[8, 20], [10, 15], [12, 15], [14, 15], [16, 15], [18, 15], [20, 15], [22, 15]], label: 'Varannan timme 08–22' };
+
+/** Byrådet: agenterna pratar med varandra i gruppchatten en gång om dagen. */
+export const COUNCIL_SCHEDULE: AgentSchedule = { days: EVERY_DAY, times: [[12, 40]], label: 'Varje dag 12:40' };
+
+/** Dina meddelanden i en tråd som ingen agent har svarat på än. */
+export function unanswered(msgs: AgentMessage[], thread: ChatThread): AgentMessage[] {
+  const t = msgs.filter((m) => m.thread === thread).sort((a, b) => (a.at < b.at ? -1 : 1));
+  const lastAgent = t.reduce<string>((acc, m) => (m.sender !== 'du' && m.at > acc ? m.at : acc), '');
+  return t.filter((m) => m.sender === 'du' && m.at > lastAgent);
+}
+
+/** Förslag i gruppchatten som väntar på ditt ja eller nej. */
+export function pendingProposals(msgs: AgentMessage[]): AgentMessage[] {
+  return msgs.filter((m) => m.kind === 'förslag' && m.status === 'väntar').sort((a, b) => (a.at < b.at ? 1 : -1));
+}
+
+/** Meddelanden i en tråd, äldst först (som i en chatt). */
+export function threadMessages(msgs: AgentMessage[], thread: ChatThread): AgentMessage[] {
+  return msgs.filter((m) => m.thread === thread).sort((a, b) => (a.at < b.at ? -1 : 1));
+}
+
+/** Nya meddelanden från agenten sedan du senast tittade. */
+export function unreadCount(msgs: AgentMessage[], thread: ChatThread, seenAt: string | null): number {
+  return msgs.filter((m) => m.thread === thread && m.sender !== 'du' && (!seenAt || m.at > seenAt)).length;
 }

@@ -1,8 +1,12 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { ArrowLeft, Clock, RefreshCw, Terminal } from 'lucide-react';
+import { ArrowLeft, Clock, RefreshCw, Snowflake, Terminal } from 'lucide-react';
 import { store } from '../../data/store';
 import { AGENTS, agentById, agoText, inlineParts, latestByAgent, mood, nextRun, parseMarkdown, stockholmParts, whenText, type AgentDef, type AgentId, type AgentRun } from '../../domain/agents';
-import { AgentSprite, DOORS, House, Interior, Scenery, SPOTS, VH, VW, nodeAt, route as streetRoute, type Pt } from '../../game/village';
+import { AgentSprite, DOORS, House, Interior, Scenery, Snowfall, SPOTS, VH, VW, nodeAt, route as streetRoute, type Pt } from '../../game/village';
+import { snowingAt, villageTheme, type ThemePref, type VillageTheme } from '../../domain/season';
+import { todayISO } from '../../domain/dates';
+import { GroupChat, PhoneButton } from './ByChat';
+import { MarketerStudio } from './MarketerStudio';
 import { go, type Route } from '../router';
 import { cx } from '../components/ui';
 
@@ -64,6 +68,57 @@ function useNow(ms = 30000) {
   return now;
 }
 
+// ---------- Vinter- och jultema (kan stängas av, sparas på enheten) ----------
+
+const THEME_KEY = 'jarvis-byn-tema';
+function readPref(): ThemePref {
+  try {
+    const v = localStorage.getItem(THEME_KEY);
+    return v === 'på' || v === 'av' ? v : 'auto';
+  } catch {
+    return 'auto';
+  }
+}
+function useVillageTheme(): { theme: VillageTheme; pref: ThemePref; toggle: () => void } {
+  const [pref, setPref] = useState<ThemePref>(readPref);
+  const theme = villageTheme(todayISO(), pref);
+  const toggle = () => {
+    // På → av, av → på. Auto räknas som på eller av beroende på datumet.
+    const next: ThemePref = theme.winter || theme.xmas ? 'av' : 'på';
+    setPref(next);
+    try {
+      localStorage.setItem(THEME_KEY, next);
+    } catch {
+      /* ingen lagring: gäller tills sidan laddas om */
+    }
+  };
+  return { theme, pref, toggle };
+}
+
+const RED = '#C2324A';
+
+/** Girlang med blinkande ljus överst på sidan när jultemat är på. */
+function Garland({ t }: { t: number }) {
+  const colors = [RED, SUN, '#F4F1E6', '#6D8FB3'];
+  return (
+    <div className="pointer-events-none flex h-3 w-full overflow-hidden" aria-hidden style={{ background: 'repeating-linear-gradient(90deg,#1F5A44 0 10px,#174A38 10px 20px)' }}>
+      {Array.from({ length: 60 }, (_, i) => (
+        <i key={i} className="mx-[7px] mt-[3px] block h-[6px] w-[6px] shrink-0" style={{ background: colors[(i + t) % colors.length], opacity: (i + t) % 2 ? 1 : 0.55 }} />
+      ))}
+    </div>
+  );
+}
+
+function useBlink(ms = 900) {
+  const [t, setT] = useState(0);
+  useEffect(() => {
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+    const x = setInterval(() => setT((v) => v + 1), ms);
+    return () => clearInterval(x);
+  }, [ms]);
+  return t;
+}
+
 const isNight = (now: Date) => {
   const h = stockholmParts(now).h;
   return h >= 22 || h < 6;
@@ -79,16 +134,20 @@ export function Byn({ route }: { route: Route }) {
   const id = route.path[1];
   const data = useAgentRuns();
   const def = id ? agentById(id) : undefined;
+  const th = useVillageTheme();
+  const blink = useBlink();
   return (
-    <div className="min-h-dvh pb-32 lg:pb-16" style={{ background: BG, color: '#E9EEEA' }}>
-      {def ? <HouseView def={def} data={data} /> : <Village data={data} />}
+    <div className="min-h-dvh pb-[calc(150px+env(safe-area-inset-bottom))] lg:pb-16" style={{ background: th.theme.xmas ? '#0F1D17' : BG, color: '#E9EEEA' }}>
+      {th.theme.xmas && <Garland t={blink} />}
+      {def ? <HouseView def={def} data={data} theme={th.theme} /> : <Village data={data} th={th} />}
     </div>
   );
 }
 
 type Data = ReturnType<typeof useAgentRuns>;
 
-function Village({ data }: { data: Data }) {
+function Village({ data, th }: { data: Data; th: ReturnType<typeof useVillageTheme> }) {
+  const { theme } = th;
   const now = useNow();
   const runs = data.runs ?? [];
   const latest = useMemo(() => latestByAgent(runs), [runs]);
@@ -108,12 +167,22 @@ function Village({ data }: { data: Data }) {
             <div className="font-pixel text-[10px] uppercase tracking-wider" style={{ color: MINT }}>
               Agentbyn
             </div>
-            <h1 className="m-0 mt-2 font-serif text-[30px] font-semibold leading-tight">Här bor dina agenter</h1>
+            <h1 className="m-0 mt-2 font-serif text-[30px] font-semibold leading-tight">{theme.xmas ? 'God jul från agentbyn' : 'Här bor dina agenter'}</h1>
             <p className="m-0 mt-1 max-w-[560px] text-[14px]" style={{ color: MUTED }}>
-              Fem hus, fem jobb. Tryck på någon av dem för att gå in och se vad de har gjort.
+              Sju hus, sju jobb. Tryck på ett hus för att gå in, se vad agenten har gjort och chatta i telefonen.
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={th.toggle}
+              className="font-pixel flex h-9 items-center gap-1.5 border-2 px-2.5 text-[9px]"
+              style={{ borderColor: theme.winter ? RED : LINE, background: theme.winter ? 'rgba(194,50,74,.25)' : PANEL, color: theme.winter ? '#FFD6DC' : MUTED }}
+              aria-pressed={theme.winter}
+              title="Slå av eller på vinter- och jultemat (sparas på den här enheten)"
+            >
+              <Snowflake size={13} aria-hidden /> {theme.winter ? 'Vinter på' : 'Vinter av'}
+            </button>
             <span className="font-pixel rounded-none border-2 px-2.5 py-1.5 text-[10px]" style={{ borderColor: LINE, background: PANEL }}>
               {day} {clock} · {night ? 'natt' : isDusk(now) ? 'kväll' : 'dag'}
             </span>
@@ -136,7 +205,7 @@ function Village({ data }: { data: Data }) {
 
         <div className="flex flex-col gap-6 xl:grid xl:grid-cols-[minmax(0,1.75fr)_minmax(0,1fr)] xl:items-start xl:gap-x-8 xl:gap-y-6">
           <div className="xl:col-start-1 xl:row-start-1">
-            <VillageScene now={now} latest={latest} />
+            <VillageScene now={now} latest={latest} theme={theme} />
             <p className="m-0 mt-2 text-[12px] sm:hidden" style={{ color: MUTED }}>
               Dra i sidled för att se hela byn.
             </p>
@@ -163,6 +232,10 @@ function Village({ data }: { data: Data }) {
               <Empty shared={data.shared} loading={data.runs == null} />
             )}
           </PSection>
+          </div>
+
+          <div className="xl:col-start-1 xl:row-start-3">
+            <GroupChat xmas={theme.xmas} />
           </div>
         </div>
 
@@ -191,8 +264,8 @@ function HowTo() {
       </div>
       Agenterna jobbar i Claude, inte i appen, så Jarvis kostar fortfarande 0 kr. Öppna Jarvis-projektet i Claude och skriv
       {' '}
-      <Code>/reminder</Code>, <Code>/advisor</Code>, <Code>/noter</Code>, <Code>/reviewer</Code> eller <Code>/builder</Code> följt av vad du vill ha gjort.
-      De som har ett schema jobbar av sig själva och skickar en notis till telefonen när de är klara.
+      <Code>/reminder</Code>, <Code>/advisor</Code>, <Code>/planner</Code>, <Code>/marketer</Code>, <Code>/noter</Code>, <Code>/reviewer</Code> eller <Code>/builder</Code> följt av vad du vill ha gjort.
+      De som har ett schema jobbar av sig själva och skickar en notis till telefonen när de är klara. I varje hus finns en telefon där du kan skriva till agenten. Svaren kommer varannan timme mellan 08 och 22.
     </div>
   );
 }
@@ -315,7 +388,7 @@ interface Walker {
 
 const SPEED = 11; // pixlar per sekund i byns mått
 
-function VillageScene({ now, latest }: { now: Date; latest: Partial<Record<AgentId, AgentRun>> }) {
+function VillageScene({ now, latest, theme }: { now: Date; latest: Partial<Record<AgentId, AgentRun>>; theme: VillageTheme }) {
   const night = isNight(now);
   const dusk = isDusk(now);
   const reduce = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
@@ -409,15 +482,15 @@ function VillageScene({ now, latest }: { now: Date; latest: Partial<Record<Agent
   const sorted = [...ws].sort((a, b) => a.pos.y - b.pos.y);
 
   return (
-    <div ref={scroller} className="relative select-none overflow-x-auto border-2 [scrollbar-width:none]" style={{ borderColor: LINE, boxShadow: '0 0 0 4px rgba(0,0,0,.25)' }}>
+    <div ref={scroller} className="relative select-none overflow-x-auto border-2 [scrollbar-width:none]" style={{ borderColor: theme.xmas ? 'rgba(194,50,74,.7)' : LINE, boxShadow: '0 0 0 4px rgba(0,0,0,.25)' }}>
       <div className="relative w-full min-w-[620px] sm:min-w-0" style={{ aspectRatio: `${VW} / ${VH}` }}>
-        <svg viewBox={`0 0 ${VW} ${VH}`} className="pixel absolute inset-0 h-full w-full" role="img" aria-label="Agentbyn med fem hus och agenterna som går runt">
-          <Scenery t={t} night={night} />
+        <svg viewBox={`0 0 ${VW} ${VH}`} className="pixel absolute inset-0 h-full w-full" role="img" aria-label={`Agentbyn med sju hus och agenterna som går runt${theme.winter ? ', i vinterskrud' : ''}`}>
+          <Scenery t={t} night={night} winter={theme.winter} xmas={theme.xmas} />
           {AGENTS.map((a) => {
             const w = ws.find((x) => x.id === a.id)!;
             return (
               <g key={a.id} className="cursor-pointer" onClick={() => go(`#/byn/${a.id}`)} onMouseEnter={() => setHover(a.id)} onMouseLeave={() => setHover(null)}>
-                <House def={a} night={night || dusk} home={w.home} t={t} smoke={moods[a.id] === 'jobbar' || (a.id === 'noter' && !night)} />
+                <House def={a} night={night || dusk} home={w.home} t={t} smoke={moods[a.id] === 'jobbar' || (a.id === 'noter' && !night) || (theme.winter && !night)} winter={theme.winter} xmas={theme.xmas} />
               </g>
             );
           })}
@@ -435,7 +508,7 @@ function VillageScene({ now, latest }: { now: Date; latest: Partial<Record<Agent
                 onMouseLeave={() => setHover(null)}
               >
                 <rect x={2} y={12} width={9} height={1.5} fill="#00000040" />
-                <AgentSprite def={def} frame={moving ? frame : 0} flip={w.flip} />
+                <AgentSprite def={def} frame={moving ? frame : 0} flip={w.flip} xmas={theme.xmas} />
               </g>
             );
           })}
@@ -443,6 +516,7 @@ function VillageScene({ now, latest }: { now: Date; latest: Partial<Record<Agent
           {dusk && <rect x={0} y={0} width={VW} height={VH} fill="#C97B5A" opacity={0.12} pointerEvents="none" />}
           {night && <rect x={0} y={0} width={VW} height={VH} fill="#0A1430" opacity={0.42} pointerEvents="none" />}
           {night && <NightLights t={t} />}
+          {theme.winter && !reduce && snowingAt(stockholmParts(now).h, stockholmParts(now).mi) && <Snowfall tick={tick} />}
         </svg>
 
         {/* Skyltar och pratbubblor ovanpå (vanlig text, skarp i alla storlekar) */}
@@ -506,7 +580,7 @@ function NightLights({ t }: { t: number }) {
 
 // ---------- Ett hus inifrån ----------
 
-function HouseView({ def, data }: { def: AgentDef; data: Data }) {
+function HouseView({ def, data, theme }: { def: AgentDef; data: Data; theme: VillageTheme }) {
   const now = useNow();
   const [frame, setFrame] = useState(0);
   const runs = (data.runs ?? []).filter((r) => r.agent === def.id);
@@ -553,7 +627,7 @@ function HouseView({ def, data }: { def: AgentDef; data: Data }) {
         <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-start lg:gap-8">
           <div className="flex flex-col gap-6">
             <div className="border-2" style={{ borderColor: LINE, boxShadow: '0 0 0 4px rgba(0,0,0,.25)' }}>
-              <Interior def={def} frame={frame} />
+              <Interior def={def} frame={frame} xmas={theme.xmas} />
             </div>
             <PSection title="Mitt jobb">
               <div className="border-2 p-4" style={{ borderColor: LINE, background: PANEL }}>
@@ -625,6 +699,8 @@ function HouseView({ def, data }: { def: AgentDef; data: Data }) {
             )}
           </div>
 
+          <div className="flex flex-col gap-6">
+          {def.id === 'marketer' && <MarketerStudio />}
           <div id="rapport" className="scroll-mt-4">
             <PSection title={shown && shown !== last ? 'Äldre jobb' : 'Senaste jobbet'}>
               {shown ? (
@@ -647,8 +723,10 @@ function HouseView({ def, data }: { def: AgentDef; data: Data }) {
               )}
             </PSection>
           </div>
+          </div>
         </div>
       </div>
+      <PhoneButton key={def.id} def={def} runs={runs} xmas={theme.xmas} />
     </>
   );
 }
