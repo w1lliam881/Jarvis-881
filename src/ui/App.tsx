@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BarChart3, Home, MoreHorizontal, Package, Plus, ShoppingBag, Undo2 } from 'lucide-react';
+import { BarChart3, Home, MoreHorizontal, Package, ShoppingBag, Undo2 } from 'lucide-react';
 import { store, useStore } from '../data/store';
 import { useRoute, go } from './router';
 import { cx } from './components/ui';
@@ -15,7 +15,10 @@ import { Byn } from './screens/Byn';
 import { Welcome } from './screens/Welcome';
 import { Sidebar } from './components/Sidebar';
 import { Intro } from './components/Intro';
+import { QuickFab } from './components/QuickFab';
 import { deviceUser } from './Boot';
+import { recordVisit } from '../data/actions';
+import { meKey } from './me';
 
 const TABS = [
   { id: 'idag', label: 'Idag', icon: Home },
@@ -58,6 +61,12 @@ export function App() {
     return () => window.removeEventListener('keydown', on);
   }, []);
 
+  // Day streak: registrera att du varit inne idag (en gång per dag och person)
+  const ready = !!ds && (!!ds.settings.migratedAt || ds.drops.length > 0);
+  useEffect(() => {
+    if (ready) void recordVisit(meKey());
+  }, [ready]);
+
   if (!ds) return null;
   const empty = !ds.settings.migratedAt && !ds.drops.length && !ds.vouchers.length;
   if (empty || (!deviceUser() && !store().backend.email)) return <Welcome />;
@@ -93,22 +102,13 @@ export function App() {
 
   return (
     <div className="min-h-dvh">
-      <Sidebar route={route} onNew={() => setQuick('menu')} />
+      <Sidebar route={route} />
       <main key={top} className="desk-main">
         {screen}
       </main>
       <SaveStatus />
       <Toasts />
-      {!(top === 'byn' && route.path[1]) && (
-      <button
-        type="button"
-        onClick={() => setQuick('menu')}
-        className="no-print btn btn-sun fixed lg:hidden bottom-[calc(84px+env(safe-area-inset-bottom))] right-4 z-40 h-[52px] rounded-2xl px-5 shadow-[0_6px_16px_rgba(23,63,49,.25)]"
-        aria-label="Ny registrering"
-      >
-        <Plus size={20} strokeWidth={2.4} aria-hidden /> Ny
-      </button>
-      )}
+      <QuickFab hidden={top === 'byn' && !!route.path[1]} onPick={setQuick} />
       <nav className="no-print safe-bottom fixed lg:hidden inset-x-0 bottom-0 z-30 border-t border-line bg-surface/95 backdrop-blur" aria-label="Huvudmeny">
         <div className="mx-auto grid max-w-[720px] grid-cols-5 px-2 pt-2">
           {TABS.map((t) => {

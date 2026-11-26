@@ -3,6 +3,11 @@ import path from 'node:path';
 
 const fixture = path.resolve('fixtures/v14-audit.json');
 
+async function openFab(page: Page, item: string) {
+  await page.getByRole('button', { name: /^Snabbval/ }).click();
+  await page.getByRole('menuitem', { name: new RegExp(item) }).click();
+}
+
 async function importV14(page: Page) {
   await page.goto('/');
   await page.getByLabel('Vad heter du?').fill('Testare');
@@ -10,7 +15,7 @@ async function importV14(page: Page) {
   await page.setInputFiles('input[type=file]', fixture);
   await expect(page.getByText('Alla siffror stämmer mot v14')).toBeVisible();
   await page.getByRole('button', { name: 'Godkänn och importera' }).click();
-  await expect(page.getByRole('heading', { name: 'Idag' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /^Hej/ })).toBeVisible();
   await expect(page.getByText(/Bokföringen avstämd efter import/)).toBeVisible();
 }
 
@@ -25,8 +30,7 @@ test('import från v14 visar avstämning och rätt siffror', async ({ page }) =>
 test('registrera en försäljning under 15 sekunder', async ({ page }) => {
   await importV14(page);
   const t0 = Date.now();
-  await page.getByRole('button', { name: 'Ny registrering' }).click();
-  await page.getByRole('button', { name: /Försäljning Ett plagg/ }).click();
+  await openFab(page, 'Sålt något');
   await page.getByPlaceholder(/Sök bland/).fill('Grim Tim');
   await page.getByRole('button', { name: /Grim Tim/ }).first().click();
   await page.getByPlaceholder('t.ex. 800').fill('950');
@@ -41,8 +45,7 @@ test('registrera en försäljning under 15 sekunder', async ({ page }) => {
 
 test('ny drop genom att klistra in rader', async ({ page }) => {
   await importV14(page);
-  await page.getByRole('button', { name: 'Ny registrering' }).click();
-  await page.getByRole('button', { name: /Drop Klistra in/ }).click();
+  await openFab(page, 'Nytt inköp');
   await page.getByLabel(/Plagg, ett per rad/).fill("3x Levi's 501 150\nBarbour jacka 224,90");
   await expect(page.getByText('4 plagg · 675 kr')).toBeVisible();
   await page.getByRole('button', { name: 'Skapa drop med 4 plagg' }).click();
@@ -55,8 +58,7 @@ test('ny drop genom att klistra in rader', async ({ page }) => {
 
 test('bokför en kostnad och se den i resultatet', async ({ page }) => {
   await importV14(page);
-  await page.getByRole('button', { name: 'Ny registrering' }).click();
-  await page.getByRole('button', { name: /Kostnad eller händelse/ }).click();
+  await page.keyboard.press('k');
   await page.getByRole('button', { name: 'Förpackning/material' }).click();
   const amount = page.locator('input[inputmode=decimal]').first();
   await amount.fill('89');
@@ -94,7 +96,25 @@ test('spelet visar uppdrag från riktig data', async ({ page }) => {
   await expect(page.getByText(/dubbletter/).first()).toBeVisible();
 });
 
-test('agentbyn utan jul: åtta hus och ett hus inifrån', async ({ page }) => {
+test('startsidan hälsar, visar streak och snabbknappen har sajterna', async ({ page }) => {
+  await importV14(page);
+  await expect(page.getByRole('heading', { name: 'Hej Testare!' })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Day streak: 1 dag i rad/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Ny registrering' })).toHaveCount(0);
+  await page.getByRole('button', { name: /^Snabbval/ }).click();
+  for (const s of ['Vinted', 'Plick', 'TikTok', 'Doorzo']) await expect(page.getByRole('menuitem', { name: `Öppna ${s}` })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('menuitem', { name: 'Öppna Vinted' })).toHaveCount(0);
+  // Spelet: dagens kista och ett sidouppdrag som läggs i Att göra
+  await page.getByRole('link', { name: /Day streak/ }).click();
+  await page.getByRole('button', { name: 'Öppna', exact: true }).click();
+  await expect(page.getByText(/Öppnad: \+\d+ XP/)).toBeVisible();
+  await page.getByRole('button', { name: /^Lägg ".+" i Att göra$/ }).first().click();
+  await expect(page.getByText('Lagt i Att göra. Bocka av där när det är gjort.')).toBeVisible();
+  await expect(page.getByText('Något gick fel')).toHaveCount(0);
+});
+
+test('agentbyn utan jul: nio hus och ett hus inifrån', async ({ page }) => {
   await page.clock.setFixedTime(new Date('2026-07-10T12:00:00+02:00'));
   await importV14(page);
   await page.evaluate(() =>
@@ -105,7 +125,7 @@ test('agentbyn utan jul: åtta hus och ett hus inifrån', async ({ page }) => {
   );
   await page.goto('/#/byn');
   await expect(page.getByRole('heading', { name: 'Här bor dina agenter' })).toBeVisible();
-  for (const n of ['Reminder', 'Advisor', 'Planner', 'Marketer', 'Noter', 'Reviewer', 'Builder', 'Scout']) await expect(page.getByText(n, { exact: true }).first()).toBeVisible();
+  for (const n of ['Reminder', 'Advisor', 'Planner', 'Marketer', 'Noter', 'Reviewer', 'Builder', 'Economizer', 'Coach Claude']) await expect(page.getByText(n, { exact: true }).first()).toBeVisible();
   await expect(page.getByRole('button', { name: /Julmusik/ })).toHaveCount(0);
   await expect(page.getByText('Att göra idag').first()).toBeVisible();
   await page.getByRole('link', { name: /Reminder/ }).first().click();
@@ -118,12 +138,19 @@ test('agentbyn utan jul: åtta hus och ett hus inifrån', async ({ page }) => {
   await page.getByRole('link', { name: /Advisor/ }).first().click();
   await page.goBack();
   await expect(page.getByRole('heading', { name: 'Här bor dina agenter' })).toBeVisible();
-  // Scouts hamn: sökning med söklänkar
-  await page.goto('/#/byn/scout');
-  await page.getByPlaceholder("t.ex. Levi's 501 vintage mörk tvätt").fill('Levis 501 vintage');
-  await page.getByRole('button', { name: 'Spara', exact: true }).click();
-  await expect(page.getByText('Levis 501 vintage').first()).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Mercari' })).toBeVisible();
+  await expect(page.getByText('Scout', { exact: true })).toHaveCount(0);
+  // Anslagstavlan på torget: veckans mål att bocka av
+  await page.goto('/#/byn/tavlan');
+  await expect(page.getByRole('heading', { name: 'Anslagstavlan' })).toBeVisible();
+  await page.getByLabel('Nytt mål för veckan…').fill('Publicera 15 plagg');
+  await page.getByRole('button', { name: 'Lägg till' }).first().click();
+  await page.getByRole('checkbox', { name: 'Bocka av "Publicera 15 plagg"' }).click();
+  await expect(page.getByRole('checkbox', { name: 'Bocka ur "Publicera 15 plagg"' })).toBeVisible();
+  // Gymmet hos Coach Claude och Banken hos Economizer
+  await page.goto('/#/byn/coach');
+  await expect(page.getByRole('heading', { name: /Coach Claude/ })).toBeVisible();
+  await page.goto('/#/byn/economizer');
+  await expect(page.getByRole('heading', { name: /Economizer/ })).toBeVisible();
   await expect(page.getByText('Något gick fel')).toHaveCount(0);
 });
 

@@ -621,3 +621,40 @@ textarea.field {
     animation: none;
   }
 }
+
+/* Spelet: partiklar, kistan och XP som flyger upp */
+@keyframes game-fall {
+  0% { transform: translate3d(0, -10px, 0); }
+  50% { transform: translate3d(12px, 50vh, 0); }
+  100% { transform: translate3d(-6px, 105vh, 0); }
+}
+.game-fall { animation: game-fall linear infinite; }
+@keyframes game-float {
+  0%, 100% { transform: translate(0, 0); opacity: 0.2; }
+  50% { transform: translate(10px, -14px); opacity: 1; }
+}
+.game-float { animation: game-float ease-in-out infinite; border-radius: 50%; }
+@keyframes chest-wiggle {
+  0%, 86%, 100% { transform: rotate(0); }
+  89% { transform: rotate(-6deg); }
+  92% { transform: rotate(6deg); }
+  95% { transform: rotate(-3deg); }
+}
+.chest-wiggle { animation: chest-wiggle 2.4s infinite; transform-origin: 50% 90%; }
+@keyframes xp-float {
+  0% { transform: translate(-50%, 0); opacity: 0; }
+  20% { opacity: 1; }
+  100% { transform: translate(-50%, -34px); opacity: 0; }
+}
+.xp-float { animation: xp-float 0.9s ease-out forwards; }
+@media (prefers-reduced-motion: reduce) {
+  .game-fall, .game-float, .chest-wiggle, .xp-float { animation: none; }
+}
+
+/* Snabbknappens val rullar upp */
+@keyframes fab-in {
+  from { opacity: 0; transform: translateY(14px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.fab-item { animation: fab-in 0.22s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@media (prefers-reduced-motion: reduce) { .fab-item { animation: none; } }

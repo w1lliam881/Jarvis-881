@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, Copy, Plus, Sparkles, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Copy, Flame, Plus, Sparkles, Trash2 } from 'lucide-react';
+import { SiteLinks } from '../components/SiteLinks';
+import { OwnerChip } from '../components/OwnerChip';
 import { useData, useStore } from '../../data/store';
 import { addTask, addTasks, deleteTask, toggleTask } from '../../data/actions';
 import { addDays, daysInMonth, longDate, monthName, nextMonth, prevMonth, todayISO, weekStart, weekdayShort } from '../../domain/dates';
@@ -15,6 +17,7 @@ import { Bars, Card, Money, Page, Pill, RoiPill, Section, Segmented, Spark, Stat
 import { openQuick } from '../App';
 import { Presence } from '../components/Presence';
 import { toast } from '../Boot';
+import { meKey, meName } from '../me';
 import { useAgentRuns } from './Byn';
 import { AgentSprite } from '../../game/village';
 import { agentById, agoText } from '../../domain/agents';
@@ -32,11 +35,14 @@ export function Idag({ route }: { route: Route }) {
   return (
     <>
       <TopBand
-        title="Idag"
+        title={meName() ? `Hej ${meName()}!` : 'Hej!'}
         sub={longDate(today)}
         right={
           <div className="mt-1 flex flex-col items-end gap-2">
-          <Presence />
+          <div className="flex items-center gap-2">
+            {ds.settings.gameEnabled && <StreakChip ds={ds} />}
+            <Presence />
+          </div>
           <span className="flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 font-mono text-[11px] text-mint lg:hidden">
             <i className={cx('h-1.5 w-1.5 rounded-full', status.state === 'saving' ? 'bg-sun' : 'bg-mint')} />
             {status.state === 'saving' ? 'Sparar' : status.at ? `Sparat ${new Date(status.at).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}` : 'Synkad'}
@@ -106,6 +112,10 @@ function Overview({ ds, o }: { ds: Dataset; o: ReturnType<typeof overview> }) {
   );
   return (
     <>
+      <div className="flex items-center justify-between gap-3 px-1">
+        <span className="text-[13px] text-muted">Dina sajter</span>
+        <SiteLinks size={34} />
+      </div>
       <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4 lg:gap-4">
         <a href="#/lager" className="card p-3 lg:p-4">
           <span className="block text-[12px] text-muted">Lagervärde</span>
@@ -182,7 +192,7 @@ function Overview({ ds, o }: { ds: Dataset; o: ReturnType<typeof overview> }) {
 
 function QuestStrip({ ds }: { ds: Dataset }) {
   const today = todayISO();
-  const xp = xpInfo(ds, today);
+  const xp = xpInfo(ds, today, meKey());
   const board = questBoard(generateQuests(ds, today));
   if (!ds.settings.gameStartedAt) return null;
   return (
@@ -229,7 +239,7 @@ function Tasks({ ds }: { ds: Dataset }) {
     if (await addTask(text.trim())) setText('');
   };
   return (
-    <Section title="Att göra" action={<span className="text-muted">{open.length} kvar</span>}>
+    <Section id="att-gora" title="Att göra" action={<span className="flex items-center gap-2"><span className="text-muted">{open.length} kvar</span><OwnerChip agent="planner" className="hidden sm:inline-flex" /></span>}>
       <Card pad={false}>
         <div className="flex gap-2 border-b border-line-2 p-3">
           <input className="field" placeholder="Ny uppgift…" value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && add()} aria-label="Ny uppgift" />
@@ -553,6 +563,22 @@ function ClipStatsNote({ ds }: { ds: Dataset }) {
           {missing.length === 1 ? `"${missing[0].title || 'Klippet'}" lades upp för över två dygn sedan.` : `${missing.length} klipp lades upp för över två dygn sedan.`} Fyll i visningar, likes och sparade från TikTok-analysen.
         </span>
       </span>
+    </a>
+  );
+}
+
+/** Liten flamma med day streaken. Leder till spelet. */
+function StreakChip({ ds }: { ds: Dataset }) {
+  const streak = xpInfo(ds, todayISO(), meKey()).streak;
+  return (
+    <a
+      href="#/spelet"
+      className="flex h-8 items-center gap-1 rounded-full bg-white/10 pl-2 pr-2.5 text-[13px] font-semibold text-on-forest transition-colors hover:bg-white/15"
+      aria-label={`Day streak: ${streak} ${streak === 1 ? 'dag' : 'dagar'} i rad. Öppna spelet.`}
+      title="Dagar i rad du varit inne. Tryck för spelet."
+    >
+      <Flame size={15} className={streak ? 'text-[#FF9A3C]' : 'text-on-forest-muted'} aria-hidden />
+      <span className="tabnum">{streak}</span>
     </a>
   );
 }

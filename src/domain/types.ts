@@ -141,6 +141,9 @@ export interface Task extends BaseRecord {
   doneAt: ISODate | null;
   minutes: number | null;
   priority: 'hög' | 'medel' | 'låg';
+  /** Spontant uppdrag från spelet: ger extra XP när uppgiften bockas av */
+  questKey?: string | null;
+  xp?: number | null;
 }
 
 export interface Goal extends BaseRecord {
@@ -149,6 +152,9 @@ export interface Goal extends BaseRecord {
   target: number;
   current: number;
   unit: string;
+  /** Veckans mål (anslagstavlan): ISO-veckan, t.ex. "2026-W48", och om det är avbockat */
+  week?: string | null;
+  done?: boolean;
 }
 
 export interface Candidate extends BaseRecord {
@@ -202,14 +208,6 @@ export interface SearchSaved extends BaseRecord {
   category?: Category | null;
   /** Eget maxpris i ören. Null = räknas ut från dina krav och din historik. */
   maxPrice?: Ore | null;
-  /** Scout: sökningen används av agenten Scout varje morgon */
-  scout?: boolean;
-  /** Scout: pausad sökning söks inte */
-  paused?: boolean;
-  /** Scout: storlek eller mått att leta efter, t.ex. "W32" */
-  size?: string;
-  /** Scout: vad du vill ha och inte ha, med egna ord */
-  note?: string;
 }
 
 export type DraftStatus = 'väntar' | 'godkänd' | 'avvisad';
@@ -277,6 +275,10 @@ export interface GameState {
   bossHits?: Record<string, string[]>;
   title: string | null;
   seenLevel: number;
+  /** Dagar man varit inne, per person (e-post eller namn). Ger day streak. */
+  visits?: Record<string, string[]>;
+  /** Dagens kista: datum → vem som öppnade och hur mycket XP */
+  chests?: Record<string, { by: string; xp: number }>;
   updatedAt: string;
 }
 

@@ -21,9 +21,10 @@ describe('agentbyn: tider i svensk tid', () => {
     expect(nextRun(AGENTS.find((a) => a.id === 'reviewer')!.schedule, new Date('2026-11-27T08:00:00Z'))!.toISOString()).toBe('2026-11-30T07:20:00.000Z');
     expect(nextRun(AGENTS.find((a) => a.id === 'noter')!.schedule, now)!.toISOString()).toBe('2026-11-24T19:40:00.000Z');
   });
-  it('alla åtta agenter finns, Planner och Scout har schema', () => {
-    expect(AGENTS.map((a) => a.id).sort()).toEqual(['advisor', 'builder', 'marketer', 'noter', 'planner', 'reminder', 'reviewer', 'scout']);
-    expect(nextRun(AGENTS.find((a) => a.id === 'scout')!.schedule, new Date('2026-11-24T12:00:00Z'))!.toISOString()).toBe('2026-11-25T06:40:00.000Z');
+  it('alla nio agenter finns, Coach tränar på söndagar och Scout är borta', () => {
+    expect(AGENTS.map((a) => a.id).sort()).toEqual(['advisor', 'builder', 'coach', 'economizer', 'marketer', 'noter', 'planner', 'reminder', 'reviewer']);
+    expect(nextRun(AGENTS.find((a) => a.id === 'coach')!.schedule, new Date('2026-11-24T12:00:00Z'))!.toISOString()).toBe('2026-11-29T17:30:00.000Z');
+    expect(AGENTS.find((a) => a.id === 'economizer')!.pages!.map((p) => p.label)).toEqual(['Sälj', 'Lager', 'Ekonomi']);
     expect(nextRun(AGENTS.find((a) => a.id === 'planner')!.schedule, new Date('2026-11-24T12:00:00Z'))!.toISOString()).toBe('2026-11-24T19:40:00.000Z');
   });
   it('Builder har inget schema', () => {

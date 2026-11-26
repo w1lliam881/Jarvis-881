@@ -232,7 +232,8 @@ function linesFor(def: AgentDef, msgs: AgentMessage[], runs: AgentRun[]): Line[]
 /** Knappen i huset som fäller upp telefonen. */
 export function PhoneButton({ def, runs, xmas }: { def: AgentDef; runs: AgentRun[]; xmas: boolean }) {
   const chat = useAgentChat();
-  const [open, setOpen] = useState(false);
+  // Öppna direkt om man kom hit via "be om något" (?chatt=1)
+  const [open, setOpen] = useState(() => /[?&]chatt=1/.test(location.hash));
   const thread = dmThread(def.id);
   const [seen, setSeen] = useState(() => seenAt(thread));
   const msgs = chat.msgs ?? [];

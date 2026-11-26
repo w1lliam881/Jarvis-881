@@ -73,9 +73,10 @@ export class Store {
   }
 
   /** Spara en uppsättning ändringar. Kastar vidare fel efter att ha visat dem. */
-  save(label: string, build: (ds: Dataset) => Change[], opts: { undoable?: boolean } = {}): Promise<boolean> {
+  save(label: string, build: (ds: Dataset) => Change[], opts: { undoable?: boolean; quiet?: boolean } = {}): Promise<boolean> {
     const run = async () => {
       if (!this.ds) return false;
+      const prev = this.status;
       let changes: Change[];
       try {
         changes = build(this.ds);
@@ -87,8 +88,10 @@ export class Store {
         return false;
       }
       if (!changes.length) return true;
-      this.status = { state: 'saving', at: this.status.at, message: null };
-      this.emit();
+      if (!opts.quiet) {
+        this.status = { state: 'saving', at: this.status.at, message: null };
+        this.emit();
+      }
       try {
         const { muts, log, before } = this.prepare(this.ds, changes);
         await this.backend.commit(muts, log);
@@ -99,7 +102,8 @@ export class Store {
           this.undoStack.push({ label, before, after });
           if (this.undoStack.length > 30) this.undoStack.shift();
         }
-        this.status = { state: 'saved', at: new Date().toISOString(), message: label };
+        // quiet: sparas i bakgrunden utan att visa "Sparat" (t.ex. att du varit inne idag).
+        this.status = opts.quiet ? prev : { state: 'saved', at: new Date().toISOString(), message: label };
         this.emit();
         this.afterCommit?.(this);
         return true;

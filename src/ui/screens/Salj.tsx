@@ -9,6 +9,7 @@ import { kr } from '../../domain/money';
 import { PLATFORMS } from '../../domain/types';
 import { Card, Chips, Empty, Money, Page, RoiPill, Section, Sheet, TopBand, cx } from '../components/ui';
 import { go } from '../router';
+import { OwnerChip } from '../components/OwnerChip';
 import { openQuick } from '../App';
 
 export function Salj() {
@@ -46,6 +47,7 @@ export function Salj() {
         </div>
       </TopBand>
       <Page>
+        <OwnerChip agent="economizer" className="self-start" />
         {unl.length > 0 && (
           <Section title={`Bokförda försäljningar utan plagg · ${unl.length}`}>
             <Card pad={false}>

@@ -52,9 +52,27 @@ export function SaleSheet({ onClose, itemId: preset }: { onClose: () => void; it
   const ds = useData();
   const [q, setQ] = useState('');
   const [sel, setSel] = useState<string | null>(preset ?? null);
-  const [price, setPrice] = useState(0);
+  const [priceText, setPriceText] = useState('');
+  const price = priceText.trim() ? parseOre(priceText) : 0;
   const [date, setDate] = useState(todayISO());
-  const [platform, setPlatform] = useState<Platform>('Vinted');
+  const [otherDate, setOtherDate] = useState(false);
+  // Plattformen du senast sålde på är förvald
+  const [platform, setPlatformState] = useState<Platform>(() => {
+    try {
+      const p = localStorage.getItem('jarvis-senaste-plattform') as Platform | null;
+      return p && (PLATFORMS as readonly string[]).includes(p) ? p : 'Vinted';
+    } catch {
+      return 'Vinted';
+    }
+  });
+  const setPlatform = (p: Platform) => {
+    setPlatformState(p);
+    try {
+      localStorage.setItem('jarvis-senaste-plattform', p);
+    } catch {
+      /* ingen lagring */
+    }
+  };
   const [busy, setBusy] = useState(false);
   const unsold = useMemo(() => allLanded(ds).filter((l) => !isSold(l.item)), [ds]);
   const list = unsold.filter((l) => `${l.item.name} ${l.item.productId} ${l.item.brand} ${l.item.size} ${l.item.category} ${l.drop.name}`.toLowerCase().includes(q.toLowerCase())).slice(0, 60);
@@ -99,18 +117,38 @@ export function SaleSheet({ onClose, itemId: preset }: { onClose: () => void; it
               </button>
             )}
           </div>
-          <Field label="Såld för">
-            <MoneyInput value={price} onCommit={setPrice} autoFocus placeholder="t.ex. 800" />
+          <Field label="Såld för (kr)">
+            <input
+              className="field num text-[20px]"
+              inputMode="decimal"
+              autoFocus
+              placeholder="t.ex. 800"
+              value={priceText}
+              onChange={(e) => setPriceText(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && price > 0 && void save()}
+              aria-label="Såld för i kronor"
+            />
           </Field>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[13px] font-medium">Plattform</span>
+            <div className="flex flex-wrap gap-1.5">
+              {PLATFORMS.map((p) => (
+                <button key={p} type="button" aria-pressed={platform === p} onClick={() => setPlatform(p)} className={cx('min-h-[40px] rounded-full border px-3.5 text-[14px] font-semibold', platform === p ? 'border-accent bg-accent text-surface' : 'border-line text-text')}>
+                  {p}
+                </button>
+              ))}
+            </div>
+          </div>
+          {otherDate ? (
             <Field label="Datum">
               <input type="date" className="field" value={date} onChange={(e) => setDate(e.target.value)} />
             </Field>
-            <Field label="Plattform">
-              <Select value={platform} options={PLATFORMS} onChange={setPlatform} />
-            </Field>
-          </div>
-          <p className="m-0 text-[12px] text-muted">Verifikatet skapas automatiskt och följer med om du ändrar priset senare.</p>
+          ) : (
+            <button type="button" className="self-start text-[13px] text-muted underline" onClick={() => setOtherDate(true)}>
+              Såld idag. Annat datum?
+            </button>
+          )}
+          <p className="m-0 text-[12px] text-muted">Produkt-ID, plagg och drop fylls i automatiskt. Verifikatet skapas och följer med om du ändrar priset senare.</p>
         </div>
       ) : (
         <div className="flex flex-col gap-2">

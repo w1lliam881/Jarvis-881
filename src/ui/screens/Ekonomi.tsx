@@ -16,6 +16,7 @@ import type { Route } from '../router';
 import { Bars, Card, Chips, Columns, ConfirmButton, Empty, Field, MoneyInput, Page, Pill, Row, Section, Segmented, Stat, TopBand, cx } from '../components/ui';
 import { Attachments } from './Attachments';
 import { MonthGoalView } from './MonthGoal';
+import { OwnerChip } from '../components/OwnerChip';
 import { OkChip } from './Lager';
 import { openQuick } from '../App';
 import { toast } from '../Boot';
@@ -51,6 +52,7 @@ export function Ekonomi({ route }: { route: Route }) {
         </div>
       </TopBand>
       <Page>
+        <OwnerChip agent={view === 'manad' ? 'advisor' : 'economizer'} className="self-start" />
         {view === 'oversikt' && <Overview />}
         {view === 'verifikat' && <Vouchers />}
         {view === 'rapporter' && <Reports />}

@@ -14,6 +14,7 @@ import { Bar, Card, Chips, ConfirmButton, Empty, Field, Money, MoneyInput, Page,
 import { SaleSheet, DropSheet, CostSheet } from '../Quick';
 import { Attachments } from './Attachments';
 import { DropPlanCard } from './DropPlan';
+import { OwnerChip } from '../components/OwnerChip';
 import { toast } from '../Boot';
 
 export function Lager({ route }: { route: Route }) {
@@ -70,6 +71,7 @@ function StockList({ initial }: { initial: string }) {
         </div>
       </TopBand>
       <Page>
+        <OwnerChip agent="economizer" className="self-start" />
         <Chips
           value={f}
           onChange={setF}

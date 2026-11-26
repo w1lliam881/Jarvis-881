@@ -1,7 +1,7 @@
 // Agenterna i Agentbyn: vilka de är, när de jobbar och hur deras arbete sammanfattas.
 // Själva agenterna körs i Claude Code (se .claude/agents). Appen visar bara vad de gjort.
 
-export type AgentId = 'builder' | 'reviewer' | 'advisor' | 'reminder' | 'noter' | 'planner' | 'marketer' | 'scout';
+export type AgentId = 'builder' | 'reviewer' | 'advisor' | 'reminder' | 'noter' | 'planner' | 'marketer' | 'economizer' | 'coach';
 
 export interface AgentRun {
   id: string;
@@ -38,6 +38,8 @@ export interface AgentDef {
   colors: { hat: string; shirt: string; pants: string; trim: string };
   roof: string;
   wall: string;
+  /** Sidor i Jarvis som agenten ansvarar för */
+  pages?: { label: string; href: string }[];
 }
 
 export const AGENTS: AgentDef[] = [
@@ -60,6 +62,7 @@ export const AGENTS: AgentDef[] = [
     colors: { hat: '#E9B44C', shirt: '#C97B5A', pants: '#2B3A4A', trim: '#FFE2A8' },
     roof: '#C97B5A',
     wall: '#F4E6C8',
+    pages: [{ label: 'Kalendern', href: '#/idag?v=kalender' }],
   },
   {
     id: 'advisor',
@@ -75,6 +78,7 @@ export const AGENTS: AgentDef[] = [
       'Vilka typer av klipp som fungerar',
       'Tre konkreta råd, med siffran de bygger på',
       'Granskar Planners planer och tränar honom (och tvärtom) i gruppchatten',
+      'Navet: alla förslag från agenterna går via dig. Du ger råd, feedback och nya förslag innan något når William',
     ],
     never: 'Sätter aldrig pris på enskilda plagg. Råd om bokföring och skatt bör granskas av en redovisningskunnig.',
     command: '/advisor',
@@ -82,6 +86,10 @@ export const AGENTS: AgentDef[] = [
     colors: { hat: '#3B3670', shirt: '#6D8FB3', pants: '#1F2E40', trim: '#E9B44C' },
     roof: '#3B3670',
     wall: '#E6E3F2',
+    pages: [
+      { label: 'Idag: översikten', href: '#/idag' },
+      { label: 'Månadsmål', href: '#/ekonomi/manad' },
+    ],
   },
   {
     id: 'noter',
@@ -101,6 +109,7 @@ export const AGENTS: AgentDef[] = [
     colors: { hat: '#6B3E1E', shirt: '#8FB9A8', pants: '#3E4C60', trim: '#F4F1E6' },
     roof: '#1F5A44',
     wall: '#F2EBDD',
+    pages: [{ label: 'Anslagstavlan: rådets tips', href: '#/byn/tavlan' }, { label: 'Ändringsloggen', href: '#/mer/logg' }],
   },
   {
     id: 'reviewer',
@@ -140,6 +149,11 @@ export const AGENTS: AgentDef[] = [
     colors: { hat: '#2C5D8A', shirt: '#E9B44C', pants: '#2B3A4A', trim: '#F4F1E6' },
     roof: '#2C5D8A',
     wall: '#E4ECF2',
+    pages: [
+      { label: 'Framtid och budget', href: '#/planering/framtid' },
+      { label: 'Att göra', href: '#/idag#att-gora' },
+      { label: 'Uppdrag i spelet', href: '#/spelet' },
+    ],
   },
   {
     id: 'marketer',
@@ -159,25 +173,54 @@ export const AGENTS: AgentDef[] = [
     colors: { hat: '#1A1A1A', shirt: '#C2324A', pants: '#1F2E40', trim: '#25F4EE' },
     roof: '#C2324A',
     wall: '#F2E2E4',
+    pages: [
+      { label: 'Marknadsföring', href: '#/planering/marknad' },
+      { label: 'Videoidéer', href: '#/planering/video' },
+    ],
   },
   {
-    id: 'scout',
-    name: 'Scout',
-    title: 'Spanaren',
-    house: 'Hamnen',
-    line: 'Hjälper dig hitta och bedöma fynd på Doorzo, utifrån dina sökningar och referensbilder.',
+    id: 'economizer',
+    name: 'Economizer',
+    title: 'Ekonomen',
+    house: 'Banken',
+    line: 'Håller ordning på pengarna, inköpen och plaggen, så att det du registrerar alltid stämmer.',
     job: [
-      'Gör färdiga söklänkar varje morgon med japanska sökord och ditt maxpris i yen',
-      'Bedömer fynd du lämnar (länk eller skärmbild) mot dina referensbilder',
-      'Räknar hemkostnad (frakt, tull, förpackning) mot ditt maxpris för kategorin',
-      'Säger köp, kanske eller låt bli, och lägger de bästa som förslag i byrådet',
+      'Ansvarar för sidorna Sälj, Lager och Ekonomi',
+      'Ser till att varje nytt plagg får produkt-ID, kategori, vikt och inköpspris direkt',
+      'Kollar att försäljningar, inköp, frakt och tull är rätt bokförda och kopplade',
+      'Säger till om marginalen sjunker, lagret binder för mycket pengar eller något saknas',
     ],
-    never: 'Köper aldrig något och söker inte automatiskt på sajterna (Doorzo tillåter inte det). Du väljer vad som är värt att titta på.',
-    command: '/scout',
-    schedule: { days: EVERY_DAY, times: [[7, 40]], label: 'Varje morgon 07:40' },
-    colors: { hat: '#2B3A4A', shirt: '#6D8FB3', pants: '#3E4C60', trim: '#E9B44C' },
-    roof: '#1F4E6B',
-    wall: '#E7E1D3',
+    never: 'Ändrar aldrig bokföringen själv och sätter aldrig pris på enskilda plagg. En redovisningskunnig bör granska bokföringen.',
+    command: '/economizer',
+    schedule: { days: EVERY_DAY, times: [[8, 20]], label: 'Varje morgon 08:20' },
+    colors: { hat: '#1F5A44', shirt: '#F4F1E6', pants: '#2B3A4A', trim: '#E9B44C' },
+    roof: '#4A5A52',
+    wall: '#E8E2D2',
+    pages: [
+      { label: 'Sälj', href: '#/salj' },
+      { label: 'Lager', href: '#/lager' },
+      { label: 'Ekonomi', href: '#/ekonomi/oversikt' },
+    ],
+  },
+  {
+    id: 'coach',
+    name: 'Coach Claude',
+    title: 'Tränaren',
+    house: 'Gymmet',
+    line: 'Tränar agenterna varje söndag: utvärderar veckan, ger betyg och kräver mer.',
+    job: [
+      'Läser varje agents vecka: körningar, svar, förslag och vad som faktiskt hände',
+      'Ger varje agent betyg 1–10, vad som var bra och vad som måste bli bättre',
+      'Pushar agenterna att vara kritiska, säga emot och ge råd som går att använda',
+      'Sätter veckans träningsmål för varje agent, som de följer nästa vecka',
+    ],
+    never: 'Tränar agenterna, inte dig. Ändrar inga data och lägger inga beställningar.',
+    command: '/coach',
+    schedule: { days: [0], times: [[18, 30]], label: 'Söndagar 18:30' },
+    colors: { hat: '#C2324A', shirt: '#1A1A1A', pants: '#2B3A4A', trim: '#E9B44C' },
+    roof: '#5A2616',
+    wall: '#D9CBB8',
+    pages: [{ label: 'Gymmet: agenternas betyg', href: '#/byn/coach' }],
   },
   {
     id: 'builder',
@@ -391,12 +434,19 @@ export interface AgentMessage {
 export const dmThread = (id: AgentId): ChatThread => `dm:${id}`;
 
 /**
- * Agenterna körs i fyra schemalagda rundor i Claude (molnmiljön Jarvis-881):
- * morgonrundan 08:20 (Reminder, Planner, Advisor, Reviewer mån/ons/fre), lunchrundan 12:40 (Reminder och byrådet),
- * kvällsrundan 20:40 (Marketer, Planner, Noter) och chattrundan varannan timme 10:15–22:15.
- * Chattsvaren: på det du skrivit i telefonerna svarar agenterna i chattrundan och i morgonrundan.
+ * Agenterna körs i schemalagda rundor i Claude (molnmiljön Jarvis-881):
+ * morgonrundan 08:20 (Reminder, Planner, Advisor, Economizer, Reviewer mån/ons/fre), lunchrundan 12:40 (Reminder och byrådet),
+ * kvällsrundan 20:40 (Marketer, Planner, Noter med rådets tips), veckomötet fredag 15:00, träningen söndag 18:30
+ * och chattrundan varje timme 08:15–23:15.
  */
-export const CHAT_SCHEDULE: AgentSchedule = { days: EVERY_DAY, times: [[8, 20], [10, 15], [12, 15], [14, 15], [16, 15], [18, 15], [20, 15], [22, 15]], label: 'Varannan timme 08–22' };
+export const CHAT_SCHEDULE: AgentSchedule = {
+  days: EVERY_DAY,
+  times: Array.from({ length: 16 }, (_, i) => [8 + i, 15] as [number, number]),
+  label: 'Varje timme 08–23',
+};
+
+/** Veckomötet i byrådet: fredagar kl 15. */
+export const MEETING_SCHEDULE: AgentSchedule = { days: [5], times: [[15, 0]], label: 'Fredagar 15:00' };
 
 /** Byrådet: agenterna pratar med varandra i gruppchatten en gång om dagen. */
 export const COUNCIL_SCHEDULE: AgentSchedule = { days: EVERY_DAY, times: [[12, 40]], label: 'Varje dag 12:40' };

@@ -2,12 +2,13 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNod
 import { ArrowLeft, Clock, Music, RefreshCw, Terminal, VolumeX } from 'lucide-react';
 import { store } from '../../data/store';
 import { AGENTS, agentById, agoText, inlineParts, latestByAgent, mood, nextRun, parseMarkdown, stockholmParts, whenText, type AgentDef, type AgentId, type AgentRun } from '../../domain/agents';
-import { AgentSprite, DOORS, House, Interior, Scenery, Snowfall, SPOTS, VH, VW, nodeAt, route as streetRoute, type Pt } from '../../game/village';
+import { AgentSprite, BOARD, DOORS, House, Interior, Scenery, Snowfall, SPOTS, VH, VW, nodeAt, route as streetRoute, type Pt } from '../../game/village';
 import { snowLevel, villageTheme, type VillageTheme } from '../../domain/season';
 import { startXmasMusic, stopXmasMusic } from '../../game/music';
 import { CouncilBar, CouncilPhone, PhoneButton } from './ByChat';
 import { MarketerStudio } from './MarketerStudio';
-import { ScoutSettings } from './ScoutSettings';
+import { BoardView } from './Board';
+import { GymBoard } from './Gym';
 import { go, type Route } from '../router';
 import { cx } from '../components/ui';
 
@@ -166,7 +167,7 @@ export function Byn({ route }: { route: Route }) {
   return (
     <div className="min-h-dvh pb-[calc(150px+env(safe-area-inset-bottom))] lg:pb-16" style={{ background: theme.xmas ? '#0F1D17' : BG, color: '#E9EEEA' }}>
       {theme.xmas && <Garland t={blink} />}
-      {def ? <HouseView def={def} data={data} theme={theme} /> : <Village data={data} theme={theme} music={music} />}
+      {id === 'tavlan' ? <BoardView runs={data.runs ?? []} /> : def ? <HouseView def={def} data={data} theme={theme} /> : <Village data={data} theme={theme} music={music} />}
     </div>
   );
 }
@@ -554,6 +555,14 @@ function VillageScene({ now, latest, theme }: { now: Date; latest: Partial<Recor
         </svg>
 
         {/* Skyltar och pratbubblor ovanpå (vanlig text, skarp i alla storlekar) */}
+        <a
+          href="#/byn/tavlan"
+          className="font-pixel absolute -translate-x-1/2 whitespace-nowrap border-2 px-1.5 py-1 text-[7px] leading-none transition-transform hover:scale-110 sm:text-[9px]"
+          style={{ left: `${(BOARD.x / VW) * 100}%`, top: `${((BOARD.y - 24) / VH) * 100}%`, background: '#E9B44C', color: '#17201B', borderColor: '#17201B' }}
+        >
+          Anslagstavlan
+        </a>
+        <a href="#/byn/tavlan" aria-label="Gå till anslagstavlan" className="absolute" style={{ left: `${((BOARD.x - 8) / VW) * 100}%`, top: `${((BOARD.y - 16) / VH) * 100}%`, width: `${(16 / VW) * 100}%`, height: `${(16 / VH) * 100}%` }} />
         {AGENTS.map((a) => {
           const d = DOORS[a.id];
           return (
@@ -679,6 +688,22 @@ function HouseView({ def, data, theme }: { def: AgentDef; data: Data; theme: Ret
               </div>
             </PSection>
 
+            {def.pages && def.pages.length > 0 && (
+              <PSection title="Ansvarar för">
+                <div className="flex flex-col gap-1.5 border-2 p-3" style={{ borderColor: LINE, background: PANEL }}>
+                  {def.pages.map((p) => (
+                    <a key={p.href} href={p.href} className="flex min-h-[40px] items-center justify-between gap-2 border-b px-1 text-[14px] last:border-0" style={{ borderColor: LINE }}>
+                      {p.label}
+                      <span className="text-[12px]" style={{ color: MUTED }}>Öppna</span>
+                    </a>
+                  ))}
+                  <p className="m-0 mt-1 text-[12px]" style={{ color: MUTED }}>
+                    Be {def.name} om något på de här sidorna i telefonen. Förslag går via Advisor innan de kommer till dig.
+                  </p>
+                </div>
+              </PSection>
+            )}
+
             <PSection title="När jag jobbar">
               <div className="flex flex-col gap-2 border-2 p-4 text-[14px]" style={{ borderColor: LINE, background: PANEL }}>
                 <div className="flex items-center justify-between gap-3">
@@ -735,7 +760,7 @@ function HouseView({ def, data, theme }: { def: AgentDef; data: Data; theme: Ret
 
           <div className="flex flex-col gap-6">
           {def.id === 'marketer' && <MarketerStudio />}
-          {def.id === 'scout' && <ScoutSettings />}
+          {def.id === 'coach' && <GymBoard />}
           <div id="rapport" className="scroll-mt-4">
             <PSection title={shown && shown !== last ? 'Äldre jobb' : 'Senaste jobbet'}>
               {shown ? (

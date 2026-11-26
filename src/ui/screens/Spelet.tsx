@@ -8,6 +8,9 @@ import { Hero, chime } from '../../game/pixel';
 import { Overworld, WorldScene } from '../../game/Overworld';
 import type { World } from '../../game/engine';
 import { Page, Toggle, cx } from '../components/ui';
+import { DailyChest, SeasonBanner, SeasonParticles, SideQuests, StreakTrack, XpGuide } from './GameFun';
+import { gameSeason } from '../../game/fun';
+import { meKey } from '../me';
 
 const TIER_COLORS = ['#CD7F32', '#B8C0CA', '#E9B44C', '#7FD1E0', '#B9A2FF'];
 
@@ -15,7 +18,8 @@ export function Spelet() {
   const ds = useData();
   const today = todayISO();
   const s = ds.settings;
-  const xp = useMemo(() => xpInfo(ds, today), [ds, today]);
+  const xp = useMemo(() => xpInfo(ds, today, meKey()), [ds, today]);
+  const season = gameSeason(today);
   const board = useMemo(() => questBoard(generateQuests(ds, today)), [ds, today]);
   const bs = useMemo(() => badges(ds), [ds]);
   const [levelUp, setLevelUp] = useState<number | null>(null);
@@ -69,7 +73,8 @@ export function Spelet() {
 
   return (
     <div className="min-h-dvh pb-32" style={{ background: '#11161A', color: '#E9EEEA' }}>
-      <header className="relative overflow-hidden px-5 pb-6 pt-[max(20px,env(safe-area-inset-top))] lg:px-8 lg:pt-8" style={{ background: `linear-gradient(180deg, ${xp.world.sky}, #11161A)` }}>
+      <header className="relative overflow-hidden px-5 pb-6 pt-[max(20px,env(safe-area-inset-top))] lg:px-8 lg:pt-8" style={{ background: `linear-gradient(180deg, ${season.sky}, ${xp.world.sky} 55%, #11161A)` }}>
+        <SeasonParticles season={season} />
         <div className="absolute inset-x-0 bottom-0 h-3" style={{ background: xp.world.ground }} aria-hidden />
         <div className="relative mx-auto flex max-w-[720px] items-end gap-4 lg:max-w-[1216px]">
           <Hero world={xp.world.id} size={96} className="bob shrink-0" />
@@ -89,6 +94,11 @@ export function Spelet() {
       </header>
 
       <div className="mx-auto flex max-w-[720px] flex-col gap-6 px-4 pt-5 lg:max-w-[1280px] lg:px-8 lg:pt-7">
+        <SeasonBanner season={season} />
+        <div className="grid gap-3 lg:grid-cols-2">
+          <StreakTrack streak={xp.streak} />
+          <DailyChest streak={xp.streak} season={season} sound={s.gameSound} />
+        </div>
         <div className="grid grid-cols-3 gap-2 text-center">
           <PixelStat icon={<Flame size={16} aria-hidden />} label="Streak" value={`${xp.streak} d`} />
           <PixelStat icon={<Swords size={16} aria-hidden />} label="Uppdrag" value={String(Object.keys(ds.game.completed).length)} />
@@ -116,7 +126,11 @@ export function Spelet() {
         </div>
         <div className="flex flex-col gap-6">
 
-        <PSection title="Dagens uppdrag" sub="De tre viktigaste just nu. Klara uppdrag bockas av automatiskt.">
+        <PSection title="Spontana uppdrag" sub="Tre nya varje dag. Lägg dem i Att göra och bocka av där när de är gjorda, så får du XP.">
+          <SideQuests />
+        </PSection>
+
+        <PSection title="Dagens uppdrag" sub="Från din data. Bockas av automatiskt när det är gjort.">
           {board.today.map((q) => (
             <QuestCard key={q.id} q={q} />
           ))}
@@ -191,6 +205,10 @@ export function Spelet() {
             </div>
           </PSection>
         )}
+
+        <PSection title="Så får du XP">
+          <XpGuide xp={xp} />
+        </PSection>
 
         <PSection title="Hall of fame">
           {hall.length ? (

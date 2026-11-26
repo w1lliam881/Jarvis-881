@@ -21,6 +21,7 @@ Kör **bara `select`**. Aldrig `insert`, `update`, `delete`, `drop`, `alter` ell
 - `changelog(id, at, by, collection, record_id, action, summary, before, after)`: varje ändring, vem och när. `by` är e-post eller namn.
 - `presence(email, last_seen)`: när var och en senast var inne.
 - `backups`: säkerhetskopior. Läs inte `data`-kolumnen, den är stor.
+- `agent_training(week, agent, score, good, improve, goal)`: Coach Claudes veckobetyg (1–10) och träningsmål per agent.
 
 ## Samlingar (`records.collection`) och fält i `data`
 
@@ -33,7 +34,7 @@ Belopp är **ören** (heltal). 80000 = 800 kr. Datum är `YYYY-MM-DD`.
 - `goals`: name, kind, target, current
 - `videos`: platform, title, type, postedAt, lengthSec, song, views, likes, comments, shares, saves, itemIds
 - `candidates`: kalkyler på Doorzo-plagg (name, price, plannedSalePrice)
-- `searches`: sparade sökningar och bevakningar (watch = true). **Scout-sökningar** har scout = true: query, category, maxPrice (ören eller null = räknas från kraven), size, note, paused
+- `searches`: sparade sökningar och bevakningar (watch = true).
 - `inbox`: godkännandekön (status väntar/godkänd/avvisad)
 - `meta`: id `settings` och id `game` (inställningar och spelläge)
 
@@ -61,6 +62,19 @@ select at, by, collection, action, summary from changelog where at > now() - int
 - Föreslå aldrig ett pris på ett enskilt plagg. Kategorinivå (snitt, maxpris) går bra.
 - Bokföringen är ett stöd. Påminn om att en redovisningskunnig bör granska den när du ger råd om bokföring.
 - Inga betalda API:er och inga nya kostnader.
+- **Var tuff och kritisk.** Håll inte med för att vara snäll. Säg emot William och de andra agenterna när siffrorna säger något annat, och föreslå något bättre.
+- **Kort.** I chatten: chattstil enligt CHATT.md. I rapporter: det viktigaste först, inga utfyllnadsmeningar.
+- **Advisor är navet.** Förslag till William kommenteras av Advisor innan han tar ställning (CHATT.md).
+
+## Träningen (alla agenter)
+
+Coach Claude tränar agenterna varje söndag i Gymmet och sätter ett träningsmål för veckan. Läs ditt senaste mål innan du börjar jobba, och följ det:
+
+```sql
+select week, score, improve, goal from agent_training where agent = 'DITT_NAMN' order by week desc limit 1
+```
+
+Finns inget mål än: jobba som vanligt.
 
 ## Spara ditt arbete (alla agenter)
 
@@ -116,9 +130,9 @@ Se `docs/agenter/CHATT.md`. Kort:
 - **Efter varje körning** skriver du 1–2 korta meddelanden i byrådet: det viktigaste du såg, och en fråga eller utmaning till en annan agent som har nytta av det (`python3 scripts/agent-chat.py post --agent DU --thread grupp --body "..."`).
 - **Inget görs utan Williams ja.** Vill du att något ska hända (en uppgift läggs in, en ändring i appen, en beställning), skriv det som ett förslag: `--kind förslag`. Läs `python3 scripts/agent-chat.py decisions` innan du agerar på ett tidigare förslag. Bara `godkänd` får följas upp, och då bara inom det du redan får göra (agenterna ändrar fortfarande aldrig affärsdatan själva).
 
-## Bilder till agenterna (Scout och Marketer)
+## Bilder till agenterna (Marketer)
 
-Bilder ligger i tabellen `agent_media` (inte i `records`): `kind` = `scout-ref` (referensbild till en Scout-sökning, `ref_id` = sökningens id) eller `clip-frame` (bildruta ur ett TikTok-klipp, `ref_id` = klippets id, `note` = var i klippet). `data` är en bild som data-URL (JPEG).
+Bilder ligger i tabellen `agent_media` (inte i `records`): `kind` = `clip-frame` (bildruta ur ett TikTok-klipp, `ref_id` = klippets id, `note` = var i klippet). `data` är en bild som data-URL (JPEG).
 
 Spara bilderna som filer och titta på dem med Read-verktyget:
 

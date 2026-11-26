@@ -11,7 +11,7 @@ Skriver bara till agent_runs, aldrig till affärsdatan. Kräver molnmiljön Jarv
 import argparse, json, subprocess, sys
 
 p = argparse.ArgumentParser()
-p.add_argument('--agent', required=True, choices=['builder', 'reviewer', 'advisor', 'reminder', 'noter', 'planner', 'marketer', 'scout'])
+p.add_argument('--agent', required=True, choices=['builder', 'reviewer', 'advisor', 'reminder', 'noter', 'planner', 'marketer', 'economizer', 'coach'])
 p.add_argument('--trigger', default='kommando', choices=['schema', 'kommando', 'test'])
 p.add_argument('--status', default='klar', choices=['klar', 'varning', 'fel'])
 p.add_argument('--title', required=True)

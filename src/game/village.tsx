@@ -12,7 +12,8 @@ const HATS: Record<AgentId, string[]> = {
   reviewer: ['............', '...KKKKKK...', '...KKKKKK...'],
   planner: ['............', '...NNNNNN...', '..NNNNNNNN..'],
   marketer: ['............', '...QQQQQ....', '...QQQQQQQQ.'],
-  scout: ['....UUUU....', '...UUUUUU...', '.UUUUUUUUUU.'],
+  economizer: ['....UUUU....', '....UUUU....', '..UUUUUUUU..'],
+  coach: ['............', '...UUUUUU...', '..ZZZZZZZZ..'],
 };
 
 /** Tomteluva när jultemat är på. */
@@ -89,11 +90,20 @@ export function AgentSprite({ def, frame = 0, flip = false, size, className, xma
         <rect x={11.4} y={5.5} width={1.2} height={2.6} fill="#25F4EE" />
       </g>
     ),
-    scout: (
+    economizer: (
       <g key="item">
-        {/* kikare */}
-        <rect x={10} y={6} width={3} height={2} fill="#2B3A4A" />
-        <rect x={12.5} y={6.2} width={1} height={1.6} fill="#BFE3FF" />
+        {/* miniräknare */}
+        <rect x={10} y={6} width={3} height={4} fill="#2B3A4A" />
+        <rect x={10.5} y={6.5} width={2} height={1} fill="#9EDBB8" />
+        <rect x={10.5} y={8} width={2} height={1.5} fill="#8A9690" />
+      </g>
+    ),
+    coach: (
+      <g key="item">
+        {/* visselpipa i snöre */}
+        <rect x={6} y={7} width={1} height={1} fill="#E9B44C" />
+        <rect x={10} y={7} width={3} height={2} fill="#8A9690" />
+        <rect x={12} y={6.5} width={1} height={1} fill="#8A9690" />
       </g>
     ),
   };
@@ -141,7 +151,8 @@ export const DOORS: Record<AgentId, Pt> = {
   noter: { x: 40, y: 128 },
   marketer: { x: 110, y: 128 },
   reviewer: { x: 284, y: 128 },
-  scout: { x: 250, y: 186 },
+  economizer: { x: 250, y: 186 },
+  coach: { x: 70, y: 186 },
 };
 
 /** Gatornas mittlinjer */
@@ -181,7 +192,6 @@ const NODES: Record<string, Pt> = {
   // hamnen och Hamnvägen västerut
   pier: { x: 292, y: HY },
   hw: { x: WX, y: HY },
-  bak: { x: 70, y: HY },
   kyr: { x: 128, y: HY },
 };
 
@@ -221,10 +231,10 @@ const EDGES: [string, string][] = [
   ['mk', 'mk1'],
   ['mk', 'mk2'],
   ['sm', 'hm'],
-  ['hm', 'c-scout'],
-  ['c-scout', 'pier'],
+  ['hm', 'c-economizer'],
+  ['c-economizer', 'pier'],
   ['mk', 'hw'],
-  ['hw', 'bak'],
+  ['hw', 'c-coach'],
   ['hw', 'kyr'],
   ['kyr', 'hm'],
 ];
@@ -250,7 +260,7 @@ export function route(from: string, to: string): Pt[] {
   return path.slice(1).map((k) => NODES[k]);
 }
 
-export const SPOTS = ['t1', 't2', 't3', 't4', 'pk1', 'pk2', 'mk1', 'mk2', 'pier', 'bak', 'kyr'];
+export const SPOTS = ['t1', 't2', 't3', 't4', 'pk1', 'pk2', 'mk1', 'mk2', 'pier', 'kyr'];
 export const nodeAt = (k: string): Pt => NODES[k];
 
 type R = [number, number, number, number, string];
@@ -573,14 +583,22 @@ function Pond({ frozen }: { frozen: boolean }) {
 }
 
 function Board({ x, y }: { x: number; y: number }) {
+  // Större anslagstavla med lappar, stolpar och ett litet tak
   return (
     <g>
-      <rect x={x + 1} y={y + 6} width={1} height={5} fill="#4A2E16" />
-      <rect x={x + 9} y={y + 6} width={1} height={5} fill="#4A2E16" />
-      <rect x={x} y={y} width={11} height={7} fill="#6B3E1E" />
-      <rect x={x + 1} y={y + 1} width={9} height={5} fill="#EAD7BC" />
-      <rect x={x + 2} y={y + 2} width={3} height={2} fill="#F4F1E6" />
-      <rect x={x + 6} y={y + 2} width={3} height={3} fill="#E9B44C" />
+      <rect x={x + 1} y={y + 9} width={1} height={6} fill="#4A2E16" />
+      <rect x={x + 14} y={y + 9} width={1} height={6} fill="#4A2E16" />
+      <rect x={x - 1} y={y - 2} width={18} height={2} fill="#8A3B22" />
+      <rect x={x} y={y} width={16} height={10} fill="#6B3E1E" />
+      <rect x={x + 1} y={y + 1} width={14} height={8} fill="#C9A46A" />
+      <rect x={x + 2} y={y + 2} width={4} height={3} fill="#F4F1E6" />
+      <rect x={x + 7} y={y + 2} width={3} height={4} fill="#FFE2A8" />
+      <rect x={x + 11} y={y + 2} width={3} height={3} fill="#F4F1E6" />
+      <rect x={x + 3} y={y + 6} width={5} height={2} fill="#F4F1E6" />
+      <rect x={x + 10} y={y + 6} width={4} height={2} fill="#9EDBB8" />
+      <rect x={x + 3.5} y={y + 2} width={1} height={1} fill="#C2324A" />
+      <rect x={x + 8} y={y + 2} width={1} height={1} fill="#2C5D8A" />
+      <rect x={x + 12} y={y + 2} width={1} height={1} fill="#C2324A" />
     </g>
   );
 }
@@ -673,7 +691,8 @@ const EAVES: Record<AgentId, [number, number, number]> = {
   reviewer: [150, 62, 16],
   planner: [106, 87, 32],
   marketer: [60, 87, 28],
-  scout: [232, 166, 36],
+  economizer: [232, 164, 36],
+  coach: [54, 164, 32],
 };
 
 function Lights({ id, t }: { id: AgentId; t: number }) {
@@ -893,39 +912,62 @@ export function House({ def, night, home, t, smoke, winter = false, xmas = false
       );
       break;
     }
-    case 'scout': {
-      // Hamnen: sjöbod med kran, lådor från Japan och en skylt
-      const planks: R[] = [];
-      for (let y = 168; y < 186; y += 3) planks.push([232, y, 36, 1, '#CFC6B2']);
+    case 'economizer': {
+      // Banken: pelare, gavel och trappa. Pengar och plagg i ordning.
       list = [
         [231, 185, 40, 2, shade],
-        [232, 166, 36, 20, def.wall],
-        ...planks,
-        ...roof(229, 154, 42, 13, def.roof, '#163A50'),
-        ...win(237, 171, lit),
-        ...win(259, 171, lit),
+        [233, 164, 34, 22, def.wall],
+        [233, 164, 34, 1, '#CFC6B2'],
+        ...roof(230, 152, 40, 13, def.roof, '#2B3A33'),
+        [236, 166, 3, 18, '#F4F1E6'],
+        [243, 166, 3, 18, '#F4F1E6'],
+        [254, 166, 3, 18, '#F4F1E6'],
+        [261, 166, 3, 18, '#F4F1E6'],
+        [236, 166, 3, 1, '#B8B0A0'],
+        [243, 166, 3, 1, '#B8B0A0'],
+        [254, 166, 3, 1, '#B8B0A0'],
+        [261, 166, 3, 1, '#B8B0A0'],
         ...door(d.x, d.y, home),
-        [242, 160, 16, 4, '#4A2E16'],
-        [243, 161, 14, 2, '#E9B44C'],
-        // lådor
-        [221, 178, 8, 8, '#8A5A2B'],
-        [221, 178, 8, 1, '#6B3E1E'],
-        [224, 181, 2, 2, '#C2324A'],
-        [223, 172, 6, 6, '#A0703A'],
-        [223, 172, 6, 1, '#6B3E1E'],
-        // kranen
-        [272, 148, 2, 38, '#4A2E16'],
-        [264, 148, 20, 2, '#4A2E16'],
-        [266, 150, 1, 3, '#4A2E16'],
+        [238, 184, 24, 2, '#B8B0A0'],
+        [244, 158, 12, 3, '#4A2E16'],
+        [245, 159, 10, 1, '#E9B44C'],
+        [248, 154, 4, 3, '#E9B44C'],
+        [249, 155, 2, 1, '#8A5A0B'],
       ];
-      const sway = t % 4 < 2 ? 0 : 1;
       extra = (
         <g>
-          <rect x={281 + sway} y={150} width={1} height={10} fill="#8A9690" />
-          <rect x={279 + sway} y={160} width={5} height={4} fill="#8A5A2B" />
-          <rect x={279 + sway} y={160} width={5} height={1} fill="#6B3E1E" />
-          {/* lykta vid dörren */}
-          <rect x={256} y={176} width={2} height={3} fill={night ? '#FFE2A8' : '#8A9690'} />
+          <rect x={266} y={174} width={2} height={3} fill={night ? '#FFE2A8' : '#8A9690'} />
+          <rect x={232} y={174} width={2} height={3} fill={night ? '#FFE2A8' : '#8A9690'} />
+        </g>
+      );
+      break;
+    }
+    case 'coach': {
+      // Gymmet: tegel, stora fönster med skivstång, skylt
+      const bricks: R[] = [];
+      for (let y = 166; y < 186; y += 3) for (let x = 54 + ((y / 3) % 2 ? 2 : 0); x < 86; x += 5) bricks.push([x, y, 1, 1, '#B79F86']);
+      list = [
+        [53, 185, 34, 2, shade],
+        [54, 164, 32, 22, def.wall],
+        ...bricks,
+        ...roof(51, 154, 38, 11, def.roof, '#3A1A10'),
+        [57, 168, 11, 8, '#4A2E16'],
+        [58, 169, 9, 6, lit ? '#FFE2A8' : '#BFE3FF'],
+        [59, 172, 7, 1, '#2B3A4A'],
+        [58, 171, 1, 3, '#1A1A1A'],
+        [66, 171, 1, 3, '#1A1A1A'],
+        [74, 168, 9, 8, '#4A2E16'],
+        [75, 169, 7, 6, lit ? '#FFE2A8' : '#BFE3FF'],
+        [77, 171, 3, 3, '#C2324A'],
+        ...door(d.x, d.y, home),
+        [62, 158, 16, 4, '#1A1A1A'],
+        [63, 159, 14, 2, '#C2324A'],
+      ];
+      const lift = t % 4 < 2 ? 0 : 1;
+      extra = (
+        <g>
+          {/* hantel i fönstret som lyfts upp och ner */}
+          <rect x={76} y={170 + lift} width={5} height={1} fill="#2B3A4A" />
         </g>
       );
       break;
@@ -941,27 +983,7 @@ export function House({ def, night, home, t, smoke, winter = false, xmas = false
   );
 }
 
-/** Byggnader utan agent: bageriet och kyrkan vid Hamnvägen, så att byn känns bebodd. */
-function Bakery({ night, t }: { night: boolean; t: number }) {
-  const x = 56;
-  const y = 186;
-  return (
-    <g>
-      <rect x={x - 1} y={y - 1} width={30} height={2} fill="#00000033" />
-      <rect x={x} y={y - 16} width={28} height={16} fill="#EAD7BC" />
-      {rects(roofRows(x - 3, y - 25, 34, 10, '#8A3B22', '#5A2616'), 'bk')}
-      <rect x={x + 3} y={y - 12} width={7} height={6} fill="#4A2E16" />
-      <rect x={x + 4} y={y - 11} width={5} height={4} fill={night ? '#FFE2A8' : '#F4D9A0'} />
-      <rect x={x + 5} y={y - 9} width={3} height={1} fill="#C97B5A" />
-      <rect x={x + 15} y={y - 7} width={6} height={7} fill="#6B3E1E" />
-      <rect x={x + 9} y={y - 20} width={10} height={3} fill="#4A2E16" />
-      <rect x={x + 10} y={y - 19} width={8} height={1} fill="#E9B44C" />
-      <rect x={x + 22} y={y - 30} width={3} height={6} fill="#5A2616" />
-      <rect x={x + 22} y={y - 34 - (t % 3)} width={2} height={2} fill="#E9EEEA" opacity={0.6} />
-    </g>
-  );
-}
-
+/** Kyrkan vid Hamnvägen, så att byn känns bebodd. */
 function Church({ night }: { night: boolean }) {
   const x = 116;
   const y = 186;
@@ -1012,6 +1034,9 @@ const TREES: [number, number][] = [
   [300, 146], [292, 156], [8, 140], [4, 158], [176, 140], [186, 148], [196, 140], [200, 162], [214, 148], [300, 166], [150, 140], [142, 162],
 ];
 
+/** Anslagstavlan på torget (mitten av tavlans fot). */
+export const BOARD = { x: 136, y: 110 };
+
 /** Allt som inte är hus: träd, torg, park, torghandel, hamn, lyktor. snow 0–1 = hur mycket snö som lagt sig. */
 export function Scenery({ t, night, snow = 0, xmas = false }: { t: number; night: boolean; snow?: number; xmas?: boolean }) {
   const frozen = snow > 0.45;
@@ -1021,7 +1046,7 @@ export function Scenery({ t, night, snow = 0, xmas = false }: { t: number; night
       <Ground level={snow} />
       <Fountain t={t} frozen={frozen} />
       <Pond frozen={frozen} />
-      <Board x={128} y={98} />
+      <Board x={BOARD.x - 8} y={BOARD.y - 15} />
       {/* bänkar */}
       <Bench x={130} y={74} />
       <Bench x={182} y={116} />
@@ -1058,7 +1083,6 @@ export function Scenery({ t, night, snow = 0, xmas = false }: { t: number; night
       <Boat t={t} />
       <Gull x={(40 + gx) % VW} y={197} />
       <Gull x={(200 + gx * 0.8) % VW} y={200} />
-      <Bakery night={night} t={t} />
       <Church night={night} />
       <Well x={262} y={84} />
       {/* staket framför husen */}
@@ -1219,37 +1243,45 @@ export function Interior({ def, frame, xmas = false }: { def: AgentDef; frame: n
         [81, 24, 1.5, 6, '#25F4EE'],
       ];
       break;
-    case 'scout':
+    case 'economizer':
       furn = [
-        // anslagstavla med referensbilder, karta över Japan, kikare och lådor
-        [36, 4, 26, 20, '#8A5A2B'],
-        [37, 5, 24, 18, '#C9A46A'],
-        [39, 7, 6, 6, '#F4F1E6'],
-        [40, 8, 4, 4, '#2C5D8A'],
-        [47, 7, 6, 6, '#F4F1E6'],
-        [48, 8, 4, 4, '#3B5A7A'],
-        [55, 8, 5, 6, '#F4F1E6'],
-        [56, 9, 3, 4, '#1F2E40'],
-        [40, 15, 6, 6, '#F4F1E6'],
-        [41, 16, 4, 4, '#4f7f9c'],
-        [49, 15, 9, 6, '#F4F1E6'],
-        [50, 16, 2, 2, '#C2324A'],
-        [53, 17, 4, 1, '#2B3A4A'],
-        [66, 5, 22, 16, '#F4F1E6'],
-        [67, 6, 20, 14, '#BFE3FF'],
-        [77, 8, 3, 2, '#3d7d58'],
-        [76, 10, 4, 3, '#3d7d58'],
-        [74, 13, 4, 3, '#3d7d58'],
-        [72, 15, 3, 2, '#3d7d58'],
-        [76, 11, 1, 1, '#C2324A'],
-        [66, 24, 26, 3, '#8A5A2B'],
-        [68, 27, 2, 7, '#6B3E1E'],
-        [88, 27, 2, 7, '#6B3E1E'],
-        [72, 21, 5, 3, '#2B3A4A'],
-        [78, 21, 5, 3, '#2B3A4A'],
-        [77, 22, 1, 1, '#1A1A1A'],
-        [84, 28, 8, 6, '#A0703A'],
-        [84, 28, 8, 1, '#6B3E1E'],
+        // kassaskåp, huvudbok och kulram
+        [38, 6, 18, 22, '#5B6670'],
+        [39, 7, 16, 20, '#8A9690'],
+        [46, 15, 3, 3, '#E9B44C'],
+        [62, 22, 26, 3, '#8A5A2B'],
+        [64, 25, 2, 9, '#6B3E1E'],
+        [84, 25, 2, 9, '#6B3E1E'],
+        [66, 18, 10, 4, '#F4F1E6'],
+        [70, 18, 1, 4, '#C4B8A0'],
+        [78, 14, 10, 8, '#6B3E1E'],
+        [79, 15, 8, 1, '#E9B44C'],
+        [79, 17, 8, 1, '#E9B44C'],
+        [79, 19, 8, 1, '#E9B44C'],
+        [80, 15, 1, 1, '#C2324A'],
+        [83, 17, 1, 1, '#C2324A'],
+        [81, 19, 1, 1, '#C2324A'],
+      ];
+      break;
+    case 'coach':
+      furn = [
+        // skivstång i ställning, matta och tavla med betyg
+        [36, 4, 24, 18, '#F4F1E6'],
+        [36, 4, 24, 3, '#C2324A'],
+        [38, 9, 12, 1, '#2B3A4A'],
+        [52, 9, 5, 1, '#2c7a52'],
+        [38, 12, 10, 1, '#2B3A4A'],
+        [52, 12, 4, 1, '#E9B44C'],
+        [38, 15, 14, 1, '#2B3A4A'],
+        [52, 15, 5, 1, '#2c7a52'],
+        [38, 18, 9, 1, '#2B3A4A'],
+        [52, 18, 3, 1, '#C2324A'],
+        [64, 14, 2, 20, '#5B6670'],
+        [88, 14, 2, 20, '#5B6670'],
+        [60, 16, 34, 1, '#2B3A4A'],
+        [60, 13, 3, 7, '#1A1A1A'],
+        [91, 13, 3, 7, '#1A1A1A'],
+        [62, 31, 30, 3, '#2C5D8A'],
       ];
       break;
     case 'builder':
