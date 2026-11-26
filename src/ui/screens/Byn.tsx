@@ -7,6 +7,7 @@ import { snowLevel, villageTheme, type VillageTheme } from '../../domain/season'
 import { startXmasMusic, stopXmasMusic } from '../../game/music';
 import { CouncilBar, CouncilPhone, PhoneButton } from './ByChat';
 import { MarketerStudio } from './MarketerStudio';
+import { ScoutSettings } from './ScoutSettings';
 import { go, type Route } from '../router';
 import { cx } from '../components/ui';
 
@@ -207,10 +208,10 @@ function Village({ data, theme, music }: { data: Data; theme: ReturnType<typeof 
                 aria-pressed={music.on}
                 title="Julmusiken spelar tyst i bakgrunden. Den startar när du rör vid sidan."
               >
-                {music.on ? <Music size={13} aria-hidden /> : <VolumeX size={13} aria-hidden />} {music.on ? 'Julmusik på' : 'Julmusik av'}
+                {music.on ? <Music size={13} aria-hidden /> : <VolumeX size={13} aria-hidden />} <span className="hidden sm:inline">{music.on ? 'Julmusik på' : 'Julmusik av'}</span><span className="sm:hidden">{music.on ? 'På' : 'Av'}</span>
               </button>
             )}
-            <span className="font-pixel rounded-none border-2 px-2.5 py-1.5 text-[10px]" style={{ borderColor: LINE, background: PANEL }}>
+            <span className="font-pixel whitespace-nowrap rounded-none border-2 px-2.5 py-1.5 text-[10px]" style={{ borderColor: LINE, background: PANEL }}>
               {day} {clock} · {night ? 'natt' : isDusk(now) ? 'kväll' : 'dag'}
             </span>
             {data.shared && (
@@ -733,6 +734,7 @@ function HouseView({ def, data, theme }: { def: AgentDef; data: Data; theme: Ret
 
           <div className="flex flex-col gap-6">
           {def.id === 'marketer' && <MarketerStudio />}
+          {def.id === 'scout' && <ScoutSettings />}
           <div id="rapport" className="scroll-mt-4">
             <PSection title={shown && shown !== last ? 'Äldre jobb' : 'Senaste jobbet'}>
               {shown ? (

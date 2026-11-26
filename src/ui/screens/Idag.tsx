@@ -18,6 +18,7 @@ import { toast } from '../Boot';
 import { useAgentRuns } from './Byn';
 import { AgentSprite } from '../../game/village';
 import { agentById, agoText } from '../../domain/agents';
+import { clipsMissingStats } from '../../domain/clips';
 
 export function Idag({ route }: { route: Route }) {
   const ds = useData();
@@ -134,6 +135,7 @@ function Overview({ ds, o }: { ds: Dataset; o: ReturnType<typeof overview> }) {
       </div>
 
       <AgentNote />
+      <ClipStatsNote ds={ds} />
 
       <div className="desk-cols">
       <div className="desk-col">
@@ -530,6 +532,26 @@ function AgentNote() {
           <span className="shrink-0 text-[12px] font-medium text-accent">Agentbyn</span>
         </span>
         <span className="mt-0.5 block text-[14px] leading-snug">{r.summary}</span>
+      </span>
+    </a>
+  );
+}
+
+/** Marketers påminnelse: klipp som lagts upp för minst 48 timmar sedan men saknar siffror. */
+function ClipStatsNote({ ds }: { ds: Dataset }) {
+  const missing = clipsMissingStats(ds);
+  if (!missing.length) return null;
+  const def = agentById('marketer')!;
+  return (
+    <a href="#/byn/marketer" className="card flex items-center gap-3 p-3.5">
+      <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl" style={{ background: def.wall }}>
+        <AgentSprite def={def} size={38} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[13px] font-semibold">Marketer väntar på siffror</span>
+        <span className="mt-0.5 block text-[14px] leading-snug">
+          {missing.length === 1 ? `"${missing[0].title || 'Klippet'}" lades upp för över två dygn sedan.` : `${missing.length} klipp lades upp för över två dygn sedan.`} Fyll i visningar, likes och sparade från TikTok-analysen.
+        </span>
       </span>
     </a>
   );

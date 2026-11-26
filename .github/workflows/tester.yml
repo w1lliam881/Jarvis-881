@@ -31,4 +31,4 @@ jobs:
       - name: Webbläsare för end-to-end
         run: npx playwright install --with-deps chromium
       - name: End-to-end
-        run: npm run e2e -- --trace off
+        run: npm run e2e
