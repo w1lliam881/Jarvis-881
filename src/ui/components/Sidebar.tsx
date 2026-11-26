@@ -1,4 +1,4 @@
-import { BarChart3, Castle, BookOpen, Calculator, Clapperboard, Database, Gamepad2, History, Home, Languages, LineChart, Package, Plus, Settings as Cog, ShoppingBag, Upload, Wallet } from 'lucide-react';
+import { BarChart3, Castle, BookOpen, Calculator, Clapperboard, Database, Gamepad2, History, Home, Languages, LineChart, Package, Settings as Cog, ShoppingBag, Upload, Wallet } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useStore } from '../../data/store';
 import { kr } from '../../domain/money';
@@ -100,7 +100,7 @@ function Group({ title, children }: { title: string; children: ReactNode }) {
 }
 
 /** Sidomeny som bara visas på bred skärm (dator). Telefonen behåller menyn i botten. */
-export function Sidebar({ route, onNew }: { route: Route; onNew: () => void }) {
+export function Sidebar({ route }: { route: Route }) {
   const { ds, status } = useStore();
   if (!ds) return null;
   const today = todayISO();
@@ -122,13 +122,6 @@ export function Sidebar({ route, onNew }: { route: Route; onNew: () => void }) {
           {o.soldCount} plagg · <span className="text-mint">{kr(o.soldProfit)} vinst</span>
         </div>
       </div>
-
-      <button type="button" onClick={onNew} className="btn btn-sun mx-3 mt-4 justify-between rounded-xl px-4">
-        <span className="flex items-center gap-2">
-          <Plus size={18} strokeWidth={2.4} aria-hidden /> Ny registrering
-        </span>
-        <kbd className="rounded bg-black/10 px-1.5 font-mono text-[11px]">N</kbd>
-      </button>
 
       <nav className="mt-4 flex flex-col">
         {MAIN.map((l) => (
@@ -155,7 +148,7 @@ export function Sidebar({ route, onNew }: { route: Route; onNew: () => void }) {
           <i className={cx('h-1.5 w-1.5 rounded-full', status.state === 'saving' ? 'bg-sun' : status.state === 'error' ? 'bg-neg' : 'bg-mint')} />
           {status.state === 'saving' ? 'Sparar…' : status.state === 'error' ? 'Kunde inte spara' : status.at ? `Sparat ${new Date(status.at).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}` : 'Synkad'}
         </div>
-        Genvägar: <kbd className="side-kbd">N</kbd> försäljning · <kbd className="side-kbd">K</kbd> kostnad · <kbd className="side-kbd">U</kbd> uppgift · <kbd className="side-kbd">1–5</kbd> flikar
+        Snabbt nere till höger. Genvägar: <kbd className="side-kbd">N</kbd> försäljning · <kbd className="side-kbd">K</kbd> kostnad · <kbd className="side-kbd">U</kbd> uppgift · <kbd className="side-kbd">1–5</kbd> flikar
       </div>
     </aside>
   );

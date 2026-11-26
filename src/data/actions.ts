@@ -1,3 +1,6 @@
+import { nextProductIds } from '../domain/productid';
+import { openChest, withVisit, type SideQuest } from '../game/fun';
+import { live } from '../domain/metrics';
 import { productIdFrom } from '../domain/import-v14';
 import { baseRecord, newId } from '../domain/defaults';
 import { eventLines, EVENT_TYPES, lockedSaleConflict, nextVoucherNr } from '../domain/ledger';
@@ -69,16 +72,20 @@ export function createDrop(p: Partial<Drop>, rows: ParsedRow[]): Promise<boolean
     ok: 0,
     ...p,
   };
-  return store().save(`Ny drop: ${drop.name} (${rows.length} plagg)`, () => [
-    { collection: 'drops', record: drop as never },
-    ...rows.map((r) => ({ collection: 'items' as const, record: newItem(drop.id, { name: r.name, category: r.category, cost: r.cost, weightKg: r.weightKg }) as never })),
-  ]);
+  return store().save(`Ny drop: ${drop.name} (${rows.length} plagg)`, (ds) => {
+    const ids = nextProductIds(ds, rows.length);
+    return [
+      { collection: 'drops', record: drop as never },
+      ...rows.map((r, k) => ({ collection: 'items' as const, record: newItem(drop.id, { name: r.name, category: r.category, cost: r.cost, weightKg: r.weightKg, productId: ids[k] }) as never })),
+    ];
+  });
 }
 
 export function addItems(dropId: string, rows: ParsedRow[]): Promise<boolean> {
-  return store().save(`${rows.length} plagg tillagda`, () =>
-    rows.map((r) => ({ collection: 'items' as const, record: newItem(dropId, { name: r.name, category: r.category, cost: r.cost, weightKg: r.weightKg }) as never })),
-  );
+  return store().save(`${rows.length} plagg tillagda`, (ds) => {
+    const ids = nextProductIds(ds, rows.length);
+    return rows.map((r, k) => ({ collection: 'items' as const, record: newItem(dropId, { name: r.name, category: r.category, cost: r.cost, weightKg: r.weightKg, productId: ids[k] }) as never }));
+  });
 }
 
 export function updateDrop(id: string, patch: Partial<Drop>, label = 'Drop sparad'): Promise<boolean> {
@@ -512,4 +519,40 @@ export function rejectDraft(id: string): Promise<boolean> {
 
 export function updateSettings(patch: Partial<Settings>, label = 'Inställningar sparade'): Promise<boolean> {
   return store().save(label, (ds) => [{ settings: { ...ds.settings, ...patch } }]);
+}
+
+// ---------- Spelet: besök, kista och spontana uppdrag ----------
+
+/** Registrerar att du varit inne idag (day streak). Första gången fylls tidigare dagar i från ändringsloggen. */
+export async function recordVisit(who: string): Promise<void> {
+  const s = store();
+  const ds = s.ds;
+  if (!ds || !who) return;
+  const today = todayISO();
+  let seed: string[] = [];
+  if (!(ds.game.visits ?? {})[who.toLowerCase()]?.length) {
+    try {
+      const log = await s.backend.changelog(500);
+      seed = [...new Set(log.filter((e) => e.by.toLowerCase() === who.toLowerCase()).map((e) => e.at.slice(0, 10)))];
+    } catch {
+      seed = [];
+    }
+  }
+  const next = withVisit(ds.game, who, today, seed);
+  if (next) await s.save('Inne idag', () => [{ game: next }], { undoable: false });
+}
+
+export function openDailyChest(who: string, streak: number): Promise<boolean> {
+  return store().save('Dagens kista', (ds) => {
+    const next = openChest(ds.game, todayISO(), who, streak);
+    return next ? [{ game: next }] : [];
+  });
+}
+
+export function addQuestTask(q: SideQuest): Promise<boolean> {
+  return store().save('Uppdrag tillagt i Att göra', (ds) => {
+    if (live(ds.tasks).some((t) => t.questKey === q.key && t.date === todayISO())) return [];
+    const t: Task = { ...baseRecord(), title: q.title, date: todayISO(), done: false, doneAt: null, minutes: q.minutes, priority: 'medel', questKey: q.key, xp: q.xp };
+    return [{ collection: 'tasks', record: t as never }];
+  });
 }

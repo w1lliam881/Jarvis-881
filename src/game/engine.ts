@@ -4,6 +4,7 @@ import { addDays, daysBetween, isoWeek, monthOf, prevMonth, todayISO, weekStart 
 import { findDuplicateSales, unlinkedSales } from '../domain/ledger';
 import { allLanded, history, isSold, live, periodPL } from '../domain/metrics';
 import type { Dataset, GameState, ISODate } from '../domain/types';
+import { chestsXp, streakOf, streakXp, tasksXp } from './fun';
 
 // ---------- Nivåer och världar ----------
 
@@ -328,15 +329,19 @@ export interface XpBreakdown {
   fromQuests: number;
   fromBadges: number;
   fromBosses: number;
+  fromTasks: number;
+  fromStreak: number;
+  fromChests: number;
   world: World;
   next: World | null;
+  /** Dagar i rad som du (den som är inloggad) varit inne */
   streak: number;
 }
 
 export const BOSS_XP = 300;
 export const BOSS_HP = 3;
 
-export function xpInfo(ds: Dataset, today: ISODate = todayISO()): XpBreakdown {
+export function xpInfo(ds: Dataset, today: ISODate = todayISO(), who?: string): XpBreakdown {
   const start = ds.settings.gameStartedAt?.slice(0, 10) ?? today;
   const fromSales = live(ds.items).filter((i) => isSold(i) && (i.saleDate ?? '') >= start).length * 5;
   const fromQuests = Object.values(ds.game.completed).reduce((s, c) => s + c.xp, 0);
@@ -347,17 +352,15 @@ export function xpInfo(ds: Dataset, today: ISODate = todayISO()): XpBreakdown {
     for (let i = base; i < t; i++) fromBadges += TIER_XP[i];
   }
   const fromBosses = Object.keys(ds.game.bossesBeaten).length * BOSS_XP;
-  const xp = fromSales + fromQuests + fromBadges + fromBosses;
+  const fromTasks = ds.settings.gameStartedAt ? tasksXp(ds, start) : 0;
+  const fromStreak = ds.settings.gameStartedAt ? streakXp(ds.game, start) : 0;
+  const fromChests = ds.settings.gameStartedAt ? chestsXp(ds.game, start) : 0;
+  const xp = fromSales + fromQuests + fromBadges + fromBosses + fromTasks + fromStreak + fromChests;
   const level = levelOf(xp);
-  // Streak: dagar i rad (till och med idag eller igår) med minst ett klart uppdrag
-  const days = new Set(Object.values(ds.game.completed).map((c) => c.at.slice(0, 10)));
-  let streak = 0;
-  let d = days.has(today) ? today : addDays(today, -1);
-  while (days.has(d)) {
-    streak++;
-    d = addDays(d, -1);
-  }
-  return { xp, level, levelFloor: xpForLevel(level), levelCeil: xpForLevel(level + 1), fromSales, fromQuests, fromBadges, fromBosses, world: worldFor(level), next: nextWorld(level), streak };
+  // Day streak: dagar i rad som personen varit inne. Utan namn: den längsta pågående bland er.
+  const visits = ds.game.visits ?? {};
+  const streak = who ? streakOf(visits[who.toLowerCase()] ?? [], today) : Math.max(0, ...Object.values(visits).map((v) => streakOf(v, today)));
+  return { xp, level, levelFloor: xpForLevel(level), levelCeil: xpForLevel(level + 1), fromSales, fromQuests, fromBadges, fromBosses, fromTasks, fromStreak, fromChests, world: worldFor(level), next: nextWorld(level), streak };
 }
 
 /**
