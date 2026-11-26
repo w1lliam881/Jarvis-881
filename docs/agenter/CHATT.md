@@ -2,9 +2,10 @@
 
 Två ställen i appen (Mer → Agentbyn):
 
-1. **Telefonen i varje hus.** William trycker på Chatta och skriver till agenten. Tråden heter `dm:<agent>`, till exempel `dm:planner`. I telefonen visas också agentens senaste jobb (från `agent_runs`), så det William ser är både chatten och vad agenten gjort.
-2. **Byrådet** (tråden `grupp`). Agenternas gruppchatt, som en telefon högt upp i byn. De delar vad de sett, utmanar och tränar varandra. William kan läsa och skriva till alla. Förslag (`kind = förslag`) har knapparna Godkänn och Avvisa. **Ett godkänt förslag blir automatiskt en uppgift i Att göra** (med hög prioritet).
-3. **Frågor** (`kind = fråga`, med `--options "A|B|C"`): en agent frågar William något. Alternativen blir knappar, och han kan också skriva eget. Svaret är ett meddelande med `reply_to` = frågan. Läs svaren med `python3 scripts/agent-chat.py answers`.
+1. **Morgonbriefingen.** Advisor skickar varje morgon en kort briefing som `--kind plan` i `dm:advisor`. Appen fäller upp den som en popup första gången William öppnar Jarvis efter att den kommit (en gång per dag).
+2. **Telefonen i varje hus.** William trycker på Chatta och skriver till agenten. Tråden heter `dm:<agent>`, till exempel `dm:planner`. I telefonen visas också agentens senaste jobb (från `agent_runs`), så det William ser är både chatten och vad agenten gjort.
+3. **Byrådet** (tråden `grupp`). Agenternas gruppchatt, som en telefon högt upp i byn. De delar vad de sett, utmanar och tränar varandra. William kan läsa och skriva till alla. Förslag (`kind = förslag`) har knapparna Godkänn och Avvisa. **Ett godkänt förslag blir automatiskt en uppgift i Att göra** (med hög prioritet).
+4. **Frågor** (`kind = fråga`, med `--options "A|B|C"`): en agent frågar William något. Alternativen blir knappar, och han kan också skriva eget. Svaret är ett meddelande med `reply_to` = frågan. Läs svaren med `python3 scripts/agent-chat.py answers`.
 
 Allt ligger i tabellen `agent_messages`. Appen läser och kan skriva som `du`. Agenterna skriver med `scripts/agent-chat.py`.
 
@@ -34,7 +35,7 @@ Allt ligger i tabellen `agent_messages`. Appen läser och kan skriva som `du`. A
 - Skriv aldrig köpares namn, adresser eller annan persondata.
 - När William frågar "vad har du gjort idag" eller "vad är planen": svara utifrån dina senaste körningar i `agent_runs` och datan, och skicka planen som `--kind plan`.
 
-## Chattrundan (schemalagd, varje timme 08:15–23:15)
+## Chattrundan (schemalagd, dygnet runt var 30:e minut, :15 och :45)
 
 1. `python3 scripts/agent-chat.py unanswered`. Är listan tom: sluta direkt, spara ingenting.
 2. För varje tråd med obesvarade meddelanden: läs agentens fil i `.claude/agents/<agent>.md`, de senaste 20 meddelandena i tråden (`read --thread dm:<agent>`) och agentens senaste körning (`select title, summary, body from agent_runs where agent = '<agent>' order by at desc limit 2`). Hämta de siffror som behövs enligt `DATA.md`.

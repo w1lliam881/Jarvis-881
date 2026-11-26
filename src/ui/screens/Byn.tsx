@@ -300,7 +300,7 @@ function HowTo() {
       Agenterna jobbar i Claude, inte i appen, så Jarvis kostar fortfarande 0 kr. Öppna Jarvis-projektet i Claude och skriv
       {' '}
       <Code>/reminder</Code>, <Code>/advisor</Code>, <Code>/planner</Code>, <Code>/marketer</Code>, <Code>/noter</Code>, <Code>/reviewer</Code> eller <Code>/builder</Code> följt av vad du vill ha gjort.
-      De som har ett schema jobbar av sig själva och skickar en notis till telefonen när de är klara. I varje hus finns en telefon där du kan skriva till agenten. Svaren kommer varannan timme mellan 08 och 22.
+      De som har ett schema jobbar av sig själva och skickar en notis till telefonen när de är klara. I varje hus finns en telefon där du kan skriva till agenten. Svaren kommer inom en halvtimme, dygnet runt.
     </div>
   );
 }

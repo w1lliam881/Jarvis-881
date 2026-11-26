@@ -92,3 +92,25 @@ describe('frågor och förslag i chatten', () => {
     expect(taskFromProposal(m({ body: 'x'.repeat(150) })).length).toBeLessThanOrEqual(100);
   });
 });
+
+import { todaysBriefing, CHAT_SCHEDULE as CS, nextRun as nr } from '../../src/domain/agents';
+describe('morgonbriefing och chattrundan', () => {
+  const base = { author: null, status: null, replyTo: null } as const;
+  it('hittar dagens plan från Advisor i dm:advisor, inte gårdagens eller andras', () => {
+    const msgs = [
+      { ...base, id: 'a', at: '2026-11-26T07:25:00Z', thread: 'dm:advisor', sender: 'advisor', body: 'Igår', kind: 'plan' },
+      { ...base, id: 'b', at: '2026-11-27T07:25:00Z', thread: 'dm:advisor', sender: 'advisor', body: 'Idag', kind: 'plan' },
+      { ...base, id: 'c', at: '2026-11-27T08:00:00Z', thread: 'dm:advisor', sender: 'advisor', body: 'Chatt', kind: 'chatt' },
+      { ...base, id: 'd', at: '2026-11-27T08:00:00Z', thread: 'dm:planner', sender: 'planner', body: 'Plan', kind: 'plan' },
+    ] as Parameters<typeof todaysBriefing>[0];
+    expect(todaysBriefing(msgs, new Date('2026-11-27T09:00:00Z'))?.id).toBe('b');
+    expect(todaysBriefing(msgs, new Date('2026-11-28T09:00:00Z'))).toBeNull();
+    // Strax efter midnatt svensk tid (23:30 UTC) räknas som nästa dag
+    expect(todaysBriefing(msgs, new Date('2026-11-26T23:30:00Z'))?.id).toBe('b');
+  });
+  it('chattrundan går dygnet runt, var 30:e minut', () => {
+    expect(CS.times).toHaveLength(48);
+    const next = nr(CS, new Date('2026-11-27T02:20:00Z'))!; // 03:20 svensk tid
+    expect(next.toISOString()).toBe('2026-11-27T02:45:00.000Z');
+  });
+});
