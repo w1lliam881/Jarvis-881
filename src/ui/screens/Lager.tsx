@@ -13,6 +13,7 @@ import type { Route } from '../router';
 import { Bar, Card, Chips, ConfirmButton, Empty, Field, Money, MoneyInput, Page, Pill, RoiPill, Section, Select, Stat, TextInput, TopBand, cx } from '../components/ui';
 import { SaleSheet, DropSheet, CostSheet } from '../Quick';
 import { Attachments } from './Attachments';
+import { DropPlanCard } from './DropPlan';
 import { toast } from '../Boot';
 
 export function Lager({ route }: { route: Route }) {
@@ -339,6 +340,8 @@ function DropView({ id }: { id: string }) {
         </Section>
         </div>
         <div className="desk-col xl:order-3 xl:col-start-2">
+
+        <DropPlanCard drop={drop} />
 
         <Section title="Lägg till plagg">
           <Card>

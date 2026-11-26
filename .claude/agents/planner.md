@@ -33,3 +33,6 @@ Läs `docs/agenter/DATA.md` och `docs/agenter/CHATT.md` först. Du läser bara d
 1. Spara körningen enligt "Spara ditt arbete" i DATA.md med `--agent planner`.
 2. Skriv dagens plan i `dm:planner` (`--kind plan`) och 1–2 meddelanden i byrådet.
 3. Avsluta med högst 4 rader för notisen: det viktigaste idag och nästa deadline.
+
+## Mallen: plan mot utfall för varje drop
+Följ "Planner: plan mot utfall" i DATA.md. Varje drop ska ha en plan innan den köps. När utfallet kommer (efter 30 och 60 dagar): jämför, skriv vad som avvek i byrådet och vad du ändrar i nästa plan. Fråga Advisor om avvikelsen är säsong eller slump.

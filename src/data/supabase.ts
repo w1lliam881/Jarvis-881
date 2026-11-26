@@ -3,7 +3,7 @@ import type { AgentMessage, AgentRun, ChatThread } from '../domain/agents';
 import { isIOSDevice } from '../domain/device';
 import { defaultGame, defaultSettings, emptyDataset } from '../domain/defaults';
 import { COLLECTIONS, type ChangeLogEntry, type Dataset } from '../domain/types';
-import { ConflictError, datasetCounts, validateMutations, type Backend, type BackupInfo, type Mutation, type PresenceInfo } from './backend';
+import { ConflictError, datasetCounts, validateMutations, type Backend, type BackupInfo, type MediaItem, type MediaKind, type Mutation, type PresenceInfo } from './backend';
 
 let client: SupabaseClient | null = null;
 function sb(): SupabaseClient {
@@ -255,6 +255,25 @@ export class SupabaseBackend implements Backend {
     return () => this.listeners.delete(cb);
   }
 
+  media = {
+    list: async (kind: MediaKind, refId: string): Promise<MediaItem[]> => {
+      const { data, error } = await sb().from('agent_media').select('id,kind,ref_id,idx,data,note').eq('kind', kind).eq('ref_id', refId).order('idx');
+      if (error) throw new Error(/does not exist|schema cache/i.test(error.message) ? 'Bilderna är inte uppsatta i databasen än (migration 0004).' : error.message);
+      return (data ?? []).map((r) => ({ id: r.id, kind: r.kind, refId: r.ref_id, idx: r.idx, data: r.data, note: r.note })) as MediaItem[];
+    },
+    add: async (kind: MediaKind, refId: string, images: { data: string; note?: string }[]): Promise<void> => {
+      const { data: last } = await sb().from('agent_media').select('idx').eq('kind', kind).eq('ref_id', refId).order('idx', { ascending: false }).limit(1).maybeSingle();
+      const start = ((last as { idx?: number } | null)?.idx ?? -1) + 1;
+      const rows = images.map((im, i) => ({ kind, ref_id: refId, idx: start + i, data: im.data, note: im.note ?? '', by_email: this.email }));
+      const { error } = await sb().from('agent_media').insert(rows);
+      if (error) throw new Error(`Kunde inte spara bilderna: ${error.message}`);
+    },
+    remove: async (id: string): Promise<void> => {
+      const { error } = await sb().from('agent_media').delete().eq('id', id);
+      if (error) throw new Error(`Kunde inte ta bort bilden: ${error.message}`);
+    },
+  };
+
   agentRuns = async (limit: number): Promise<AgentRun[]> => {
     const { data, error } = await sb().from('agent_runs').select('*').order('at', { ascending: false }).limit(limit);
     if (error) throw new Error(error.message);
@@ -265,10 +284,10 @@ export class SupabaseBackend implements Backend {
     list: async (limit: number): Promise<AgentMessage[]> => {
       const { data, error } = await sb().from('agent_messages').select('*').order('at', { ascending: false }).limit(limit);
       if (error) throw new Error(/does not exist|schema cache/i.test(error.message) ? 'Chatten är inte uppsatt i databasen än (migration 0003).' : error.message);
-      return (data ?? []).map((r) => ({ id: r.id, at: r.at, thread: r.thread, sender: r.sender, author: r.author, body: r.body, kind: r.kind, status: r.status, replyTo: r.reply_to })) as AgentMessage[];
+      return (data ?? []).map((r) => ({ id: r.id, at: r.at, thread: r.thread, sender: r.sender, author: r.author, body: r.body, kind: r.kind, status: r.status, replyTo: r.reply_to, options: Array.isArray(r.options) ? r.options : null })) as AgentMessage[];
     },
-    send: async (thread: ChatThread, body: string): Promise<void> => {
-      const { error } = await sb().from('agent_messages').insert({ thread, sender: 'du', author: this.email, body: body.slice(0, 2000), kind: 'chatt' });
+    send: async (thread: ChatThread, body: string, replyTo?: string | null): Promise<void> => {
+      const { error } = await sb().from('agent_messages').insert({ thread, sender: 'du', author: this.email, body: body.slice(0, 2000), kind: 'chatt', reply_to: replyTo ?? null });
       if (error) throw new Error(`Kunde inte skicka: ${error.message}`);
     },
     decide: async (id: string, status: 'godkänd' | 'avvisad'): Promise<void> => {

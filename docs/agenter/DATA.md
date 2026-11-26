@@ -26,14 +26,14 @@ Kör **bara `select`**. Aldrig `insert`, `update`, `delete`, `drop`, `alter` ell
 
 Belopp är **ören** (heltal). 80000 = 800 kr. Datum är `YYYY-MM-DD`.
 
-- `drops`: name, date, shipping, customs, status (beställd/på väg/hemma), note
+- `drops`: name, date, shipping, customs, status (beställd/på väg/hemma), note, **plan** (Planners mall: count, budget, expectedRevenue, sold30, sold60, madeAt, note; belopp i ören, sold30/sold60 som andel 0–1)
 - `items`: dropId, name, category, brand, model, size, cost, weightKg, salePrice, saleDate, platform, productId, comment, listedAt, location, returnedAt. Sålt om `salePrice > 0` och `saleDate` finns.
 - `vouchers`: nr, date, text, lines[{account, debit, credit}], source (auto/manual/v14/event), itemId, dropId. Intäkt = kredit på konto 3001.
 - `tasks`: title, date, done, doneAt, priority (hög/medel/låg)
 - `goals`: name, kind, target, current
 - `videos`: platform, title, type, postedAt, lengthSec, song, views, likes, comments, shares, saves, itemIds
 - `candidates`: kalkyler på Doorzo-plagg (name, price, plannedSalePrice)
-- `searches`: sparade sökningar och bevakningar (watch = true)
+- `searches`: sparade sökningar och bevakningar (watch = true). **Scout-sökningar** har scout = true: query, category, maxPrice (ören eller null = räknas från kraven), size, note, paused
 - `inbox`: godkännandekön (status väntar/godkänd/avvisad)
 - `meta`: id `settings` och id `game` (inställningar och spelläge)
 
@@ -115,3 +115,43 @@ Se `docs/agenter/CHATT.md`. Kort:
 - **Byrådet** (gruppchatten `grupp`): agenterna pratar med varandra, pushar och tränar varandra. William läser.
 - **Efter varje körning** skriver du 1–2 korta meddelanden i byrådet: det viktigaste du såg, och en fråga eller utmaning till en annan agent som har nytta av det (`python3 scripts/agent-chat.py post --agent DU --thread grupp --body "..."`).
 - **Inget görs utan Williams ja.** Vill du att något ska hända (en uppgift läggs in, en ändring i appen, en beställning), skriv det som ett förslag: `--kind förslag`. Läs `python3 scripts/agent-chat.py decisions` innan du agerar på ett tidigare förslag. Bara `godkänd` får följas upp, och då bara inom det du redan får göra (agenterna ändrar fortfarande aldrig affärsdatan själva).
+
+## Bilder till agenterna (Scout och Marketer)
+
+Bilder ligger i tabellen `agent_media` (inte i `records`): `kind` = `scout-ref` (referensbild till en Scout-sökning, `ref_id` = sökningens id) eller `clip-frame` (bildruta ur ett TikTok-klipp, `ref_id` = klippets id, `note` = var i klippet). `data` är en bild som data-URL (JPEG).
+
+Spara bilderna som filer och titta på dem med Read-verktyget:
+
+```bash
+mkdir -p /tmp/bilder && q "select id, idx, note, data from agent_media where kind = 'clip-frame' and ref_id = 'KLIPPETS_ID' order by idx" \
+ | python3 -c "import json,sys,base64;[open(f\"/tmp/bilder/{r['idx']}.jpg\",'wb').write(base64.b64decode(r['data'].split(',',1)[1])) for r in json.load(sys.stdin)]"
+ls /tmp/bilder
+```
+
+Bildrutorna är tagna jämnt genom klippet (6 st). Ljudet finns inte med.
+
+## Planner: plan mot utfall för varje drop
+
+- När en drop finns utan `plan`: föreslå en plan (antal, kostnad hem, förväntad försäljning, andel sålda efter 30 och 60 dagar) och be William trycka **Gör plan** på dropens sida. Planen sparas på dropen.
+- När en drop har `plan`: jämför med utfallet (antal, kostnad, sålt inom 30 och 60 dagar räknat från dropens datum, snittpris, vinst). Inom ±5 % = enligt plan. Skriv vad som avvek och vad du lär dig till nästa plan.
+
+## Advisor: månadsrapport mot målet
+
+Målet: försäljning **14 000–17 000 kr** i månaden och **37 % vinstmarginal** (kan ändras i `meta/settings`: monthGoalMin, monthGoalMax i ören, marginGoalPct). Räkna på plaggen som sålts under månaden: försäljning = summan av `salePrice`, marginal = (försäljning − hemkostnad) / försäljning. Hemkostnad = inköp + andel frakt (vikt) + andel tull (inköpsvärde) + förpackning, som i appen (Ekonomi → Månadsmål visar samma siffror).
+
+```sql
+select to_char((data->>'saleDate')::date,'YYYY-MM') m, count(*), sum((data->>'salePrice')::int)/100 kr
+from records where collection='items' and deleted_at is null and coalesce((data->>'salePrice')::int,0)>0 and data->>'saleDate' is not null
+group by 1 order by 1 desc limit 6;
+```
+
+## Frågor till William (alla agenter)
+
+Du får fråga William saker i telefonen eller byrådet när ett svar gör ditt jobb bättre, till exempel om budget, datum eller vad han föredrar. Högst **en fråga per agent och dag**, och bara om svaret inte finns i datan.
+
+```bash
+python3 scripts/agent-chat.py post --agent planner --thread grupp --kind fråga --body "Ska juldroppen beställas lördag eller söndag?" --options "Lördag|Söndag|Redan beställd"
+python3 scripts/agent-chat.py answers   # Williams svar på frågor
+```
+
+Svarsalternativen (2–4 st, korta) blir knappar. William kan också skriva ett eget svar. Läs svaren med `answers` innan du frågar igen, och använd svaret i ditt jobb.

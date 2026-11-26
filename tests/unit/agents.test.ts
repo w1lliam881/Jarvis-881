@@ -21,8 +21,9 @@ describe('agentbyn: tider i svensk tid', () => {
     expect(nextRun(AGENTS.find((a) => a.id === 'reviewer')!.schedule, new Date('2026-11-27T08:00:00Z'))!.toISOString()).toBe('2026-11-30T07:20:00.000Z');
     expect(nextRun(AGENTS.find((a) => a.id === 'noter')!.schedule, now)!.toISOString()).toBe('2026-11-24T19:40:00.000Z');
   });
-  it('alla sju agenter finns, Planner och Marketer har schema', () => {
-    expect(AGENTS.map((a) => a.id).sort()).toEqual(['advisor', 'builder', 'marketer', 'noter', 'planner', 'reminder', 'reviewer']);
+  it('alla åtta agenter finns, Planner och Scout har schema', () => {
+    expect(AGENTS.map((a) => a.id).sort()).toEqual(['advisor', 'builder', 'marketer', 'noter', 'planner', 'reminder', 'reviewer', 'scout']);
+    expect(nextRun(AGENTS.find((a) => a.id === 'scout')!.schedule, new Date('2026-11-24T12:00:00Z'))!.toISOString()).toBe('2026-11-25T06:40:00.000Z');
     expect(nextRun(AGENTS.find((a) => a.id === 'planner')!.schedule, new Date('2026-11-24T12:00:00Z'))!.toISOString()).toBe('2026-11-24T19:40:00.000Z');
   });
   it('Builder har inget schema', () => {
@@ -70,5 +71,23 @@ describe('agentbyn: rapporter i Markdown', () => {
       { text: '800 kr', bold: true },
       { text: ' idag', bold: false },
     ]);
+  });
+});
+
+import { answerTo, openQuestions, taskFromProposal, type AgentMessage } from '../../src/domain/agents';
+describe('frågor och förslag i chatten', () => {
+  const m = (p: Partial<AgentMessage>): AgentMessage => ({ id: 'x', at: '2026-11-26T10:00:00Z', thread: 'grupp', sender: 'planner', body: '', kind: 'chatt', status: null, replyTo: null, ...p });
+  it('öppna frågor försvinner när du svarat', () => {
+    const q1 = m({ id: 'q1', kind: 'fråga', options: ['Ja', 'Nej'], body: 'Lördag?' });
+    const q2 = m({ id: 'q2', kind: 'fråga', thread: 'dm:advisor', sender: 'advisor', body: 'Budget?' });
+    const ans = m({ id: 'a1', sender: 'du', body: 'Ja', replyTo: 'q1', at: '2026-11-26T10:05:00Z' });
+    expect(openQuestions([q1, q2]).map((x) => x.id)).toEqual(['q1', 'q2']);
+    expect(openQuestions([q1, q2, ans]).map((x) => x.id)).toEqual(['q2']);
+    expect(openQuestions([q1, q2, ans], 'grupp')).toEqual([]);
+    expect(answerTo([q1, ans], 'q1')?.body).toBe('Ja');
+  });
+  it('ett godkänt förslag blir en kort uppgift', () => {
+    expect(taskFromProposal(m({ body: 'Förslag: beställ juldroppen på lördag 28/11. Det ger en dags marginal.' }))).toBe('Beställ juldroppen på lördag 28/11.');
+    expect(taskFromProposal(m({ body: 'x'.repeat(150) })).length).toBeLessThanOrEqual(100);
   });
 });

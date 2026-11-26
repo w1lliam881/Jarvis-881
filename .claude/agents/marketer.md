@@ -32,3 +32,9 @@ Länkar: du kan inte titta på videorna. Länken och rubriken (från TikTok) hj�
 1. Spara körningen med `--agent marketer` enligt DATA.md.
 2. Skriv i byrådet vad som funkat (en siffra) och fråga Planner hur det passar med droppens tidsplan.
 3. Avsluta med högst 4 rader för notisen.
+
+## Bildrutor ur klippen
+När William laddat upp videon finns 6 bildrutor per klipp i `agent_media` (`kind = 'clip-frame'`, `ref_id` = klippets id). Hämta och titta på dem enligt "Bilder till agenterna" i DATA.md. Beskriv vad du ser (vinkel, ljus, avstånd, plagg i fokus, text på skärmen, miljö) och koppla det till siffrorna: vilka visuella val hänger ihop med fler visningar och sparade? Du hör inte ljudet, säg det om ljudet kan spela roll. Saknas bildrutor: be William ladda upp videon när han loggar klippet (en fråga, högst en gång i veckan).
+
+## Påminnelsen efter 48 timmar
+Appen och notiserna påminner själva om klipp som saknar siffror efter två dygn. Du behöver inte upprepa det varje kväll, men nämn det i byrådet om fler än två klipp saknar siffror.

@@ -75,6 +75,30 @@ Deno.serve(async (req) => {
   // ---------- Dagliga påminnelsen ----------
   const hour = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Stockholm', hour: '2-digit', hour12: false }).format(now).padStart(2, '0');
   const monday = new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Stockholm', weekday: 'short' }).format(now) === 'Mon';
+  // Marketer: klipp som just passerat 48 timmar utan siffror får en notis (en gång, den timmen de passerar)
+  {
+    const { data: vids } = await db.from('records').select('data').eq('collection', 'videos').is('deleted_at', null);
+    const H = 3600000;
+    const justDue = (vids ?? [])
+      .map((r) => r.data as { title?: string; postedAt?: string; views?: number })
+      .filter((v) => {
+        const age = now.getTime() - new Date(v.postedAt ?? 0).getTime();
+        return !(Number(v.views) > 0) && age >= 48 * H && age < 49 * H;
+      });
+    if (justDue.length) {
+      const t = justDue[0].title ? `"${String(justDue[0].title).slice(0, 60)}"` : 'Ditt klipp';
+      for (const s of subs) {
+        if (s.kinds?.daily === false) continue;
+        await send(s, {
+          title: 'Marketer: dags för siffrorna',
+          body: `${justDue.length > 1 ? `${justDue.length} klipp` : t} lades upp för två dygn sedan. Fyll i visningar, likes och sparade från TikTok-analysen.`,
+          url: './#/byn/marketer',
+          tag: `jarvis-clip-${now.toISOString().slice(0, 13)}`,
+        });
+      }
+    }
+  }
+
   const due = subs.filter((s) => String(s.remind_at).padStart(5, '0').slice(0, 2) === hour);
   if (!due.length) return new Response('inga denna timme', { headers: cors });
 

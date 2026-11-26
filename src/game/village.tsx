@@ -12,6 +12,7 @@ const HATS: Record<AgentId, string[]> = {
   reviewer: ['............', '...KKKKKK...', '...KKKKKK...'],
   planner: ['............', '...NNNNNN...', '..NNNNNNNN..'],
   marketer: ['............', '...QQQQQ....', '...QQQQQQQQ.'],
+  scout: ['....UUUU....', '...UUUUUU...', '.UUUUUUUUUU.'],
 };
 
 /** Tomteluva när jultemat är på. */
@@ -30,7 +31,7 @@ const LEGS = [
 export function AgentSprite({ def, frame = 0, flip = false, size, className, xmas = false }: { def: AgentDef; frame?: number; flip?: boolean; size?: number; className?: string; xmas?: boolean }) {
   const c = def.colors;
   const pal: Record<string, string> = {
-    Y: c.hat, C: c.hat, P: c.hat, B: c.hat, K: c.hat, N: c.hat, Q: c.hat, Z: c.trim,
+    Y: c.hat, C: c.hat, P: c.hat, B: c.hat, K: c.hat, N: c.hat, Q: c.hat, U: c.hat, Z: c.trim,
     S: '#F2C9A0', E: '#1A1A1A', M: '#C46A5A', G: c.trim,
     T: c.shirt, W: c.trim, L: c.pants, F: '#2A1A0E',
     r: '#C2324A', w: '#F4F1E6',
@@ -88,6 +89,13 @@ export function AgentSprite({ def, frame = 0, flip = false, size, className, xma
         <rect x={11.4} y={5.5} width={1.2} height={2.6} fill="#25F4EE" />
       </g>
     ),
+    scout: (
+      <g key="item">
+        {/* kikare */}
+        <rect x={10} y={6} width={3} height={2} fill="#2B3A4A" />
+        <rect x={12.5} y={6.2} width={1} height={1.6} fill="#BFE3FF" />
+      </g>
+    ),
   };
   const body = (
     <g transform={flip ? 'translate(13 0) scale(-1 1)' : undefined}>
@@ -105,16 +113,16 @@ export function AgentSprite({ def, frame = 0, flip = false, size, className, xma
 
 // ---------- Byn ----------
 
-export const VW = 192;
-export const VH = 124;
+export const VW = 320;
+export const VH = 208;
 
 export interface Pt {
   x: number;
   y: number;
 }
 
-/** Husens dörrar (där figurerna går in och ut). */
-export const DOORS: Record<AgentId, Pt> = {
+/** Var husen ritades från början (deras ritningar använder de här koordinaterna). */
+const OLD_DOORS: Partial<Record<AgentId, Pt>> = {
   reminder: { x: 33, y: 41 },
   builder: { x: 96, y: 41 },
   advisor: { x: 160, y: 41 },
@@ -124,48 +132,101 @@ export const DOORS: Record<AgentId, Pt> = {
   planner: { x: 122, y: 99 },
 };
 
+/** Husens dörrar i den större byn (där figurerna går in och ut). */
+export const DOORS: Record<AgentId, Pt> = {
+  reminder: { x: 36, y: 58 },
+  planner: { x: 112, y: 58 },
+  builder: { x: 204, y: 58 },
+  advisor: { x: 282, y: 58 },
+  noter: { x: 40, y: 128 },
+  marketer: { x: 110, y: 128 },
+  reviewer: { x: 284, y: 128 },
+  scout: { x: 250, y: 186 },
+};
+
+/** Gatornas mittlinjer */
+const NY = 61; // Storgatan (norra)
+const SY = 131; // Strandgatan (södra)
+const HY = 189; // Hamnvägen
+const WX = 87; // Västra gränd
+const MX = 160; // Torggatan (genom torget, ner till hamnen)
+const EX = 239; // Östra gränd
+
 /** Gatunätet som figurerna går på. */
 const NODES: Record<string, Pt> = {
   ...Object.fromEntries(Object.entries(DOORS).map(([k, v]) => [`d-${k}`, v])),
-  'c-reminder': { x: 33, y: 47 },
-  'c-advisor': { x: 160, y: 47 },
-  ht: { x: 96, y: 47 },
-  p: { x: 96, y: 63 },
-  p1: { x: 86, y: 58 },
-  p2: { x: 107, y: 60 },
-  p3: { x: 88, y: 70 },
-  p4: { x: 105, y: 70 },
-  dam: { x: 117, y: 66 },
-  hb: { x: 96, y: 104 },
-  'c-noter': { x: 36, y: 104 },
-  'c-reviewer': { x: 158, y: 104 },
-  'c-marketer': { x: 74, y: 104 },
-  'c-planner': { x: 122, y: 104 },
-  bank: { x: 60, y: 104 },
+  ...Object.fromEntries(Object.entries(DOORS).map(([k, v]) => [`c-${k}`, { x: v.x, y: v.y === 58 ? NY : v.y === 128 ? SY : HY }])),
+  nw: { x: WX, y: NY },
+  nm: { x: MX, y: NY },
+  ne: { x: EX, y: NY },
+  sw: { x: WX, y: SY },
+  sm: { x: MX, y: SY },
+  se: { x: EX, y: SY },
+  hm: { x: MX, y: HY },
+  // torget
+  t0: { x: MX, y: 74 },
+  t1: { x: 138, y: 80 },
+  t2: { x: 182, y: 80 },
+  t3: { x: 138, y: 112 },
+  t4: { x: 182, y: 112 },
+  t5: { x: MX, y: 118 },
+  // parken i öster och dammen
+  pk: { x: EX, y: 96 },
+  pk1: { x: 214, y: 100 },
+  pk2: { x: 262, y: 92 },
+  // torghandeln och skogen i väster
+  mk: { x: WX, y: 158 },
+  mk1: { x: 58, y: 160 },
+  mk2: { x: 118, y: 160 },
+  // hamnen och Hamnvägen västerut
+  pier: { x: 292, y: HY },
+  hw: { x: WX, y: HY },
+  bak: { x: 70, y: HY },
+  kyr: { x: 128, y: HY },
 };
 
 const EDGES: [string, string][] = [
-  ['d-reminder', 'c-reminder'],
-  ['c-reminder', 'ht'],
-  ['d-builder', 'ht'],
-  ['d-advisor', 'c-advisor'],
-  ['c-advisor', 'ht'],
-  ['ht', 'p'],
-  ['p', 'p1'],
-  ['p', 'p2'],
-  ['p', 'p3'],
-  ['p', 'p4'],
-  ['p', 'dam'],
-  ['p', 'hb'],
-  ['hb', 'c-marketer'],
-  ['c-marketer', 'd-marketer'],
-  ['c-marketer', 'bank'],
-  ['bank', 'c-noter'],
-  ['c-noter', 'd-noter'],
-  ['hb', 'c-planner'],
-  ['c-planner', 'd-planner'],
-  ['c-planner', 'c-reviewer'],
-  ['c-reviewer', 'd-reviewer'],
+  // dörrar till gatan
+  ...(Object.keys(DOORS) as AgentId[]).map((k): [string, string] => [`d-${k}`, `c-${k}`]),
+  // Storgatan väst till öst
+  ['c-reminder', 'nw'],
+  ['nw', 'c-planner'],
+  ['c-planner', 'nm'],
+  ['nm', 'c-builder'],
+  ['c-builder', 'ne'],
+  ['ne', 'c-advisor'],
+  // Strandgatan
+  ['c-noter', 'sw'],
+  ['sw', 'c-marketer'],
+  ['c-marketer', 'sm'],
+  ['sm', 'se'],
+  ['se', 'c-reviewer'],
+  // gränderna mellan gatorna
+  ['nw', 'sw'],
+  ['ne', 'pk'],
+  ['pk', 'se'],
+  ['pk', 'pk1'],
+  ['pk', 'pk2'],
+  // torget
+  ['nm', 't0'],
+  ['t0', 't1'],
+  ['t0', 't2'],
+  ['t1', 't3'],
+  ['t2', 't4'],
+  ['t3', 't5'],
+  ['t4', 't5'],
+  ['t5', 'sm'],
+  // söderut: torghandeln och hamnen
+  ['sw', 'mk'],
+  ['mk', 'mk1'],
+  ['mk', 'mk2'],
+  ['sm', 'hm'],
+  ['hm', 'c-scout'],
+  ['c-scout', 'pier'],
+  ['mk', 'hw'],
+  ['hw', 'bak'],
+  ['hw', 'kyr'],
+  ['kyr', 'hm'],
 ];
 
 const ADJ: Record<string, string[]> = {};
@@ -189,7 +250,7 @@ export function route(from: string, to: string): Pt[] {
   return path.slice(1).map((k) => NODES[k]);
 }
 
-export const SPOTS = ['p1', 'p2', 'p3', 'p4', 'dam', 'bank'];
+export const SPOTS = ['t1', 't2', 't3', 't4', 'pk1', 'pk2', 'mk1', 'mk2', 'pier', 'bak', 'kyr'];
 export const nodeAt = (k: string): Pt => NODES[k];
 
 type R = [number, number, number, number, string];
@@ -198,7 +259,7 @@ function rects(list: R[], key: string) {
   return list.map(([x, y, w, h, f], i) => <rect key={`${key}${i}`} x={x} y={y} width={w} height={h} fill={f} />);
 }
 
-/** Pseudoslump som blir likadan varje gång (gräs, blommor). */
+/** Pseudoslump som blir likadan varje gång (gräs, blommor, snö). */
 function seeded(n: number) {
   let s = n;
   return () => {
@@ -209,87 +270,197 @@ function seeded(n: number) {
 
 const SNOW = '#F2F6F8';
 const SNOW_SHADE = '#D6E1E8';
+const ROAD = '#C9A46A';
+const ROAD_EDGE = '#A8834C';
+const GRASS = '#2f6b4a';
 
-function Ground({ winter }: { winter: boolean }) {
+/** Gatorna som rektanglar (också för snön som läggs lättare på gatorna). */
+const ROADS: R[] = [
+  [8, NY - 3, 304, 6, ROAD],
+  [8, SY - 3, 304, 6, ROAD],
+  [8, HY - 3, 300, 6, ROAD],
+  [WX - 3, NY, 6, SY - NY, ROAD],
+  [EX - 3, NY, 6, SY - NY, ROAD],
+  [MX - 3, SY, 6, HY - SY, ROAD],
+  [MX - 3, NY, 6, 10, ROAD],
+  // stumpar till dörrarna
+  ...(Object.values(DOORS).map((d) => [d.x - 3, d.y - 1, 6, 4, ROAD]) as R[]),
+];
+
+/**
+ * Snödrivor: snön lägger sig i drivor som växer utåt från en mittpunkt (vid husväggar, träd och kanter),
+ * och gatorna får snö sist. level 0–1 avgör hur långt drivorna har växt.
+ */
+const SNOW_PATCHES: R[] = (() => {
+  const r = seeded(91);
+  const onRoad = (x: number, y: number) => ROADS.some(([rx, ry, rw, rh]) => x >= rx - 1 && x <= rx + rw && y >= ry - 1 && y <= ry + rh);
+  const items: [number, R][] = [];
+  for (let c = 0; c < 90; c++) {
+    const cx = r() * VW;
+    const cy = 8 + r() * 184;
+    const size = 6 + r() * 14;
+    const road = onRoad(cx, cy);
+    for (let k = 0; k < 18; k++) {
+      const a = r() * Math.PI * 2;
+      const d = Math.sqrt(r()) * size;
+      const x = Math.round(cx + Math.cos(a) * d * 1.6);
+      const y = Math.round(cy + Math.sin(a) * d * 0.6);
+      if (y < 7 || y > 190 || x < 0 || x > VW - 2) continue;
+      const w = 3 + Math.floor(r() * 5);
+      const tone = d / size > 0.75 ? SNOW_SHADE : SNOW;
+      // ordning: närmast mitten först, gatorna senare
+      items.push([d / size + (road || onRoad(x, y) ? 1.2 : 0) + r() * 0.25 + c * 0.001, [x, y, w, 2, tone]]);
+    }
+  }
+  return items.sort((a, b) => a[0] - b[0]).map((x) => x[1]);
+})();
+
+function Ground({ level }: { level: number }) {
   const r = seeded(7);
   const tufts: R[] = [];
-  for (let i = 0; i < 170; i++) tufts.push([Math.floor(r() * VW), Math.floor(r() * VH), 1, 1, winter ? (r() > 0.75 ? '#3d7d58' : SNOW_SHADE) : r() > 0.5 ? '#3d7d58' : '#255a3e']);
+  for (let i = 0; i < 420; i++) tufts.push([Math.floor(r() * VW), Math.floor(r() * 194), 1, 1, r() > 0.5 ? '#3d7d58' : '#255a3e']);
   const flowers: R[] = [];
   const fc = ['#E9B44C', '#F4F1E6', '#C97B5A', '#8FB0D6'];
-  for (let i = 0; i < (winter ? 0 : 40); i++) {
+  for (let i = 0; i < 90; i++) {
     const x = Math.floor(r() * VW);
-    const y = Math.floor(r() * VH);
-    if ((y > 43 && y < 51) || (y > 100 && y < 108) || (x > 74 && x < 118 && y > 50 && y < 78)) continue;
+    const y = Math.floor(r() * 190);
+    if (ROADS.some(([rx, ry, rw, rh]) => x >= rx - 2 && x <= rx + rw + 2 && y >= ry - 2 && y <= ry + rh + 2)) continue;
     flowers.push([x, y, 1, 1, fc[i % 4]]);
   }
-  const road = winter ? '#C8BBA6' : '#C9A46A';
-  const edge = winter ? '#A89880' : '#A8834C';
-  const paths: R[] = [
-    // huvudgatan och gränden längst ner
-    [24, 44, 142, 6, road],
-    [30, 101, 134, 6, road],
-    // stumpar till dörrarna
-    [30, 41, 6, 6, road],
-    [157, 41, 6, 6, road],
-    [93, 41, 6, 6, road],
-    [33, 99, 6, 5, road],
-    [155, 99, 6, 5, road],
-    [71, 99, 6, 5, road],
-    [119, 99, 6, 5, road],
-    // från torget till gränden
-    [93, 74, 6, 28, road],
-    // till dammen
-    [112, 63, 8, 6, road],
-  ];
   const edges: R[] = [
-    [24, 50, 142, 1, edge],
-    [30, 107, 134, 1, edge],
-    [93, 74, 1, 27, edge],
-    [98, 74, 1, 27, edge],
+    [8, NY + 3, 304, 1, ROAD_EDGE],
+    [8, SY + 3, 304, 1, ROAD_EDGE],
+    [8, HY + 3, 300, 1, ROAD_EDGE],
+    [WX - 3, NY + 3, 1, SY - NY - 6, ROAD_EDGE],
+    [WX + 3, NY + 3, 1, SY - NY - 6, ROAD_EDGE],
+    [EX - 3, NY + 3, 1, SY - NY - 6, ROAD_EDGE],
+    [EX + 3, NY + 3, 1, SY - NY - 6, ROAD_EDGE],
+    [MX - 3, SY + 3, 1, HY - SY - 6, ROAD_EDGE],
+    [MX + 3, SY + 3, 1, HY - SY - 6, ROAD_EDGE],
   ];
-  // torget
-  const plaza: R[] = [[76, 52, 40, 23, winter ? '#D9D2C4' : '#BFA27A']];
-  for (let y = 53; y < 75; y += 3) for (let x = 77 + ((y / 3) % 2 ? 1 : 0); x < 115; x += 4) plaza.push([x, y, 2, 1, winter ? '#C2B8A6' : '#A8885E']);
-  plaza.push([76, 75, 40, 1, edge]);
-  // Snövallar längs gatorna
-  const banks: R[] = winter
-    ? [
-        [24, 43, 142, 1, SNOW],
-        [30, 100, 134, 1, SNOW],
-        [26, 51, 50, 1, SNOW_SHADE],
-        [118, 51, 46, 1, SNOW_SHADE],
-      ]
-    : [];
+  // Kullersten på gatorna
+  const cobbles: R[] = [];
+  for (const [rx, ry, rw, rh] of ROADS.slice(0, 6))
+    for (let y = ry + 1; y < ry + rh - 1; y += 2) for (let x = rx + ((y + 1) % 4 === 0 ? 1 : 3); x < rx + rw - 1; x += 5) cobbles.push([x, y, 2, 1, '#B8935A']);
+  // Torget med mönster
+  const plaza: R[] = [[124, 68, 72, 56, '#BFA27A']];
+  for (let y = 69; y < 123; y += 3) for (let x = 125 + ((y / 3) % 2 ? 1 : 0); x < 195; x += 4) plaza.push([x, y, 2, 1, '#A8885E']);
+  plaza.push([124, 68, 72, 1, ROAD_EDGE], [124, 123, 72, 1, ROAD_EDGE], [124, 68, 1, 56, ROAD_EDGE], [195, 68, 1, 56, ROAD_EDGE]);
+  // Grusgång genom parken och till torghandeln
+  const paths: R[] = [
+    [EX, 94, 26, 3, '#B89A6E'],
+    [210, 97, EX - 210, 3, '#B89A6E'],
+    [WX - 2, SY + 3, 4, HY - SY - 6, '#B89A6E'],
+    [52, 158, 72, 4, '#B89A6E'],
+  ];
+  // Havet längst ner med strand
+  const sea: R[] = [
+    [0, 194, VW, 14, '#3E6F8E'],
+    [0, 192, VW, 2, '#E3CF9E'],
+    [0, 194, VW, 1, '#5B8CAE'],
+  ];
+  const wave = seeded(5);
+  for (let i = 0; i < 40; i++) sea.push([Math.floor(wave() * VW), 196 + Math.floor(wave() * 11), 3, 1, '#7FA9C6']);
+  // Kullar längst upp
+  const hills: R[] = [
+    [0, 0, VW, 6, '#2A5E42'],
+    [0, 6, VW, 2, '#26573D'],
+    [20, 0, 40, 3, '#3d7d58'],
+    [140, 0, 60, 2, '#3d7d58'],
+    [250, 0, 50, 3, '#3d7d58'],
+  ];
+  const n = Math.round(level * SNOW_PATCHES.length);
   return (
     <g>
-      <rect x={0} y={0} width={VW} height={VH} fill={winter ? '#E4ECF0' : '#2f6b4a'} />
+      <rect x={0} y={0} width={VW} height={VH} fill={GRASS} />
+      {rects(hills, 'h')}
       {rects(tufts, 't')}
-      {rects(paths, 'r')}
+      {level < 0.5 && rects(flowers, 'f')}
+      {rects(ROADS, 'r')}
+      {rects(cobbles, 'cb')}
       {rects(edges, 'e')}
+      {rects(paths, 'p')}
       {rects(plaza, 'pl')}
-      {rects(banks, 'sb')}
-      {rects(flowers, 'f')}
+      {rects(sea, 'sea')}
+      {n > 0 && rects(SNOW_PATCHES.slice(0, n), 's')}
     </g>
   );
 }
 
-function Tree({ x, y, s = 1, winter = false }: { x: number; y: number; s?: number; winter?: boolean }) {
+function Tree({ x, y, s = 1, snow = 0 }: { x: number; y: number; s?: number; snow?: number }) {
   const w = 10 * s;
   return (
     <g>
+      <rect x={x + 1} y={y + 8 * s + 3} width={w - 2} height={1.5} fill="#00000022" />
       <rect x={x + w / 2 - 1} y={y + 8 * s} width={2} height={4 * s} fill="#4A2E16" />
       <rect x={x} y={y + 3 * s} width={w} height={6 * s} fill="#1F5A44" />
       <rect x={x + 2 * s} y={y} width={w - 4 * s} height={3 * s} fill="#1F5A44" />
-      <rect x={x + 2 * s} y={y + 2 * s} width={3 * s} height={2 * s} fill={winter ? SNOW_SHADE : '#3d7d58'} />
+      <rect x={x + 2 * s} y={y + 2 * s} width={3 * s} height={2 * s} fill={snow > 0.3 ? SNOW_SHADE : '#3d7d58'} />
+      <rect x={x + w - 3 * s} y={y + 5 * s} width={2 * s} height={2 * s} fill="#174A38" />
       <rect x={x} y={y + 8 * s} width={w} height={1} fill="#173f31" />
-      {winter && (
+      {snow > 0.2 && (
         <>
           <rect x={x + 2 * s} y={y} width={w - 4 * s} height={1} fill={SNOW} />
-          <rect x={x} y={y + 3 * s} width={w} height={1} fill={SNOW} />
-          <rect x={x + 1} y={y + 6 * s} width={2} height={1} fill={SNOW} />
-          <rect x={x + w - 4} y={y + 5 * s} width={2} height={1} fill={SNOW} />
+          <rect x={x} y={y + 3 * s} width={snow > 0.5 ? w : w / 2} height={1} fill={SNOW} />
+          {snow > 0.4 && <rect x={x + 1} y={y + 6 * s} width={2} height={1} fill={SNOW} />}
+          {snow > 0.5 && <rect x={x + w - 4} y={y + 5 * s} width={2} height={1} fill={SNOW} />}
         </>
       )}
+    </g>
+  );
+}
+
+function Bush({ x, y, snow = 0 }: { x: number; y: number; snow?: number }) {
+  return (
+    <g>
+      <rect x={x} y={y + 1} width={7} height={3} fill="#255a3e" />
+      <rect x={x + 1} y={y} width={5} height={1} fill="#2f7a52" />
+      <rect x={x + 2} y={y + 1} width={1} height={1} fill="#C2324A" />
+      {snow > 0.3 && <rect x={x + 1} y={y} width={5} height={1} fill={SNOW} />}
+    </g>
+  );
+}
+
+function Bench({ x, y }: { x: number; y: number }) {
+  return (
+    <g>
+      <rect x={x} y={y} width={8} height={1} fill="#6B3E1E" />
+      <rect x={x} y={y + 2} width={8} height={1} fill="#8A5A2B" />
+      <rect x={x + 1} y={y + 3} width={1} height={2} fill="#4A2E16" />
+      <rect x={x + 6} y={y + 3} width={1} height={2} fill="#4A2E16" />
+    </g>
+  );
+}
+
+/** Torghandelns stånd med randigt tak */
+function Stall({ x, y, c }: { x: number; y: number; c: string }) {
+  const stripes: R[] = [];
+  for (let i = 0; i < 12; i += 2) stripes.push([x + i, y, 1, 3, '#F4F1E6']);
+  return (
+    <g>
+      <rect x={x} y={y} width={12} height={3} fill={c} />
+      {rects(stripes, `st${x}`)}
+      <rect x={x + 1} y={y + 3} width={1} height={7} fill="#4A2E16" />
+      <rect x={x + 10} y={y + 3} width={1} height={7} fill="#4A2E16" />
+      <rect x={x} y={y + 7} width={12} height={3} fill="#8A5A2B" />
+      <rect x={x + 2} y={y + 6} width={2} height={1} fill="#E9B44C" />
+      <rect x={x + 5} y={y + 6} width={2} height={1} fill="#C97B5A" />
+      <rect x={x + 8} y={y + 6} width={2} height={1} fill="#6D8FB3" />
+    </g>
+  );
+}
+
+function Snowman({ x, y }: { x: number; y: number }) {
+  return (
+    <g>
+      <rect x={x} y={y + 5} width={6} height={5} fill={SNOW} />
+      <rect x={x + 1} y={y + 1} width={4} height={4} fill={SNOW} />
+      <rect x={x + 1} y={y} width={4} height={1} fill="#1A1A1A" />
+      <rect x={x + 2} y={y - 1} width={2} height={1} fill="#1A1A1A" />
+      <rect x={x + 2} y={y + 2} width={1} height={1} fill="#1A1A1A" />
+      <rect x={x + 4} y={y + 3} width={2} height={1} fill="#E07B39" />
+      <rect x={x} y={y + 5} width={6} height={1} fill="#C2324A" />
+      <rect x={x + 2} y={y + 7} width={1} height={1} fill="#1A1A1A" />
     </g>
   );
 }
@@ -309,7 +480,6 @@ function ChristmasTree({ x, y, t }: { x: number; y: number; t: number }) {
     [x + 7, y + 18, 2, 3, '#4A2E16'],
     [x + 4, y + 21, 8, 2, '#8A3B22'],
     [x + 4, y + 21, 8, 1, '#C2324A'],
-    // snö på grenarna
     [x + 6, y + 3, 4, 1, SNOW],
     [x + 4, y + 6, 2, 1, SNOW],
     [x + 10, y + 6, 2, 1, SNOW],
@@ -322,12 +492,12 @@ function ChristmasTree({ x, y, t }: { x: number; y: number; t: number }) {
     [7, 5], [5, 8], [10, 8], [3, 11], [8, 11], [12, 11], [2, 15], [6, 16], [10, 15], [14, 16],
   ];
   const colors = ['#C2324A', '#E9B44C', '#F4F1E6', '#6D8FB3'];
-  // presenter
   const gifts: R[] = [
     [x - 4, y + 19, 4, 4, '#C2324A'],
     [x - 2.5, y + 19, 1, 4, '#E9B44C'],
     [x + 16, y + 20, 5, 3, '#E9B44C'],
     [x + 18, y + 20, 1, 3, '#C2324A'],
+    [x + 12, y + 21, 3, 2, '#6D8FB3'],
   ];
   return (
     <g>
@@ -344,69 +514,60 @@ function ChristmasTree({ x, y, t }: { x: number; y: number; t: number }) {
 }
 
 /** Fallande snö. tick räknar upp tio gånger i sekunden. */
-export function Snowfall({ tick }: { tick: number }) {
+export function Snowfall({ tick, count = 110 }: { tick: number; count?: number }) {
   const r = seeded(31);
-  const flakes = Array.from({ length: 70 }, () => ({ x: r() * VW, y: r() * VH, v: 0.25 + r() * 0.35, a: r() * 6 }));
+  const flakes = Array.from({ length: count }, () => ({ x: r() * VW, y: r() * VH, v: 0.22 + r() * 0.35, a: r() * 6, big: r() > 0.8 }));
   return (
     <g pointerEvents="none">
       {flakes.map((f, i) => {
         const y = (f.y + tick * f.v) % VH;
         const x = (f.x + Math.sin((tick + f.a * 10) / 14) * 1.5 + VW) % VW;
-        return <rect key={i} x={x} y={y} width={i % 5 === 0 ? 1.4 : 1} height={i % 5 === 0 ? 1.4 : 1} fill="#FFFFFF" opacity={0.9} />;
+        return <rect key={i} x={x} y={y} width={f.big ? 1.4 : 1} height={f.big ? 1.4 : 1} fill="#FFFFFF" opacity={f.big ? 0.95 : 0.8} />;
       })}
     </g>
   );
 }
 
-function Fountain({ t, winter }: { t: number; winter: boolean }) {
+// Fontänen mitt på torget (ritad runt 160, 96)
+function Fountain({ t, frozen }: { t: number; frozen: boolean }) {
   const drop = t % 3;
-  if (winter)
-    return (
-      <g>
-        <rect x={89} y={60} width={14} height={8} fill="#8A9690" />
-        <rect x={90} y={61} width={12} height={6} fill="#BFD9E8" />
-        <rect x={91} y={62} width={6} height={1} fill="#F2F6F8" />
-        <rect x={95} y={56} width={2} height={6} fill="#8A9690" />
-        <rect x={94} y={55} width={4} height={1} fill={SNOW} />
-        <rect x={89} y={60} width={14} height={1} fill={SNOW} />
-        <rect x={94} y={57} width={1} height={3} fill="#DDEEF7" />
-        <rect x={97} y={57} width={1} height={2} fill="#DDEEF7" />
-      </g>
-    );
+  const x = MX - 8;
+  const y = 92;
   return (
     <g>
-      <rect x={89} y={60} width={14} height={8} fill="#8A9690" />
-      <rect x={90} y={61} width={12} height={6} fill="#6D8FB3" />
-      <rect x={91} y={62} width={10} height={1} fill="#8FB0D6" />
-      <rect x={95} y={56} width={2} height={6} fill="#8A9690" />
-      <rect x={94} y={55} width={4} height={1} fill="#8A9690" />
-      <rect x={95} y={53 + drop} width={2} height={1} fill="#BFE3FF" />
-      <rect x={93 - drop} y={57} width={1} height={1} fill="#BFE3FF" />
-      <rect x={98 + drop} y={57} width={1} height={1} fill="#BFE3FF" />
+      <rect x={x - 1} y={y + 1} width={18} height={10} fill="#00000022" />
+      <rect x={x} y={y} width={16} height={9} fill="#8A9690" />
+      <rect x={x + 1} y={y + 1} width={14} height={7} fill={frozen ? '#BFD9E8' : '#6D8FB3'} />
+      <rect x={x + 2} y={y + 2} width={frozen ? 6 : 12} height={1} fill={frozen ? '#F2F6F8' : '#8FB0D6'} />
+      <rect x={x + 7} y={y - 5} width={2} height={7} fill="#8A9690" />
+      <rect x={x + 6} y={y - 6} width={4} height={1} fill={frozen ? SNOW : '#8A9690'} />
+      {!frozen && (
+        <>
+          <rect x={x + 7} y={y - 8 + drop} width={2} height={1} fill="#BFE3FF" />
+          <rect x={x + 5 - drop} y={y - 4} width={1} height={1} fill="#BFE3FF" />
+          <rect x={x + 10 + drop} y={y - 4} width={1} height={1} fill="#BFE3FF" />
+        </>
+      )}
+      {frozen && <rect x={x} y={y} width={16} height={1} fill={SNOW} />}
     </g>
   );
 }
 
-function Pond({ winter }: { winter: boolean }) {
-  if (winter)
-    return (
-      <g>
-        <rect x={120} y={57} width={22} height={14} fill={SNOW_SHADE} />
-        <rect x={121} y={58} width={20} height={12} fill="#A9C8DA" />
-        <rect x={123} y={59} width={16} height={10} fill="#C6DDEA" />
-        <rect x={125} y={61} width={6} height={1} fill="#F2F6F8" />
-        <rect x={131} y={65} width={5} height={1} fill="#F2F6F8" />
-        <rect x={128} y={63} width={1} height={3} fill="#A9C8DA" />
-      </g>
-    );
+function Pond({ frozen }: { frozen: boolean }) {
+  const x = 246;
+  const y = 104;
   return (
     <g>
-      <rect x={120} y={57} width={22} height={14} fill="#255a3e" />
-      <rect x={121} y={58} width={20} height={12} fill="#4f7f9c" />
-      <rect x={123} y={59} width={16} height={10} fill="#6D8FB3" />
-      <rect x={126} y={61} width={4} height={1} fill="#BFE3FF" />
-      <rect x={133} y={65} width={3} height={1} fill="#BFE3FF" />
-      <rect x={135} y={60} width={3} height={2} fill="#3d7d58" />
+      <rect x={x} y={y} width={26} height={16} fill={frozen ? SNOW_SHADE : '#255a3e'} />
+      <rect x={x + 1} y={y + 1} width={24} height={14} fill={frozen ? '#A9C8DA' : '#4f7f9c'} />
+      <rect x={x + 3} y={y + 2} width={20} height={12} fill={frozen ? '#C6DDEA' : '#6D8FB3'} />
+      <rect x={x + 6} y={y + 5} width={frozen ? 7 : 4} height={1} fill={frozen ? '#F2F6F8' : '#BFE3FF'} />
+      <rect x={x + 14} y={y + 9} width={frozen ? 6 : 3} height={1} fill={frozen ? '#F2F6F8' : '#BFE3FF'} />
+      {!frozen && <rect x={x + 18} y={y + 3} width={3} height={2} fill="#3d7d58" />}
+      {[0, 1, 2, 3, 4, 5, 6].map((i) => (
+        <rect key={i} x={x + i * 4} y={y + 17} width={1} height={3} fill="#EAD7BC" />
+      ))}
+      <rect x={x} y={y + 18} width={25} height={1} fill="#EAD7BC" />
     </g>
   );
 }
@@ -427,11 +588,50 @@ function Board({ x, y }: { x: number; y: number }) {
 function Lamp({ x, y, night }: { x: number; y: number; night: boolean }) {
   return (
     <g>
-      {night && <rect x={x - 3} y={y - 2} width={7} height={7} fill="#E9B44C" opacity={0.18} />}
+      {night && <rect x={x - 4} y={y - 3} width={9} height={9} fill="#E9B44C" opacity={0.16} />}
       <rect x={x} y={y} width={1} height={9} fill="#2B3A4A" />
+      <rect x={x - 1} y={y + 8} width={3} height={1} fill="#2B3A4A" />
       <rect x={x - 1} y={y - 1} width={3} height={2} fill={night ? '#FFE2A8' : '#8A9690'} />
     </g>
   );
+}
+
+/** En båt vid bryggan som guppar lite. */
+function Boat({ t }: { t: number }) {
+  const b = t % 4 < 2 ? 0 : 0.6;
+  return (
+    <g transform={`translate(0 ${b})`}>
+      <rect x={284} y={199} width={18} height={3} fill="#8A3B22" />
+      <rect x={286} y={202} width={14} height={1} fill="#5A2616" />
+      <rect x={292} y={190} width={1} height={9} fill="#4A2E16" />
+      <rect x={293} y={191} width={6} height={6} fill="#F4F1E6" />
+      <rect x={293} y={196} width={6} height={1} fill="#E9B44C" />
+    </g>
+  );
+}
+
+function Gull({ x, y }: { x: number; y: number }) {
+  return (
+    <g>
+      <rect x={x} y={y} width={2} height={1} fill="#F4F1E6" />
+      <rect x={x + 2} y={y + 1} width={1} height={1} fill="#F4F1E6" />
+      <rect x={x + 3} y={y} width={2} height={1} fill="#F4F1E6" />
+    </g>
+  );
+}
+
+/** Ljusslinga tvärs över Torggatan, mellan två stolpar */
+function StreetGarland({ x1, x2, y, t }: { x1: number; x2: number; y: number; t: number }) {
+  const colors = ['#C2324A', '#E9B44C', '#3d9d68', '#6D8FB3'];
+  const out: ReactNode[] = [
+    <rect key="p1" x={x1} y={y} width={1} height={10} fill="#2B3A4A" />,
+    <rect key="p2" x={x2} y={y} width={1} height={10} fill="#2B3A4A" />,
+  ];
+  for (let i = 0, k = 0; x1 + i < x2; i += 2, k++) {
+    const sag = Math.round(Math.sin((i / (x2 - x1)) * Math.PI) * 3);
+    out.push(<rect key={i} x={x1 + i} y={y + sag} width={1} height={1} fill={k % 2 ? colors[(k + t) % colors.length] : '#173f31'} opacity={k % 2 && (k + t) % 3 === 0 ? 0.55 : 1} />);
+  }
+  return <g>{out}</g>;
 }
 
 // ---------- Husen ----------
@@ -473,6 +673,7 @@ const EAVES: Record<AgentId, [number, number, number]> = {
   reviewer: [150, 62, 16],
   planner: [106, 87, 32],
   marketer: [60, 87, 28],
+  scout: [232, 166, 36],
 };
 
 function Lights({ id, t }: { id: AgentId; t: number }) {
@@ -495,7 +696,11 @@ function Wreath({ x, y }: { x: number; y: number }) {
 }
 
 export function House({ def, night, home, t, smoke, winter = false, xmas = false }: { def: AgentDef; night: boolean; home: boolean; t: number; smoke: boolean; winter?: boolean; xmas?: boolean }) {
-  const d = DOORS[def.id];
+  // Husen är ritade där de stod i den mindre byn. Flytta dem till sin nya plats.
+  const old = OLD_DOORS[def.id];
+  const d = old ?? DOORS[def.id];
+  const dx = old ? DOORS[def.id].x - old.x : 0;
+  const dy = old ? DOORS[def.id].y - old.y : 0;
   const lit = night && home;
   const shade = '#00000033';
   const roof = (x: number, y: number, w: number, h: number, c: string, dark: string) => roofRows(x, y, w, h, c, dark, winter);
@@ -688,9 +893,46 @@ export function House({ def, night, home, t, smoke, winter = false, xmas = false
       );
       break;
     }
+    case 'scout': {
+      // Hamnen: sjöbod med kran, lådor från Japan och en skylt
+      const planks: R[] = [];
+      for (let y = 168; y < 186; y += 3) planks.push([232, y, 36, 1, '#CFC6B2']);
+      list = [
+        [231, 185, 40, 2, shade],
+        [232, 166, 36, 20, def.wall],
+        ...planks,
+        ...roof(229, 154, 42, 13, def.roof, '#163A50'),
+        ...win(237, 171, lit),
+        ...win(259, 171, lit),
+        ...door(d.x, d.y, home),
+        [242, 160, 16, 4, '#4A2E16'],
+        [243, 161, 14, 2, '#E9B44C'],
+        // lådor
+        [221, 178, 8, 8, '#8A5A2B'],
+        [221, 178, 8, 1, '#6B3E1E'],
+        [224, 181, 2, 2, '#C2324A'],
+        [223, 172, 6, 6, '#A0703A'],
+        [223, 172, 6, 1, '#6B3E1E'],
+        // kranen
+        [272, 148, 2, 38, '#4A2E16'],
+        [264, 148, 20, 2, '#4A2E16'],
+        [266, 150, 1, 3, '#4A2E16'],
+      ];
+      const sway = t % 4 < 2 ? 0 : 1;
+      extra = (
+        <g>
+          <rect x={281 + sway} y={150} width={1} height={10} fill="#8A9690" />
+          <rect x={279 + sway} y={160} width={5} height={4} fill="#8A5A2B" />
+          <rect x={279 + sway} y={160} width={5} height={1} fill="#6B3E1E" />
+          {/* lykta vid dörren */}
+          <rect x={256} y={176} width={2} height={3} fill={night ? '#FFE2A8' : '#8A9690'} />
+        </g>
+      );
+      break;
+    }
   }
   return (
-    <g>
+    <g transform={dx || dy ? `translate(${dx} ${dy})` : undefined}>
       {rects(list, def.id)}
       {extra}
       {xmas && <Lights id={def.id} t={t} />}
@@ -699,48 +941,138 @@ export function House({ def, night, home, t, smoke, winter = false, xmas = false
   );
 }
 
-/** Det som inte är hus: träd, fontän, damm, lyktor, anslagstavla. */
-export function Scenery({ t, night, winter = false, xmas = false }: { t: number; night: boolean; winter?: boolean; xmas?: boolean }) {
+/** Byggnader utan agent: bageriet och kyrkan vid Hamnvägen, så att byn känns bebodd. */
+function Bakery({ night, t }: { night: boolean; t: number }) {
+  const x = 56;
+  const y = 186;
   return (
     <g>
-      <Ground winter={winter} />
-      <Fountain t={t} winter={winter} />
-      <Pond winter={winter} />
-      <Board x={64} y={58} />
-      <Lamp x={74} y={40} night={night} />
-      <Lamp x={120} y={40} night={night} />
-      <Lamp x={90} y={96} night={night} />
-      <Lamp x={102} y={96} night={night} />
+      <rect x={x - 1} y={y - 1} width={30} height={2} fill="#00000033" />
+      <rect x={x} y={y - 16} width={28} height={16} fill="#EAD7BC" />
+      {rects(roofRows(x - 3, y - 25, 34, 10, '#8A3B22', '#5A2616'), 'bk')}
+      <rect x={x + 3} y={y - 12} width={7} height={6} fill="#4A2E16" />
+      <rect x={x + 4} y={y - 11} width={5} height={4} fill={night ? '#FFE2A8' : '#F4D9A0'} />
+      <rect x={x + 5} y={y - 9} width={3} height={1} fill="#C97B5A" />
+      <rect x={x + 15} y={y - 7} width={6} height={7} fill="#6B3E1E" />
+      <rect x={x + 9} y={y - 20} width={10} height={3} fill="#4A2E16" />
+      <rect x={x + 10} y={y - 19} width={8} height={1} fill="#E9B44C" />
+      <rect x={x + 22} y={y - 30} width={3} height={6} fill="#5A2616" />
+      <rect x={x + 22} y={y - 34 - (t % 3)} width={2} height={2} fill="#E9EEEA" opacity={0.6} />
+    </g>
+  );
+}
+
+function Church({ night }: { night: boolean }) {
+  const x = 116;
+  const y = 186;
+  return (
+    <g>
+      <rect x={x - 1} y={y - 1} width={26} height={2} fill="#00000033" />
+      <rect x={x} y={y - 18} width={24} height={18} fill="#F4F1E6" />
+      {rects(roofRows(x - 2, y - 26, 28, 9, '#2B3A4A', '#1A2530'), 'ch')}
+      <rect x={x + 9} y={y - 40} width={6} height={22} fill="#F4F1E6" />
+      <rect x={x + 8} y={y - 44} width={8} height={4} fill="#2B3A4A" />
+      <rect x={x + 10} y={y - 48} width={4} height={4} fill="#2B3A4A" />
+      <rect x={x + 11} y={y - 52} width={2} height={4} fill="#E9B44C" />
+      <rect x={x + 10} y={y - 51} width={4} height={1} fill="#E9B44C" />
+      <rect x={x + 10} y={y - 36} width={4} height={5} fill={night ? '#FFE2A8' : '#8FB0D6'} />
+      <rect x={x + 3} y={y - 13} width={3} height={6} fill={night ? '#FFE2A8' : '#8FB0D6'} />
+      <rect x={x + 18} y={y - 13} width={3} height={6} fill={night ? '#FFE2A8' : '#8FB0D6'} />
+      <rect x={x + 10} y={y - 8} width={4} height={8} fill="#6B3E1E" />
+    </g>
+  );
+}
+
+/** Staket framför ett hus */
+function Fence({ x, y, w }: { x: number; y: number; w: number }) {
+  const out: R[] = [[x, y + 1, w, 1, '#EAD7BC']];
+  for (let i = 0; i < w; i += 3) out.push([x + i, y, 1, 3, '#F4F1E6']);
+  return <g>{rects(out, `fe${x}-${y}`)}</g>;
+}
+
+/** Brunn i parken */
+function Well({ x, y }: { x: number; y: number }) {
+  return (
+    <g>
+      <rect x={x} y={y + 4} width={8} height={5} fill="#8A9690" />
+      <rect x={x + 1} y={y + 5} width={6} height={1} fill="#5B6670" />
+      <rect x={x} y={y} width={1} height={5} fill="#4A2E16" />
+      <rect x={x + 7} y={y} width={1} height={5} fill="#4A2E16" />
+      <rect x={x - 1} y={y - 1} width={10} height={2} fill="#8A3B22" />
+      <rect x={x + 3} y={y + 1} width={2} height={2} fill="#6B3E1E" />
+    </g>
+  );
+}
+
+const TREES: [number, number][] = [
+  // skogsdungar längs kanten och mellan husen
+  [2, 8], [10, 2], [56, 8], [64, 2], [74, 26], [80, 34], [136, 4], [146, 10], [150, 28], [232, 4], [242, 10], [250, 28], [298, 4], [306, 12],
+  [306, 40], [2, 40], [4, 52], [2, 90], [8, 100], [64, 78], [70, 98], [100, 80], [200, 72], [205, 112], [225, 72], [300, 78], [306, 92],
+  // söder om Strandgatan
+  [300, 146], [292, 156], [8, 140], [4, 158], [176, 140], [186, 148], [196, 140], [200, 162], [214, 148], [300, 166], [150, 140], [142, 162],
+];
+
+/** Allt som inte är hus: träd, torg, park, torghandel, hamn, lyktor. snow 0–1 = hur mycket snö som lagt sig. */
+export function Scenery({ t, night, snow = 0, xmas = false }: { t: number; night: boolean; snow?: number; xmas?: boolean }) {
+  const frozen = snow > 0.45;
+  const gx = (t * 0.7) % (VW + 40);
+  return (
+    <g>
+      <Ground level={snow} />
+      <Fountain t={t} frozen={frozen} />
+      <Pond frozen={frozen} />
+      <Board x={128} y={98} />
+      {/* bänkar */}
+      <Bench x={130} y={74} />
+      <Bench x={182} y={116} />
+      <Bench x={130} y={116} />
+      <Bench x={212} y={90} />
+      {/* torghandeln */}
+      <Stall x={60} y={146} c="#C2324A" />
+      <Stall x={78} y={146} c="#1F5A44" />
+      <Stall x={96} y={146} c="#2C5D8A" />
+      {/* buskar */}
       {(
         [
-          [2, 4],
-          [4, 50],
-          [6, 66],
-          [2, 106],
-          [56, 4],
-          [60, 18],
-          [126, 4],
-          [132, 20],
-          [178, 2],
-          [180, 50],
-          [176, 104],
-          [182, 66],
-          [182, 84],
-          [4, 84],
-          [76, 108],
-          [110, 108],
+          [16, 48], [62, 120], [118, 50], [190, 50], [262, 50], [270, 120], [216, 124], [190, 182], [92, 180], [146, 180], [36, 180], [226, 120], [244, 76],
         ] as [number, number][]
-      )
-        .filter(([x, y]) => !(xmas && x === 60 && y === 18))
-        .map(([x, y], i) => (
-          <Tree key={i} x={x} y={y} s={i % 3 === 0 ? 1.2 : 1} winter={winter} />
-        ))}
-      {xmas && <ChristmasTree x={57} y={17} t={t} />}
-      {/* staket vid dammen */}
-      {[0, 1, 2, 3, 4, 5].map((i) => (
-        <rect key={i} x={120 + i * 4} y={73} width={1} height={3} fill="#EAD7BC" />
+      ).map(([x, y], i) => (
+        <Bush key={i} x={x} y={y} snow={snow} />
       ))}
-      <rect x={120} y={74} width={21} height={1} fill="#EAD7BC" />
+      {TREES.filter(([x, y]) => !(xmas && x === 200 && y === 72)).map(([x, y], i) => (
+        <Tree key={i} x={x} y={y} s={i % 3 === 0 ? 1.2 : 1} snow={snow} />
+      ))}
+      {/* lyktor */}
+      {(
+        [
+          [70, 50], [168, 50], [242, 50], [66, 120], [200, 120], [262, 120], [176, 178], [226, 178],
+        ] as [number, number][]
+      ).map(([x, y], i) => (
+        <Lamp key={i} x={x} y={y} night={night} />
+      ))}
+      {/* bryggan och båten */}
+      <rect x={270} y={186} width={34} height={4} fill="#8A5A2B" />
+      {[272, 284, 296].map((x) => (
+        <rect key={x} x={x} y={190} width={2} height={6} fill="#4A2E16" />
+      ))}
+      <Boat t={t} />
+      <Gull x={(40 + gx) % VW} y={197} />
+      <Gull x={(200 + gx * 0.8) % VW} y={200} />
+      <Bakery night={night} t={t} />
+      <Church night={night} />
+      <Well x={262} y={84} />
+      {/* staket framför husen */}
+      <Fence x={18} y={53} w={12} />
+      <Fence x={42} y={53} w={12} />
+      <Fence x={268} y={53} w={10} />
+      <Fence x={22} y={123} w={12} />
+      <Fence x={46} y={123} w={12} />
+      <Fence x={92} y={123} w={12} />
+      <Fence x={116} y={123} w={10} />
+      {snow > 0.2 && <Snowman x={28} y={140} />}
+      {snow > 0.45 && <Snowman x={222} y={88} />}
+      {xmas && <ChristmasTree x={176} y={72} t={t} />}
+      {xmas && <StreetGarland x1={153} x2={167} y={64} t={t} />}
     </g>
   );
 }
@@ -885,6 +1217,39 @@ export function Interior({ def, frame, xmas = false }: { def: AgentDef; frame: n
         [73, 25, 2, 5, '#25F4EE'],
         [77, 26, 2, 4, '#FE2C55'],
         [81, 24, 1.5, 6, '#25F4EE'],
+      ];
+      break;
+    case 'scout':
+      furn = [
+        // anslagstavla med referensbilder, karta över Japan, kikare och lådor
+        [36, 4, 26, 20, '#8A5A2B'],
+        [37, 5, 24, 18, '#C9A46A'],
+        [39, 7, 6, 6, '#F4F1E6'],
+        [40, 8, 4, 4, '#2C5D8A'],
+        [47, 7, 6, 6, '#F4F1E6'],
+        [48, 8, 4, 4, '#3B5A7A'],
+        [55, 8, 5, 6, '#F4F1E6'],
+        [56, 9, 3, 4, '#1F2E40'],
+        [40, 15, 6, 6, '#F4F1E6'],
+        [41, 16, 4, 4, '#4f7f9c'],
+        [49, 15, 9, 6, '#F4F1E6'],
+        [50, 16, 2, 2, '#C2324A'],
+        [53, 17, 4, 1, '#2B3A4A'],
+        [66, 5, 22, 16, '#F4F1E6'],
+        [67, 6, 20, 14, '#BFE3FF'],
+        [77, 8, 3, 2, '#3d7d58'],
+        [76, 10, 4, 3, '#3d7d58'],
+        [74, 13, 4, 3, '#3d7d58'],
+        [72, 15, 3, 2, '#3d7d58'],
+        [76, 11, 1, 1, '#C2324A'],
+        [66, 24, 26, 3, '#8A5A2B'],
+        [68, 27, 2, 7, '#6B3E1E'],
+        [88, 27, 2, 7, '#6B3E1E'],
+        [72, 21, 5, 3, '#2B3A4A'],
+        [78, 21, 5, 3, '#2B3A4A'],
+        [77, 22, 1, 1, '#1A1A1A'],
+        [84, 28, 8, 6, '#A0703A'],
+        [84, 28, 8, 1, '#6B3E1E'],
       ];
       break;
     case 'builder':

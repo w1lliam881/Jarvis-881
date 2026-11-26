@@ -82,3 +82,15 @@ Acceptans: försäljning under 15 sekunder (e2e-test), prisändring uppdaterar v
 - ✅ Varje körning sparas i tabellen `agent_runs` (migrering `0002_agent_runs.sql`).
 - ✅ Agentbyn (`#/byn`): pixelby där agenterna går runt, med dag, kväll och natt. Varje hus visar jobb, schema och alla rapporter.
 - ✅ Alla fem testkörda mot riktig data. Reviewer hittade två fel som Builder rättade (koppling i låst period, tydligare kopplingsruta).
+
+## Agenternas egna förslag, Scout och ny by (2026-11-26) ✅
+
+- ✅ Planners mall: plan per drop (antal, kostnad, försäljning, sålt efter 30/60 dagar) jämförs med utfallet på dropsidan
+- ✅ Advisors månadsrapport: Ekonomi → Månadsmål, mot 14 000–17 000 kr och 37 % marginal, sex månaders trend, målet går att ändra
+- ✅ Godkända förslag i byrådet blir uppgifter i Att göra
+- ✅ Påminnelse 48 timmar efter ett klipp utan siffror (kort på Idag och notis från servern)
+- ✅ Tester körs på GitHub vid varje push till main och varje PR
+- ✅ Scout (ny agent i Hamnen): sökningar med maxpris, referensbilder, söklänkar och bedömning av fynd du lämnar. Söker inte automatiskt (Doorzo tillåter inte det).
+- ✅ Marketer ser klippen: 6 bildrutor tas ur videon i webbläsaren och sparas i agent_media
+- ✅ Agenterna kan ställa frågor med svarsknappar
+- ✅ Agentbyn: större med fler gator, bageri, kyrka, torghandel och hamn; snö som faller och lägger sig i drivor 20 nov–julafton, jultema och tyst julmusik (går att stänga av); byrådet som telefon högt upp

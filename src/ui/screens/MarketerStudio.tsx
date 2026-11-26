@@ -1,6 +1,9 @@
 // Marketers studio: logga TikTok-klipp med kryss, och se vad som fungerar. Visas i Studion i Agentbyn.
 import { useMemo, useState, type ReactNode } from 'react';
-import { Link2, Plus } from 'lucide-react';
+import { Film, Link2, Plus } from 'lucide-react';
+import { baseRecord } from '../../domain/defaults';
+import { useMedia, videoFrames } from '../media';
+import { store } from '../../data/store';
 import { saveVideo } from '../../data/actions';
 import { useData } from '../../data/store';
 import { live } from '../../domain/metrics';
@@ -78,10 +81,27 @@ export function MarketerStudio() {
   const [f, setF] = useState<Form | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
   const [fetching, setFetching] = useState(false);
+  const [frames, setFrames] = useState<{ data: string; note: string }[]>([]);
+  const [reading, setReading] = useState(false);
+  const canMedia = !!store().backend.media;
+  const pickVideo = async (file: File | undefined) => {
+    if (!file) return;
+    setReading(true);
+    try {
+      const fr = await videoFrames(file, 6, 480);
+      setFrames(fr);
+      if (f && !f.title) setF({ ...f, title: file.name.replace(/\.[^.]+$/, '') });
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Kunde inte läsa videon', 'error');
+    } finally {
+      setReading(false);
+    }
+  };
 
   const open = (v?: VideoPost) => {
     setF(v ? fromVideo(v) : empty());
     setEditId(v?.id ?? null);
+    setFrames([]);
   };
   const onUrl = async (raw: string) => {
     if (!f) return;
@@ -96,6 +116,7 @@ export function MarketerStudio() {
   const save = async () => {
     if (!f) return;
     const at = new Date(`${f.date}T${String(f.hour).padStart(2, '0')}:00:00`);
+    const vid = editId ?? baseRecord().id;
     const ok = await saveVideo(
       {
         platform: 'TikTok',
@@ -114,7 +135,18 @@ export function MarketerStudio() {
         saves: num(f.saves),
       },
       editId ?? undefined,
+      vid,
     );
+    if (ok && frames.length && store().backend.media) {
+      try {
+        const m = store().backend.media!;
+        // Ny video ersätter gamla bildrutor för samma klipp
+        for (const old of await m.list('clip-frame', vid)) await m.remove(old.id);
+        await m.add('clip-frame', vid, frames);
+      } catch (e) {
+        toast(e instanceof Error ? e.message : 'Bildrutorna kunde inte sparas', 'error');
+      }
+    }
     if (ok) {
       toast(editId ? 'Klippet är uppdaterat' : 'Klippet är loggat. Marketer läser det nästa runda.');
       setF(null);
@@ -168,6 +200,30 @@ export function MarketerStudio() {
               {fetching ? 'Hämtar rubriken från TikTok…' : 'Klistra in länken så hämtas rubrik och bild. Visningar och likes visar TikTok inte via länken, de fyller du i nedan.'}
             </span>
             {f.thumb && <img src={f.thumb} alt="" className="mt-1 h-24 w-auto self-start border-2 object-cover" style={{ borderColor: LINE }} />}
+          </Q>
+          <Q label="Videon, så att Marketer kan se klippet (valfritt)">
+            {canMedia ? (
+              <>
+                <label className="flex min-h-[46px] cursor-pointer items-center gap-2 self-start border-2 px-3 text-[14px] text-[#E9EEEA]" style={{ borderColor: LINE }}>
+                  <Film size={16} aria-hidden /> {reading ? 'Läser videon…' : frames.length ? 'Välj en annan video' : 'Välj videofil'}
+                  <input type="file" accept="video/*" hidden onChange={(e) => void pickVideo(e.target.files?.[0])} />
+                </label>
+                {frames.length > 0 && (
+                  <div className="flex gap-1.5 overflow-x-auto">
+                    {frames.map((fr) => (
+                      <img key={fr.note} src={fr.data} alt={`Bildruta vid ${fr.note}`} className="h-24 w-auto shrink-0 border-2" style={{ borderColor: LINE }} />
+                    ))}
+                  </div>
+                )}
+                <span className="text-[12px]" style={{ color: MUTED }}>
+                  Videon laddas inte upp. Jarvis tar ut 6 bildrutor genom klippet och sparar dem, så att Marketer ser hur du filmat: vinkel, ljus, text på skärmen och plagg. Ljudet hör Marketer inte.
+                </span>
+              </>
+            ) : (
+              <span className="text-[12px]" style={{ color: MUTED }}>
+                Bildrutor ur videon sparas i databasen och fungerar när du är inloggad.
+              </span>
+            )}
           </Q>
           <Q label="Rubrik eller kort beskrivning">
             <input className="border-2 bg-[#0A1712] px-3 py-2 text-[16px] text-[#E9EEEA]" style={{ borderColor: LINE }} value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} placeholder="t.ex. Levi's 501 från senaste dropen" />
@@ -258,8 +314,9 @@ export function MarketerStudio() {
                   {v.postedAt.slice(0, 10)} · {(v.formats ?? []).slice(0, 3).join(', ') || 'inga kryss'}
                 </span>
               </span>
-              <span className="shrink-0 text-right text-[12px]" style={{ color: v.views ? MINT : SUN }}>
+              <span className="flex shrink-0 flex-col items-end text-right text-[12px]" style={{ color: v.views ? MINT : SUN }}>
                 {v.views ? `${v.views.toLocaleString('sv-SE')} visn.` : 'Fyll i siffror'}
+                <FrameCount id={v.id} />
               </span>
             </button>
           ))}
@@ -267,6 +324,13 @@ export function MarketerStudio() {
       )}
     </section>
   );
+}
+
+/** Hur många bildrutor Marketer har att titta på för ett klipp. */
+function FrameCount({ id }: { id: string }) {
+  const m = useMedia('clip-frame', id);
+  if (!m.items.length) return null;
+  return <span style={{ color: MUTED }}>Marketer ser {m.items.length} bilder</span>;
 }
 
 function Q({ label, children }: { label: string; children: ReactNode }) {

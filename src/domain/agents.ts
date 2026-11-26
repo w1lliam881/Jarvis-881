@@ -1,7 +1,7 @@
 // Agenterna i Agentbyn: vilka de är, när de jobbar och hur deras arbete sammanfattas.
 // Själva agenterna körs i Claude Code (se .claude/agents). Appen visar bara vad de gjort.
 
-export type AgentId = 'builder' | 'reviewer' | 'advisor' | 'reminder' | 'noter' | 'planner' | 'marketer';
+export type AgentId = 'builder' | 'reviewer' | 'advisor' | 'reminder' | 'noter' | 'planner' | 'marketer' | 'scout';
 
 export interface AgentRun {
   id: string;
@@ -159,6 +159,25 @@ export const AGENTS: AgentDef[] = [
     colors: { hat: '#1A1A1A', shirt: '#C2324A', pants: '#1F2E40', trim: '#25F4EE' },
     roof: '#C2324A',
     wall: '#F2E2E4',
+  },
+  {
+    id: 'scout',
+    name: 'Scout',
+    title: 'Spanaren',
+    house: 'Hamnen',
+    line: 'Hjälper dig hitta och bedöma fynd på Doorzo, utifrån dina sökningar och referensbilder.',
+    job: [
+      'Gör färdiga söklänkar varje morgon med japanska sökord och ditt maxpris i yen',
+      'Bedömer fynd du lämnar (länk eller skärmbild) mot dina referensbilder',
+      'Räknar hemkostnad (frakt, tull, förpackning) mot ditt maxpris för kategorin',
+      'Säger köp, kanske eller låt bli, och lägger de bästa som förslag i byrådet',
+    ],
+    never: 'Köper aldrig något och söker inte automatiskt på sajterna (Doorzo tillåter inte det). Du väljer vad som är värt att titta på.',
+    command: '/scout',
+    schedule: { days: EVERY_DAY, times: [[7, 40]], label: 'Varje morgon 07:40' },
+    colors: { hat: '#2B3A4A', shirt: '#6D8FB3', pants: '#3E4C60', trim: '#E9B44C' },
+    roof: '#1F4E6B',
+    wall: '#E7E1D3',
   },
   {
     id: 'builder',
@@ -361,8 +380,10 @@ export interface AgentMessage {
   /** Vem av er som skrev, när sender är 'du' (e-post eller namn). */
   author?: string | null;
   body: string;
-  /** chatt = vanligt meddelande. plan = dagens/veckans plan. förslag = något agenten vill göra och som kräver ditt ja. */
-  kind: 'chatt' | 'plan' | 'förslag';
+  /** chatt = vanligt meddelande. plan = dagens/veckans plan. förslag = något agenten vill göra och som kräver ditt ja.
+   *  fråga = agenten frågar dig något, ofta med svarsalternativ (options). Du svarar med ett meddelande som har replyTo = frågan. */
+  kind: 'chatt' | 'plan' | 'förslag' | 'fråga';
+  options?: string[] | null;
   status: 'väntar' | 'godkänd' | 'avvisad' | null;
   replyTo: string | null;
 }
@@ -400,4 +421,22 @@ export function threadMessages(msgs: AgentMessage[], thread: ChatThread): AgentM
 /** Nya meddelanden från agenten sedan du senast tittade. */
 export function unreadCount(msgs: AgentMessage[], thread: ChatThread, seenAt: string | null): number {
   return msgs.filter((m) => m.thread === thread && m.sender !== 'du' && (!seenAt || m.at > seenAt)).length;
+}
+
+/** Frågor från agenterna som du inte svarat på än (ett svar har replyTo = frågans id). */
+export function openQuestions(msgs: AgentMessage[], thread?: ChatThread): AgentMessage[] {
+  const answered = new Set(msgs.filter((m) => m.sender === 'du' && m.replyTo).map((m) => m.replyTo));
+  return msgs.filter((m) => m.kind === 'fråga' && !answered.has(m.id) && (!thread || m.thread === thread)).sort((a, b) => (a.at < b.at ? -1 : 1));
+}
+
+/** Ditt svar på en fråga, om du svarat. */
+export function answerTo(msgs: AgentMessage[], id: string): AgentMessage | undefined {
+  return msgs.find((m) => m.sender === 'du' && m.replyTo === id);
+}
+
+/** Uppgiften som skapas när du godkänner ett förslag: första meningen, högst 100 tecken. */
+export function taskFromProposal(m: Pick<AgentMessage, 'body' | 'sender'>): string {
+  const first = m.body.replace(/\s+/g, ' ').trim().split(/(?<=[.!?])\s/)[0] ?? m.body;
+  const t = first.length > 100 ? `${first.slice(0, 97).trimEnd()}…` : first;
+  return t.replace(/^(Förslag|Jag föreslår att)[:\s]+/i, '').replace(/^./, (c) => c.toUpperCase());
 }

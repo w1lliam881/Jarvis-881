@@ -15,6 +15,7 @@ import { go } from '../router';
 import type { Route } from '../router';
 import { Bars, Card, Chips, Columns, ConfirmButton, Empty, Field, MoneyInput, Page, Pill, Row, Section, Segmented, Stat, TopBand, cx } from '../components/ui';
 import { Attachments } from './Attachments';
+import { MonthGoalView } from './MonthGoal';
 import { OkChip } from './Lager';
 import { openQuick } from '../App';
 import { toast } from '../Boot';
@@ -24,6 +25,7 @@ const VIEWS = [
   { value: 'verifikat', label: 'Verifikat' },
   { value: 'rapporter', label: 'Rapporter' },
   { value: 'analys', label: 'Analys' },
+  { value: 'manad', label: 'Månadsmål' },
   { value: 'kvartal', label: 'Kvartal' },
   { value: 'kontroll', label: 'Kontroll' },
 ] as const;
@@ -54,6 +56,7 @@ export function Ekonomi({ route }: { route: Route }) {
         {view === 'rapporter' && <Reports />}
         {view === 'analys' && <Analysis />}
         {view === 'kvartal' && <QuarterView />}
+        {view === 'manad' && <MonthGoalView />}
         {view === 'kontroll' && <Checks />}
       </Page>
     </>
