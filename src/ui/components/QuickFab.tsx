@@ -1,6 +1,6 @@
 // Snabbknappen nere till höger: sålt något, nytt inköp och dina sajter. Valen rullar upp med en kort animation.
 import { useEffect, useRef, useState } from 'react';
-import { Package, ShoppingBag, Zap, X } from 'lucide-react';
+import { Link2, Package, ShoppingBag, Zap, X } from 'lucide-react';
 import { SITES, SiteLogo } from './SiteLinks';
 import { cx } from './ui';
 import type { QuickKind } from '../Quick';
@@ -28,14 +28,15 @@ export function QuickFab({ onPick, hidden }: { onPick: (k: QuickKind) => void; h
     onPick(k);
   };
   const actions = [
+    { k: 'doorzo' as const, icon: Link2, t: 'Doorzo-länk', s: 'Klistra in, resten fylls i' },
     { k: 'sale' as const, icon: ShoppingBag, t: 'Sålt något', s: 'Pris och plattform, klart' },
-    { k: 'drop' as const, icon: Package, t: 'Nytt inköp', s: 'Doorzo-länk eller klistra in' },
+    { k: 'drop' as const, icon: Package, t: 'Nytt inköp', s: 'Skriv plaggen själv' },
   ];
   return (
     <div ref={ref} className="no-print fixed bottom-[calc(84px+env(safe-area-inset-bottom))] right-4 z-40 flex flex-col items-end gap-2 lg:bottom-8 lg:right-8">
       {open && (
         <div className="flex flex-col items-end gap-2" role="menu" aria-label="Snabbval">
-          <div className="fab-item flex items-center gap-2 rounded-2xl bg-surface p-2 shadow-[0_8px_24px_rgba(23,63,49,.22)] ring-1 ring-line" style={{ animationDelay: '120ms' }}>
+          <div className="fab-item flex items-center gap-2 rounded-2xl bg-surface p-2 shadow-[0_8px_24px_rgba(23,63,49,.22)] ring-1 ring-line" style={{ animationDelay: '180ms' }}>
             {SITES.map((s) => (
               <a key={s.id} href={s.url} target="_blank" rel="noreferrer" role="menuitem" className="flex flex-col items-center gap-1 rounded-xl px-1.5 py-1 active:scale-95" aria-label={`Öppna ${s.name}`} onClick={() => setOpen(false)}>
                 <SiteLogo site={s} size={38} />
@@ -50,7 +51,7 @@ export function QuickFab({ onPick, hidden }: { onPick: (k: QuickKind) => void; h
               role="menuitem"
               onClick={() => pick(a.k)}
               className="fab-item flex min-h-[52px] items-center gap-3 rounded-2xl bg-surface py-2 pl-3 pr-4 text-left shadow-[0_8px_24px_rgba(23,63,49,.22)] ring-1 ring-line"
-              style={{ animationDelay: `${60 - i * 60}ms` }}
+              style={{ animationDelay: `${Math.max(0, 120 - i * 60)}ms` }}
             >
               <span className="grid h-9 w-9 place-items-center rounded-xl bg-accent-soft text-accent">
                 <a.icon size={18} aria-hidden />

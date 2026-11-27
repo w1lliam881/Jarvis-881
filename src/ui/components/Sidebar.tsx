@@ -148,7 +148,7 @@ export function Sidebar({ route }: { route: Route }) {
           <i className={cx('h-1.5 w-1.5 rounded-full', status.state === 'saving' ? 'bg-sun' : status.state === 'error' ? 'bg-neg' : 'bg-mint')} />
           {status.state === 'saving' ? 'Sparar…' : status.state === 'error' ? 'Kunde inte spara' : status.at ? `Sparat ${new Date(status.at).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}` : 'Synkad'}
         </div>
-        Snabbt nere till höger. Genvägar: <kbd className="side-kbd">N</kbd> försäljning · <kbd className="side-kbd">K</kbd> kostnad · <kbd className="side-kbd">U</kbd> uppgift · <kbd className="side-kbd">1–5</kbd> flikar
+        Snabbt nere till höger. Genvägar: <kbd className="side-kbd">N</kbd> försäljning · <kbd className="side-kbd">K</kbd> kostnad · <kbd className="side-kbd">U</kbd> uppgift · <kbd className="side-kbd">D</kbd> Doorzo · <kbd className="side-kbd">1–5</kbd> flikar
       </div>
     </aside>
   );

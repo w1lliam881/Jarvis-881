@@ -193,3 +193,20 @@ export function parseDoorzoLink(link: string, yenPerSek: number): DoorzoItem | n
 export function doorzoComment(d: DoorzoItem): string {
   return [d.details.join(', '), d.priceYen != null ? `${d.priceYen.toLocaleString('sv-SE')} yen` : '', d.mercariId ? `Mercari ${d.mercariId}` : '', d.title ? `Titel: ${d.title}` : ''].filter(Boolean).join(' · ');
 }
+
+/**
+ * Droppen nya Doorzo-plagg läggs i som standard: den senaste beställda droppen från de senaste 7 dagarna
+ * (man handlar ofta en drop över flera dagar). Finns ingen: null = ny drop.
+ */
+export function openDoorzoDrop<T extends { id: string; date: string; status: string; deletedAt?: string | null }>(drops: T[], today: string): T | null {
+  const from = new Date(Date.parse(`${today}T12:00:00Z`) - 7 * 864e5).toISOString().slice(0, 10);
+  const open = drops.filter((d) => !d.deletedAt && d.status === 'beställd' && d.date >= from && d.date <= today);
+  open.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+  return open[0] ?? null;
+}
+
+/** Hämtar Doorzo-/Mercari-länkar ur det som delats till appen (?url=…&text=…). */
+export function sharedLinks(search: string): string {
+  const p = new URLSearchParams(search);
+  return findLinks([p.get('url'), p.get('text'), p.get('title')].filter(Boolean).join(' ')).join('\n');
+}

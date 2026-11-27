@@ -61,7 +61,7 @@ test('nytt inköp från en Doorzo-länk fyller i plagget', async ({ page }) => {
   await openFab(page, 'Nytt inköp');
   const link =
     "https://www.doorzo.com/en/mall/mercari/detail/68747470733a2f2f7777772e6d6572636172692e636f6d2f6a702f6974656d732f6d32373836343035383937342f?Price=3000&Asin=m27864058974&Title=Levi%27s+511+USA%E8%A3%BDW29+L32+WHITE+OAK%E8%A3%BD%E8%B5%A4%E8%80%B3&Image=https://static.mercdn.net/item/detail/orig/photos/m27864058974_1.jpg?1794015573&SellerId=&SellerName=";
-  await page.getByLabel('Doorzo-länk').fill(link);
+  await page.getByLabel('Doorzo-länk', { exact: true }).fill(link);
   const card = page.getByLabel("Från Doorzo: Levi's 511 W29 L32");
   await expect(card).toBeVisible();
   await expect(card.getByText(/3.000 yen · Made in USA · White Oak/)).toBeVisible();
@@ -73,6 +73,43 @@ test('nytt inköp från en Doorzo-länk fyller i plagget', async ({ page }) => {
   await page.goto('/#/lager');
   await page.getByText("Levi's 511 W29 L32").first().click();
   await expect(page.getByRole('link', { name: /Köpt här/ })).toHaveAttribute('href', /doorzo\.com/);
+});
+
+test('Doorzo-länk från startsidan, snabbknappen och klistra in var som helst', async ({ page }) => {
+  await importV14(page);
+  const link =
+    "https://www.doorzo.com/en/mall/mercari/detail/68747470733a2f2f7777772e6d6572636172692e636f6d2f6a702f6974656d732f6d32373836343035383937342f?Price=3000&Asin=m27864058974&Title=Levi%27s+511+USA%E8%A3%BDW29+L32+WHITE+OAK%E8%A3%BD%E8%B5%A4%E8%80%B3";
+  // 1. Rutan på Idag: klistra in länken, inköpet öppnas med plagget ifyllt
+  await page.getByLabel('Klistra in Doorzo-länk', { exact: true }).fill(link);
+  await expect(page.getByRole('heading', { name: 'Inköp från Doorzo' })).toBeVisible();
+  await expect(page.getByLabel("Från Doorzo: Levi's 511 W29 L32")).toBeVisible();
+  await page.getByRole('button', { name: 'Skapa drop med 1 plagg' }).click();
+  await expect(page.getByText(/Sparat · Ny drop/)).toBeVisible();
+  // 2. Snabbknappen: Doorzo-länk överst. Nästa plagg hamnar i samma (beställda) drop som standard
+  await page.getByRole('button', { name: /^Snabbval/ }).click();
+  await page.getByRole('menuitem', { name: /Doorzo-länk/ }).click();
+  await expect(page.getByLabel('Doorzo-länk', { exact: true })).toBeFocused();
+  await page.getByLabel('Doorzo-länk', { exact: true }).fill(link.replace('m27864058974', 'm11112222333').replace('Price=3000', 'Price=2800'));
+  await expect(page.getByRole('radio', { name: /Drop 10/ })).toHaveAttribute('aria-checked', 'true');
+  await page.getByRole('button', { name: /Lägg 1 plagg i Drop 10/ }).click();
+  await expect(page.getByText(/1 plagg tillagda i Drop 10/)).toBeVisible();
+  // 3. Klistra in var som helst i appen (utanför ett fält)
+  await page.goto('/#/lager');
+  await page.evaluate((t) => {
+    const dt = new DataTransfer();
+    dt.setData('text/plain', t);
+    window.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt }));
+  }, link);
+  await expect(page.getByRole('heading', { name: 'Inköp från Doorzo' })).toBeVisible();
+  await expect(page.getByText('Något gick fel')).toHaveCount(0);
+});
+
+test('delad länk till appen öppnar inköpet', async ({ page }) => {
+  await importV14(page);
+  await page.goto('/?text=' + encodeURIComponent('https://www.doorzo.com/item?Asin=m27864058974&Price=3000&Title=Nudie+Grim+Tim+W31') + '#/idag');
+  await expect(page.getByRole('heading', { name: 'Inköp från Doorzo' })).toBeVisible();
+  await expect(page.getByLabel(/Från Doorzo: Nudie Jeans Grim Tim W31/)).toBeVisible();
+  expect(page.url()).not.toContain('text=');
 });
 
 test('bokför en kostnad och se den i resultatet', async ({ page }) => {

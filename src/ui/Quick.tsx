@@ -2,19 +2,26 @@ import { useMemo, useState } from 'react';
 import { go } from './router';
 import { ClipboardPaste, ListPlus, Package, Receipt, ShoppingBag } from 'lucide-react';
 import { useData } from '../data/store';
-import { addDraft, addTask, bookEvent, createDrop, sellItem } from '../data/actions';
+import { addDraft, addItems, addTask, bookEvent, createDrop, sellItem } from '../data/actions';
 import { todayISO } from '../domain/dates';
 import { EVENT_TYPES } from '../domain/ledger';
 import { allLanded, isSold, live } from '../domain/metrics';
 import { kr, parseOre } from '../domain/money';
 import { parseLines, parseMail, type ParsedRow } from '../domain/parse';
 import { DEFAULT_WEIGHT } from '../domain/calc';
-import { doorzoComment, findLinks, parseDoorzoLink, type DoorzoItem } from '../domain/doorzolink';
+import { doorzoComment, findLinks, openDoorzoDrop, parseDoorzoLink, type DoorzoItem } from '../domain/doorzolink';
 import { CATEGORIES, PLATFORMS, type Category, type EventType, type Platform } from '../domain/types';
 import { Field, MoneyInput, Select, Sheet, confetti, cx } from './components/ui';
 import { toast } from './Boot';
 
-export type QuickKind = 'menu' | 'sale' | 'cost' | 'task' | 'drop' | 'mail';
+export type QuickKind = 'menu' | 'sale' | 'cost' | 'task' | 'drop' | 'mail' | 'doorzo';
+
+/** Text (länkar) som ska in i Doorzo-rutan när den öppnas: från urklipp, en delning eller rutan på Idag. */
+let pendingDoorzo = '';
+export function openDoorzo(text = '') {
+  pendingDoorzo = text;
+  window.dispatchEvent(new CustomEvent('jarvis-quick', { detail: 'doorzo' }));
+}
 
 export function QuickSheet({ kind, setKind }: { kind: QuickKind | null; setKind: (k: QuickKind | null) => void }) {
   const close = () => setKind(null);
@@ -45,6 +52,7 @@ export function QuickSheet({ kind, setKind }: { kind: QuickKind | null; setKind:
       {kind === 'cost' && <CostSheet onClose={close} />}
       {kind === 'task' && <TaskSheet onClose={close} />}
       {kind === 'drop' && <DropSheet onClose={close} />}
+      {kind === 'doorzo' && <DropSheet onClose={close} doorzo />}
       {kind === 'mail' && <MailSheet onClose={close} />}
     </>
   );
@@ -277,14 +285,29 @@ function TaskSheet({ onClose }: { onClose: () => void }) {
   );
 }
 
-export function DropSheet({ onClose }: { onClose: () => void }) {
+export function DropSheet({ onClose, doorzo = false }: { onClose: () => void; doorzo?: boolean }) {
   const ds = useData();
+  const today = todayISO();
+  const openDrops = useMemo(() => live(ds.drops).filter((d) => d.status !== 'hemma').sort((a, b) => (a.date < b.date ? 1 : -1)), [ds.drops]);
+  // Doorzo: lägg i veckans beställda drop som standard (man handlar ofta en drop över flera dagar)
+  const [target, setTarget] = useState<string>(() => (doorzo ? (openDoorzoDrop(live(ds.drops), today)?.id ?? 'ny') : 'ny'));
+  const [initial] = useState(() => {
+    const t = pendingDoorzo;
+    pendingDoorzo = '';
+    return t;
+  });
   const [name, setName] = useState(`Drop ${live(ds.drops).length + 1}`);
   const [date, setDate] = useState(todayISO());
   const [text, setText] = useState('');
   const [shipping, setShipping] = useState(0);
   const [customs, setCustoms] = useState(0);
-  const [linked, setLinked] = useState<DoorzoItem[]>([]);
+  const [linked, setLinked] = useState<DoorzoItem[]>(() =>
+    findLinks(initial)
+      .map((l) => parseDoorzoLink(l, ds.settings.yenPerSek))
+      .filter((d): d is DoorzoItem => !!d),
+  );
+  const [showText, setShowText] = useState(!doorzo);
+  const existing = target === 'ny' ? null : openDrops.find((d) => d.id === target) ?? null;
   const textRows = useMemo(() => parseLines(text), [text]);
   const rows: ParsedRow[] = useMemo(
     () => [
@@ -296,26 +319,49 @@ export function DropSheet({ onClose }: { onClose: () => void }) {
   const total = rows.reduce((s, r) => s + r.cost, 0);
   const save = async () => {
     if (!rows.length) return;
-    if (await createDrop({ name, date, shipping, customs, status: shipping ? 'hemma' : 'beställd' }, rows)) {
-      toast(`${rows.length} plagg tillagda`);
+    const ok = existing ? await addItems(existing.id, rows) : await createDrop({ name, date, shipping, customs, status: shipping ? 'hemma' : 'beställd' }, rows);
+    if (ok) {
+      toast(existing ? `${rows.length} plagg tillagda i ${existing.name}` : `${rows.length} plagg tillagda`);
       onClose();
     }
   };
+  const saveLabel = existing ? `Lägg ${rows.length} plagg i ${existing.name}` : `Skapa drop med ${rows.length} plagg`;
   return (
-    <Sheet open onClose={onClose} title="Ny drop" footer={<button type="button" className="btn btn-primary mb-1 w-full" disabled={!rows.length} onClick={save}>Skapa drop med {rows.length} plagg</button>}>
+    <Sheet open onClose={onClose} title={doorzo ? 'Inköp från Doorzo' : 'Nytt inköp'} footer={<button type="button" className="btn btn-primary mb-1 w-full" disabled={!rows.length} onClick={save}>{saveLabel}</button>}>
       <div className="flex flex-col gap-3">
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Namn">
-            <input className="field" value={name} onChange={(e) => setName(e.target.value)} />
+        {doorzo && <DoorzoLinks items={linked} setItems={setLinked} yenPerSek={ds.settings.yenPerSek} autoFocus />}
+        {openDrops.length > 0 && (
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[13px] font-medium">Lägg i</span>
+            <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Lägg i drop">
+              {[{ id: 'ny', label: 'Ny drop' }, ...openDrops.slice(0, 4).map((d) => ({ id: d.id, label: `${d.name} (${d.status})` }))].map((o) => (
+                <button key={o.id} type="button" role="radio" aria-checked={target === o.id} onClick={() => setTarget(o.id)} className={cx('min-h-[40px] rounded-full border px-3.5 text-[14px] font-semibold', target === o.id ? 'border-accent bg-accent text-surface' : 'border-line text-text')}>
+                  {o.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        {!existing && (
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Namn">
+              <input className="field" value={name} onChange={(e) => setName(e.target.value)} />
+            </Field>
+            <Field label="Datum">
+              <input type="date" className="field" value={date} onChange={(e) => setDate(e.target.value)} />
+            </Field>
+          </div>
+        )}
+        {!doorzo && <DoorzoLinks items={linked} setItems={setLinked} yenPerSek={ds.settings.yenPerSek} />}
+        {showText ? (
+          <Field label={linked.length ? 'Fler plagg, ett per rad (valfritt)' : 'Eller skriv plaggen, ett per rad'} hint={'Pris sist på raden. "11x" först ger flera likadana. Kategori gissas eller skrivs efter semikolon.'}>
+            <textarea className="field min-h-[150px]" value={text} onChange={(e) => setText(e.target.value)} placeholder={'11x Nudie jeans 132,19\nA&F tröja; Tröjor; 150\nBurberry t-shirt 215'} />
           </Field>
-          <Field label="Datum">
-            <input type="date" className="field" value={date} onChange={(e) => setDate(e.target.value)} />
-          </Field>
-        </div>
-        <DoorzoLinks items={linked} setItems={setLinked} yenPerSek={ds.settings.yenPerSek} />
-        <Field label={linked.length ? 'Fler plagg, ett per rad (valfritt)' : 'Eller skriv plaggen, ett per rad'} hint={'Pris sist på raden. "11x" först ger flera likadana. Kategori gissas eller skrivs efter semikolon.'}>
-          <textarea className="field min-h-[150px]" value={text} onChange={(e) => setText(e.target.value)} placeholder={'11x Nudie jeans 132,19\nA&F tröja; Tröjor; 150\nBurberry t-shirt 215'} />
-        </Field>
+        ) : (
+          <button type="button" className="self-start text-[13px] text-muted underline" onClick={() => setShowText(true)}>
+            Plagg utan länk? Skriv dem här
+          </button>
+        )}
         {rows.length > 0 && (
           <div className="card p-3 text-[13px]">
             <div className="mb-1 font-semibold">
@@ -332,7 +378,8 @@ export function DropSheet({ onClose }: { onClose: () => void }) {
             {rows.length > 8 && <div className="text-muted">…och {rows.length - 8} till</div>}
           </div>
         )}
-        <div className="grid grid-cols-2 gap-3">
+        {!existing && (
+          <div className="grid grid-cols-2 gap-3">
           <Field label="Frakt (valfritt)">
             <MoneyInput value={shipping} onCommit={setShipping} />
           </Field>
@@ -340,13 +387,14 @@ export function DropSheet({ onClose }: { onClose: () => void }) {
             <MoneyInput value={customs} onCommit={setCustoms} />
           </Field>
         </div>
+        )}
       </div>
     </Sheet>
   );
 }
 
 /** Klistra in en eller flera Doorzo-länkar: märke, modell, storlek, kategori och pris fylls i från länken. */
-function DoorzoLinks({ items, setItems, yenPerSek }: { items: DoorzoItem[]; setItems: (f: (x: DoorzoItem[]) => DoorzoItem[]) => void; yenPerSek: number }) {
+function DoorzoLinks({ items, setItems, yenPerSek, autoFocus }: { items: DoorzoItem[]; setItems: (f: (x: DoorzoItem[]) => DoorzoItem[]) => void; yenPerSek: number; autoFocus?: boolean }) {
   const [link, setLink] = useState('');
   const [miss, setMiss] = useState(false);
   const take = (v: string) => {
@@ -362,11 +410,25 @@ function DoorzoLinks({ items, setItems, yenPerSek }: { items: DoorzoItem[]; setI
       setMiss(v.trim().length > 8);
     }
   };
+  const paste = async () => {
+    try {
+      const t = await navigator.clipboard.readText();
+      if (t) take(t);
+      else setMiss(true);
+    } catch {
+      toast('Kunde inte läsa urklipp. Håll fingret i rutan och välj Klistra in.');
+    }
+  };
   const edit = (i: number, patch: Partial<DoorzoItem>) => setItems((cur) => cur.map((d, k) => (k === i ? { ...d, ...patch } : d)));
   return (
     <div className="flex flex-col gap-2">
       <Field label="Från Doorzo" hint={`Klistra in länken till plagget. Märke, modell, storlek, kategori och pris fylls i. Priset räknas om med ${yenPerSek} yen per krona (Inställningar); Doorzos avgift och frakt läggs på droppen.`}>
-        <input className="field" inputMode="url" value={link} onChange={(e) => take(e.target.value)} placeholder="https://www.doorzo.com/…" aria-label="Doorzo-länk" />
+        <div className="flex gap-2">
+          <input className="field min-w-0 flex-1" inputMode="url" value={link} onChange={(e) => take(e.target.value)} placeholder="https://www.doorzo.com/…" aria-label="Doorzo-länk" autoFocus={autoFocus && !items.length} />
+          <button type="button" onClick={() => void paste()} className="btn btn-primary shrink-0 px-4" aria-label="Klistra in länk från urklipp">
+            <ClipboardPaste size={18} aria-hidden /> Klistra in
+          </button>
+        </div>
       </Field>
       {miss && <p className="m-0 text-[12px] text-me">Hittade ingen Doorzo- eller Mercari-länk i det du klistrade in.</p>}
       {items.map((d, i) => (

@@ -3,7 +3,8 @@ import { BarChart3, Home, MoreHorizontal, Package, ShoppingBag, Undo2 } from 'lu
 import { store, useStore } from '../data/store';
 import { useRoute, go } from './router';
 import { cx } from './components/ui';
-import { QuickSheet, type QuickKind } from './Quick';
+import { QuickSheet, openDoorzo, type QuickKind } from './Quick';
+import { findLinks, sharedLinks } from '../domain/doorzolink';
 import { Idag } from './screens/Idag';
 import { Lager } from './screens/Lager';
 import { Salj } from './screens/Salj';
@@ -46,7 +47,7 @@ export function App() {
     return () => window.removeEventListener('jarvis-quick', on);
   }, []);
 
-  // Tangentbordsgenvägar på dator: n = ny försäljning, k = ny kostnad, 1–5 = flikar
+  // Tangentbordsgenvägar på dator: n = ny försäljning, k = ny kostnad, d = Doorzo-länk, 1–5 = flikar
   useEffect(() => {
     const on = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement;
@@ -54,6 +55,7 @@ export function App() {
       if (e.key === 'n') setQuick('sale');
       else if (e.key === 'k') setQuick('cost');
       else if (e.key === 'u') setQuick('task');
+      else if (e.key === 'd') setQuick('doorzo');
       else if (/^[1-5]$/.test(e.key)) go(`#/${TABS[+e.key - 1].id}`);
       else return;
       e.preventDefault();
@@ -61,6 +63,27 @@ export function App() {
     window.addEventListener('keydown', on);
     return () => window.removeEventListener('keydown', on);
   }, []);
+
+  // Doorzo-länk var som helst: klistra in (utanför ett fält) eller dela till appen, så öppnas inköpsrutan med plagget ifyllt
+  useEffect(() => {
+    const onPaste = (e: ClipboardEvent) => {
+      const t = e.target as HTMLElement;
+      if (/INPUT|TEXTAREA|SELECT/.test(t.tagName) || t.isContentEditable || document.querySelector('[role=dialog]')) return;
+      const text = e.clipboardData?.getData('text') ?? '';
+      if (!findLinks(text).length) return;
+      e.preventDefault();
+      openDoorzo(text);
+    };
+    window.addEventListener('paste', onPaste);
+    return () => window.removeEventListener('paste', onPaste);
+  }, []);
+  const shareReady = !!ds && (!!ds.settings.migratedAt || ds.drops.length > 0);
+  useEffect(() => {
+    if (!shareReady || !location.search) return;
+    const links = sharedLinks(location.search);
+    history.replaceState(null, '', location.pathname + (location.hash || '#/idag'));
+    if (links) openDoorzo(links);
+  }, [shareReady]);
 
   // Day streak: registrera att du varit inne idag (en gång per dag och person)
   const ready = !!ds && (!!ds.settings.migratedAt || ds.drops.length > 0);
