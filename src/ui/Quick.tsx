@@ -7,8 +7,10 @@ import { todayISO } from '../domain/dates';
 import { EVENT_TYPES } from '../domain/ledger';
 import { allLanded, isSold, live } from '../domain/metrics';
 import { kr, parseOre } from '../domain/money';
-import { parseLines, parseMail } from '../domain/parse';
-import { PLATFORMS, type EventType, type Platform } from '../domain/types';
+import { parseLines, parseMail, type ParsedRow } from '../domain/parse';
+import { DEFAULT_WEIGHT } from '../domain/calc';
+import { doorzoComment, findLinks, parseDoorzoLink, type DoorzoItem } from '../domain/doorzolink';
+import { CATEGORIES, PLATFORMS, type Category, type EventType, type Platform } from '../domain/types';
 import { Field, MoneyInput, Select, Sheet, confetti, cx } from './components/ui';
 import { toast } from './Boot';
 
@@ -282,7 +284,15 @@ export function DropSheet({ onClose }: { onClose: () => void }) {
   const [text, setText] = useState('');
   const [shipping, setShipping] = useState(0);
   const [customs, setCustoms] = useState(0);
-  const rows = useMemo(() => parseLines(text), [text]);
+  const [linked, setLinked] = useState<DoorzoItem[]>([]);
+  const textRows = useMemo(() => parseLines(text), [text]);
+  const rows: ParsedRow[] = useMemo(
+    () => [
+      ...linked.map((d) => ({ name: d.name, category: d.category, cost: d.cost, weightKg: d.weightKg, brand: d.brand, model: d.model, size: d.size, comment: doorzoComment(d), sourceUrl: d.sourceUrl })),
+      ...textRows,
+    ],
+    [linked, textRows],
+  );
   const total = rows.reduce((s, r) => s + r.cost, 0);
   const save = async () => {
     if (!rows.length) return;
@@ -302,7 +312,8 @@ export function DropSheet({ onClose }: { onClose: () => void }) {
             <input type="date" className="field" value={date} onChange={(e) => setDate(e.target.value)} />
           </Field>
         </div>
-        <Field label="Plagg, ett per rad" hint={'Pris sist på raden. "11x" först ger flera likadana. Kategori gissas eller skrivs efter semikolon.'}>
+        <DoorzoLinks items={linked} setItems={setLinked} yenPerSek={ds.settings.yenPerSek} />
+        <Field label={linked.length ? 'Fler plagg, ett per rad (valfritt)' : 'Eller skriv plaggen, ett per rad'} hint={'Pris sist på raden. "11x" först ger flera likadana. Kategori gissas eller skrivs efter semikolon.'}>
           <textarea className="field min-h-[150px]" value={text} onChange={(e) => setText(e.target.value)} placeholder={'11x Nudie jeans 132,19\nA&F tröja; Tröjor; 150\nBurberry t-shirt 215'} />
         </Field>
         {rows.length > 0 && (
@@ -331,6 +342,68 @@ export function DropSheet({ onClose }: { onClose: () => void }) {
         </div>
       </div>
     </Sheet>
+  );
+}
+
+/** Klistra in en eller flera Doorzo-länkar: märke, modell, storlek, kategori och pris fylls i från länken. */
+function DoorzoLinks({ items, setItems, yenPerSek }: { items: DoorzoItem[]; setItems: (f: (x: DoorzoItem[]) => DoorzoItem[]) => void; yenPerSek: number }) {
+  const [link, setLink] = useState('');
+  const [miss, setMiss] = useState(false);
+  const take = (v: string) => {
+    const found = findLinks(v)
+      .map((l) => parseDoorzoLink(l, yenPerSek))
+      .filter((d): d is DoorzoItem => !!d);
+    if (found.length) {
+      setItems((cur) => [...cur, ...found.filter((d) => !d.mercariId || !cur.some((c) => c.mercariId === d.mercariId))]);
+      setLink('');
+      setMiss(false);
+    } else {
+      setLink(v);
+      setMiss(v.trim().length > 8);
+    }
+  };
+  const edit = (i: number, patch: Partial<DoorzoItem>) => setItems((cur) => cur.map((d, k) => (k === i ? { ...d, ...patch } : d)));
+  return (
+    <div className="flex flex-col gap-2">
+      <Field label="Från Doorzo" hint={`Klistra in länken till plagget. Märke, modell, storlek, kategori och pris fylls i. Priset räknas om med ${yenPerSek} yen per krona (Inställningar); Doorzos avgift och frakt läggs på droppen.`}>
+        <input className="field" inputMode="url" value={link} onChange={(e) => take(e.target.value)} placeholder="https://www.doorzo.com/…" aria-label="Doorzo-länk" />
+      </Field>
+      {miss && <p className="m-0 text-[12px] text-me">Hittade ingen Doorzo- eller Mercari-länk i det du klistrade in.</p>}
+      {items.map((d, i) => (
+        <div key={`${d.mercariId}-${i}`} className="card flex flex-col gap-2 p-3" aria-label={`Från Doorzo: ${d.name}`}>
+          <div className="flex items-start gap-3">
+            {d.imageUrl && <img src={d.imageUrl} alt="" width={56} height={56} className="h-14 w-14 shrink-0 rounded-lg object-cover" referrerPolicy="no-referrer" loading="lazy" />}
+            <div className="min-w-0 flex-1">
+              <input className="field w-full font-semibold" value={d.name} onChange={(e) => edit(i, { name: e.target.value })} aria-label="Namn" />
+              <div className="mt-1 text-[12px] text-muted">
+                {[d.priceYen != null ? `${d.priceYen.toLocaleString('sv-SE')} yen` : 'Pris saknas i länken', ...d.details].join(' · ')}
+              </div>
+            </div>
+            <button type="button" className="min-h-[40px] shrink-0 px-2 text-[13px] font-semibold text-muted" onClick={() => setItems((cur) => cur.filter((_, k) => k !== i))} aria-label={`Ta bort ${d.name}`}>
+              Ta bort
+            </button>
+          </div>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            <Field label="Märke">
+              <input className="field" value={d.brand} onChange={(e) => edit(i, { brand: e.target.value })} />
+            </Field>
+            <Field label="Modell">
+              <input className="field" value={d.model} onChange={(e) => edit(i, { model: e.target.value })} />
+            </Field>
+            <Field label="Storlek">
+              <input className="field" value={d.size} onChange={(e) => edit(i, { size: e.target.value })} />
+            </Field>
+            <Field label="Kategori">
+              <Select value={d.category} options={CATEGORIES} onChange={(c: Category) => edit(i, { category: c, weightKg: DEFAULT_WEIGHT[c] })} />
+            </Field>
+            <Field label="Pris (kr)">
+              <MoneyInput value={d.cost} onCommit={(v) => edit(i, { cost: v })} />
+            </Field>
+          </div>
+          {d.title && <div className="text-[11px] text-muted">Titel: {d.title}</div>}
+        </div>
+      ))}
+    </div>
   );
 }
 

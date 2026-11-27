@@ -58,6 +58,21 @@ export function newItem(dropId: string, p: Partial<Item>): Item {
 
 // ---------- Drops och plagg ----------
 
+/** Fälten från en inklistrad rad eller en Doorzo-länk. */
+function rowFields(r: ParsedRow): Partial<Item> {
+  return {
+    name: r.name,
+    category: r.category,
+    cost: r.cost,
+    weightKg: r.weightKg,
+    ...(r.brand ? { brand: r.brand } : {}),
+    ...(r.model ? { model: r.model } : {}),
+    ...(r.size ? { size: r.size } : {}),
+    ...(r.comment ? { comment: r.comment } : {}),
+    ...(r.sourceUrl ? { sourceUrl: r.sourceUrl } : {}),
+  };
+}
+
 export function createDrop(p: Partial<Drop>, rows: ParsedRow[]): Promise<boolean> {
   const drop: Drop = {
     ...baseRecord(),
@@ -76,7 +91,7 @@ export function createDrop(p: Partial<Drop>, rows: ParsedRow[]): Promise<boolean
     const ids = nextProductIds(ds, rows.length);
     return [
       { collection: 'drops', record: drop as never },
-      ...rows.map((r, k) => ({ collection: 'items' as const, record: newItem(drop.id, { name: r.name, category: r.category, cost: r.cost, weightKg: r.weightKg, productId: ids[k] }) as never })),
+      ...rows.map((r, k) => ({ collection: 'items' as const, record: newItem(drop.id, { ...rowFields(r), productId: ids[k] }) as never })),
     ];
   });
 }
@@ -84,7 +99,7 @@ export function createDrop(p: Partial<Drop>, rows: ParsedRow[]): Promise<boolean
 export function addItems(dropId: string, rows: ParsedRow[]): Promise<boolean> {
   return store().save(`${rows.length} plagg tillagda`, (ds) => {
     const ids = nextProductIds(ds, rows.length);
-    return rows.map((r, k) => ({ collection: 'items' as const, record: newItem(dropId, { name: r.name, category: r.category, cost: r.cost, weightKg: r.weightKg, productId: ids[k] }) as never }));
+    return rows.map((r, k) => ({ collection: 'items' as const, record: newItem(dropId, { ...rowFields(r), productId: ids[k] }) as never }));
   });
 }
 

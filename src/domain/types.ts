@@ -74,6 +74,8 @@ export interface Item extends BaseRecord {
   /** Mått i cm, nyckel = måttets namn (t.ex. "Midja") */
   measurements?: Record<string, number>;
   comment: string;
+  /** Länken plagget köptes från (Doorzo eller Mercari), om den finns. */
+  sourceUrl?: string;
   ok: CheckStatus;
   saleBooking: SaleBooking;
   location: string;

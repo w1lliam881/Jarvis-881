@@ -46,7 +46,7 @@ test('registrera en försäljning under 15 sekunder', async ({ page }) => {
 test('ny drop genom att klistra in rader', async ({ page }) => {
   await importV14(page);
   await openFab(page, 'Nytt inköp');
-  await page.getByLabel(/Plagg, ett per rad/).fill("3x Levi's 501 150\nBarbour jacka 224,90");
+  await page.getByLabel(/ett per rad/).fill("3x Levi's 501 150\nBarbour jacka 224,90");
   await expect(page.getByText('4 plagg · 675 kr')).toBeVisible();
   await page.getByRole('button', { name: 'Skapa drop med 4 plagg' }).click();
   await expect(page.getByText(/Sparat · Ny drop/)).toBeVisible();
@@ -54,6 +54,25 @@ test('ny drop genom att klistra in rader', async ({ page }) => {
   await expect(page.getByRole('link', { name: /Drop 10/ })).toBeVisible();
   await page.goto('/#/ekonomi/verifikat');
   await expect(page.getByText(/Inköp Drop 10 \(4 plagg\)/)).toBeVisible();
+});
+
+test('nytt inköp från en Doorzo-länk fyller i plagget', async ({ page }) => {
+  await importV14(page);
+  await openFab(page, 'Nytt inköp');
+  const link =
+    "https://www.doorzo.com/en/mall/mercari/detail/68747470733a2f2f7777772e6d6572636172692e636f6d2f6a702f6974656d732f6d32373836343035383937342f?Price=3000&Asin=m27864058974&Title=Levi%27s+511+USA%E8%A3%BDW29+L32+WHITE+OAK%E8%A3%BD%E8%B5%A4%E8%80%B3&Image=https://static.mercdn.net/item/detail/orig/photos/m27864058974_1.jpg?1794015573&SellerId=&SellerName=";
+  await page.getByLabel('Doorzo-länk').fill(link);
+  const card = page.getByLabel("Från Doorzo: Levi's 511 W29 L32");
+  await expect(card).toBeVisible();
+  await expect(card.getByText(/3.000 yen · Made in USA · White Oak/)).toBeVisible();
+  await expect(card.getByLabel('Kategori')).toHaveValue('Jeans');
+  await expect(card.getByLabel('Storlek')).toHaveValue('W29 L32');
+  await expect(page.getByText('1 plagg · 214 kr')).toBeVisible();
+  await page.getByRole('button', { name: 'Skapa drop med 1 plagg' }).click();
+  await expect(page.getByText(/Sparat · Ny drop/)).toBeVisible();
+  await page.goto('/#/lager');
+  await page.getByText("Levi's 511 W29 L32").first().click();
+  await expect(page.getByRole('link', { name: /Köpt här/ })).toHaveAttribute('href', /doorzo\.com/);
 });
 
 test('bokför en kostnad och se den i resultatet', async ({ page }) => {

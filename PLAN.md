@@ -107,3 +107,8 @@ Acceptans: försäljning under 15 sekunder (e2e-test), prisändring uppdaterar v
 - ✅ Chattrundan dygnet runt var 30:e minut, veckomöte fredagar 15:00, Noter skriver Rådets tips på kvällen
 - ✅ Morgonbriefing från Advisor fälls upp som chatt när du öppnar Jarvis (en gång per dag)
 - ✅ Snabbåtkomsten länkar till dina egna profiler på TikTok, Plick och Vinted
+
+## Inköp från Doorzo-länk (2026-11-27) ✅
+
+- ✅ Klistra in en Doorzo-länk under Nytt inköp: märke, modell, storlek, kategori, pris (yen omräknat till kr), detaljer (Made in USA, selvedge …) och bild fylls i från själva länken. Ingen hämtning från Doorzo behövs.
+- ✅ Länken sparas på plagget ("Köpt här" på plaggsidan)

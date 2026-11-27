@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { CheckCircle2, ChevronRight, Circle, Copy, Plus, AlertTriangle, RotateCcw, Search } from 'lucide-react';
+import { CheckCircle2, ChevronRight, Circle, Copy, ExternalLink, Plus, AlertTriangle, RotateCcw, Search } from 'lucide-react';
 import { adText, measuresFilled, MEASURES } from '../../domain/ad';
 import { useData } from '../../data/store';
 import { addItems, deleteDrop, deleteItem, returnItem, setOk, undoSale, updateDrop, updateItem } from '../../data/actions';
@@ -397,6 +397,11 @@ function ItemView({ id }: { id: string }) {
             <span className="rounded-lg border border-dashed border-white/30 px-2.5 py-1 text-[13px] text-on-forest-muted">Inget produkt-ID</span>
           )}
           {item.comment && <span className="text-[13px] text-on-forest-muted">{item.comment}</span>}
+          {item.sourceUrl && (
+            <a href={item.sourceUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-[32px] items-center gap-1 text-[13px] font-semibold text-mint underline">
+              <ExternalLink size={14} aria-hidden /> Köpt här (Doorzo)
+            </a>
+          )}
         </div>
         <div className="grid grid-cols-3 gap-3 text-[12px] text-on-forest-muted">
           <div>
