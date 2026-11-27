@@ -104,6 +104,22 @@ test('Doorzo-länk från startsidan, snabbknappen och klistra in var som helst',
   await expect(page.getByText('Något gick fel')).toHaveCount(0);
 });
 
+test('Lägg till på droppens sida öppnar samma Doorzo-ruta för den droppen', async ({ page }) => {
+  await importV14(page);
+  await page.goto('/#/lager/drops');
+  await page.locator('a[href^="#/lager/drop/"]').first().click();
+  await page.waitForURL(/lager\/drop\//);
+  await expect(page.getByRole('button', { name: /^Lägg till plagg i / })).toBeVisible();
+  const name = (await page.getByRole('heading', { level: 1 }).textContent())!.trim();
+  await page.getByRole('button', { name: `Lägg till plagg i ${name}` }).click();
+  await expect(page.getByRole('heading', { name: `Lägg till i ${name}` })).toBeVisible();
+  await expect(page.getByLabel('Doorzo-länk', { exact: true })).toBeFocused();
+  await page.getByLabel('Doorzo-länk', { exact: true }).fill('https://www.doorzo.com/item?Asin=m27864058974&Price=3000&Title=Nudie+Grim+Tim+W31');
+  await page.getByRole('button', { name: `Lägg 1 plagg i ${name}` }).click();
+  await expect(page.getByText(`1 plagg tillagda i ${name}`)).toBeVisible();
+  await expect(page.getByText('Nudie Jeans Grim Tim W31').first()).toBeVisible();
+});
+
 test('delad länk till appen öppnar inköpet', async ({ page }) => {
   await importV14(page);
   await page.goto('/?text=' + encodeURIComponent('https://www.doorzo.com/item?Asin=m27864058974&Price=3000&Title=Nudie+Grim+Tim+W31') + '#/idag');
