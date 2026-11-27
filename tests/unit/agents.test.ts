@@ -108,9 +108,11 @@ describe('morgonbriefing och chattrundan', () => {
     // Strax efter midnatt svensk tid (23:30 UTC) räknas som nästa dag
     expect(todaysBriefing(msgs, new Date('2026-11-26T23:30:00Z'))?.id).toBe('b');
   });
-  it('chattrundan går dygnet runt, var 30:e minut', () => {
-    expect(CS.times).toHaveLength(48);
-    const next = nr(CS, new Date('2026-11-27T02:20:00Z'))!; // 03:20 svensk tid
-    expect(next.toISOString()).toBe('2026-11-27T02:45:00.000Z');
+  it('chattrundan går var 30:e minut 07–24 och pausar på natten', () => {
+    expect(CS.times).toHaveLength(34);
+    // 03:20 svensk tid: nästa svar 07:15
+    expect(nr(CS, new Date('2026-11-27T02:20:00Z'))!.toISOString()).toBe('2026-11-27T06:15:00.000Z');
+    // 14:20 svensk tid: nästa 14:45
+    expect(nr(CS, new Date('2026-11-27T13:20:00Z'))!.toISOString()).toBe('2026-11-27T13:45:00.000Z');
   });
 });

@@ -28,6 +28,7 @@ npm run migrate:report -- fil.json   # skriver docs/MIGRERINGSRAPPORT.md
 - Supabase-SQL: curl mot Management API (`docs/agenter/DATA.md`), nyckeln läggs på av proxyn. Skriv aldrig ut nycklar.
 - Doorzo, Mercari och andra externa sajter nås inte från containern (proxyn stoppar). Doorzo-länkar tolkas ur själva länken (`src/domain/doorzolink.ts`).
 - Pixeltypsnittet (`font-pixel`) saknar Å. Använd det inte på text med å.
+- Agenternas modeller: Haiku för rundorna, Sonnet för Advisor och Coach, Opus för Builder och Reviewer (`model:` i `.claude/agents/*.md` och på de schemalagda uppgifterna). Chattrundan 07:15–23:45.
 - `AgentSchedule.days`: 0 = söndag. Tider i svensk tid. Schemalagda rundor = scheduled tasks i Claude (se `src/domain/agents.ts`).
 - Arbetsgren `claude/vigilant-shannon-ay2mhz`. William slår ihop PR:er; efter en ihopslagning görs en ny PR från samma gren.
 

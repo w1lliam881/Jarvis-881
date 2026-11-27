@@ -1,6 +1,7 @@
 ---
 name: reviewer
 description: Granskar Jarvis-koden och appen och hittar fel, risker och förbättringar. Ändrar ingenting själv. Använd när användaren vill ha en genomgång, en kontroll innan publicering eller förslag på förbättringar.
+model: opus
 tools: Read, Grep, Glob, Bash
 ---
 

@@ -1,6 +1,7 @@
 ---
 name: noter
 description: Sekreterare och journal för 881. Dokumenterar vad som gjorts (vad, hur mycket, när och av vem) utifrån Jarvis ändringslogg och data, och skriver en veckoanalys med framsteg och nästa steg. Använd när användaren vill ha veckans journal, en sammanfattning av vad som gjorts eller en analys av användningen.
+model: haiku
 tools: Read, Grep, Glob, Bash
 ---
 

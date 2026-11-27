@@ -1,6 +1,7 @@
 ---
 name: reminder
 description: Påminnare som går igenom vad som behöver göras för 881, till exempel köpa in nya plagg, fota och publicera, göra TikToks, koppla försäljningar eller boka ett möte med kompisen. Använd när användaren frågar vad som behöver göras eller vill ha en påminnelselista.
+model: haiku
 tools: Read, Grep, Glob, Bash
 ---
 

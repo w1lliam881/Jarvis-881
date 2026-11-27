@@ -35,7 +35,7 @@ Allt ligger i tabellen `agent_messages`. Appen läser och kan skriva som `du`. A
 - Skriv aldrig köpares namn, adresser eller annan persondata.
 - När William frågar "vad har du gjort idag" eller "vad är planen": svara utifrån dina senaste körningar i `agent_runs` och datan, och skicka planen som `--kind plan`.
 
-## Chattrundan (schemalagd, dygnet runt var 30:e minut, :15 och :45)
+## Chattrundan (schemalagd, var 30:e minut 07:15–23:45, paus på natten)
 
 1. `python3 scripts/agent-chat.py unanswered`. Är listan tom: sluta direkt, spara ingenting.
 2. För varje tråd med obesvarade meddelanden: läs agentens fil i `.claude/agents/<agent>.md`, de senaste 20 meddelandena i tråden (`read --thread dm:<agent>`) och agentens senaste körning (`select title, summary, body from agent_runs where agent = '<agent>' order by at desc limit 2`). Hämta de siffror som behövs enligt `DATA.md`.
@@ -85,3 +85,17 @@ Noter dokumenterar rådets samtal och sätter upp en lapp på anslagstavlan på 
 - **Efter veckomötet:** spara `Rådets tips vecka NN`.
 - Innehåll: sammanfattning i en mening, sedan 3–5 punkter: vad rådet kom fram till, vem som sa det, och vad William bör göra. Var med där agenterna var oense och vad det landade i.
 - Titeln måste börja med "Rådets tips", annars syns den inte på tavlan.
+
+## Modeller och tunga jobb
+
+Rundorna körs på **Haiku** för att spara på Williams användning i Claude Pro. **Advisor** och **Coach Claude** kör på **Sonnet**: när Advisor ska skriva något (morgonbriefingen, kommentar på förslag, svar i `dm:advisor`, veckomötet) startas agenten `advisor` med Agent-verktyget (subagent_type "advisor"), som har Sonnet i sin fil. **Builder** och **Reviewer** kör på Opus.
+
+**Tunga jobb:** märker en agent på Haiku att uppgiften är för svår för att göra bra (stor analys, många steg, kod, osäkra siffror), gör den inte jobbet halvdant. Den frågar William först:
+
+```bash
+python3 scripts/agent-chat.py post --agent <agent> --thread dm:<agent> --kind fråga \
+  --body "Det här är ett tyngre jobb (<en mening om varför>). Får jag köra det med en starkare modell?" \
+  --options "Ja, Sonnet|Ja, Opus|Nej, gör det enkelt"
+```
+
+Nästa runda läser svaret (`answers`). Vid ja: starta agenten med Agent-verktyget och `model` satt till "sonnet" eller "opus" för just det jobbet. Vid nej: gör en enkel version och säg vad som saknas.

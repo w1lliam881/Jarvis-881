@@ -299,7 +299,7 @@ export function Phone({ def, runs, chat, onClose, xmas }: { def: AgentDef; runs:
           <span className="min-w-0 flex-1">
             <span className="block text-[15px] font-semibold text-[#E9EEEA]">{def.name}</span>
             <span className="block text-[11px]" style={{ color: MUTED }}>
-              {def.house} · {waiting ? `svarar ${nextReply ? whenText(nextReply, now) : 'snart'}` : 'svarar inom 30 min, dygnet runt'}
+              {def.house} · {waiting ? `svarar ${nextReply ? whenText(nextReply, now) : 'snart'}` : 'svarar inom 30 min, 07–24'}
             </span>
           </span>
         </>
@@ -324,7 +324,7 @@ export function Phone({ def, runs, chat, onClose, xmas }: { def: AgentDef; runs:
             <div className="font-pixel mb-2 text-[9px]" style={{ color: SUN }}>
               Ny kontakt
             </div>
-            Skriv vad du undrar. {def.name} läser och svarar inom en halvtimme, dygnet runt. Ibland frågar {def.name} dig något här.
+            Skriv vad du undrar. {def.name} läser och svarar inom en halvtimme mellan 07 och 24. Skriver du på natten kommer svaret strax efter 07. Ibland frågar {def.name} dig något här.
           </div>
         )}
         {lines.map((l) => (
