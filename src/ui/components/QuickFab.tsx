@@ -29,7 +29,7 @@ export function QuickFab({ onPick, hidden }: { onPick: (k: QuickKind) => void; h
   };
   const actions = [
     { k: 'sale' as const, icon: ShoppingBag, t: 'Sålt något', s: 'Pris och plattform, klart' },
-    { k: 'drop' as const, icon: Package, t: 'Nytt inköp', s: 'Klistra in plaggen' },
+    { k: 'drop' as const, icon: Package, t: 'Nytt inköp', s: 'Doorzo-länk eller klistra in' },
   ];
   return (
     <div ref={ref} className="no-print fixed bottom-[calc(84px+env(safe-area-inset-bottom))] right-4 z-40 flex flex-col items-end gap-2 lg:bottom-8 lg:right-8">

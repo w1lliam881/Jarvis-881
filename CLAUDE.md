@@ -19,6 +19,18 @@ npm run build:preview  # en enda HTML-fil i dist-preview/ (förhandsvisning)
 npm run migrate:report -- fil.json   # skriver docs/MIGRERINGSRAPPORT.md
 ```
 
+## Snabbfakta (micro-skills: läs innan du letar)
+
+- `npm test` tar ca 1 s. `npm run e2e -- --trace off` tar ca 25 s (iPhone 13-vy, preview på 4174 utan Supabase = lokalt läge).
+- e2e återanvänder en server som redan kör på 4174. Kör `pkill -f "vite preview"` först, annars testas en gammal build.
+- `npm run build` bygger med Supabase-nycklar (inloggningsskärm). För skärmbilder: `VITE_SUPABASE_URL= VITE_SUPABASE_ANON_KEY= npx vite preview --port 4174 --outDir dist-e2e` efter `npm run e2e`.
+- e2e-hjälpare: `importV14(page)` (namn → importera fixtures/v14-audit.json → rubrik /^Hej/), `openFab(page, 'Sålt något' | 'Nytt inköp')`.
+- Supabase-SQL: curl mot Management API (`docs/agenter/DATA.md`), nyckeln läggs på av proxyn. Skriv aldrig ut nycklar.
+- Doorzo, Mercari och andra externa sajter nås inte från containern (proxyn stoppar). Doorzo-länkar tolkas ur själva länken (`src/domain/doorzolink.ts`).
+- Pixeltypsnittet (`font-pixel`) saknar Å. Använd det inte på text med å.
+- `AgentSchedule.days`: 0 = söndag. Tider i svensk tid. Schemalagda rundor = scheduled tasks i Claude (se `src/domain/agents.ts`).
+- Arbetsgren `claude/vigilant-shannon-ay2mhz`. William slår ihop PR:er; efter en ihopslagning görs en ny PR från samma gren.
+
 ## Regler
 
 - Pengar är heltal i ören. Använd `toOre`, `parseOre`, `kr`, `allocate` i `src/domain/money.ts`.

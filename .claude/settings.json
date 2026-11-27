@@ -1,0 +1,16 @@
+{
+  "extraKnownMarketplaces": {
+    "tokeneconomizer": {
+      "source": {
+        "source": "directory",
+        "path": "./.claude/plugins/tokeneconomizer-marketplace"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "tokeneconomizer@tokeneconomizer": true
+  },
+  "env": {
+    "TE_MICROSKILLS": "envfacts+distiller"
+  }
+}

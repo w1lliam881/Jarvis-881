@@ -22,6 +22,12 @@ export interface ParsedRow {
   category: Category;
   cost: Ore;
   weightKg: number;
+  /** Från en Doorzo-länk: fylls i automatiskt. */
+  brand?: string;
+  model?: string;
+  size?: string;
+  comment?: string;
+  sourceUrl?: string;
 }
 
 /**

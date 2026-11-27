@@ -29,6 +29,7 @@ Alla poster har: `id`, `version` (ökar vid varje ändring), `createdAt`, `updat
 | saleDate | datum? | |
 | platform | Vinted, Plick, Egen hemsida, Annat | |
 | comment | text | t.ex. annons-ID |
+| sourceUrl | text? | länken plagget köptes från (Doorzo/Mercari), fylls i från Doorzo-länken |
 | ok | 0, 1, 2 | |
 | saleBooking | individual, aggregate | aggregate = äldre v14-plagg som bokförs samlat per drop och månad |
 | location | text | lagerplats |

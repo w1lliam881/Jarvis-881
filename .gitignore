@@ -7,3 +7,4 @@ playwright-report
 .env
 .env.local
 dist-e2e
+.claude/settings.local.json
