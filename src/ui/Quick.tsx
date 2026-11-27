@@ -18,8 +18,11 @@ export type QuickKind = 'menu' | 'sale' | 'cost' | 'task' | 'drop' | 'mail' | 'd
 
 /** Text (länkar) som ska in i Doorzo-rutan när den öppnas: från urklipp, en delning eller rutan på Idag. */
 let pendingDoorzo = '';
-export function openDoorzo(text = '') {
+let pendingDrop: string | null = null;
+/** Öppnar Doorzo-rutan. dropId: lägg plaggen i just den droppen (knappen Lägg till på droppens sida). */
+export function openDoorzo(text = '', dropId: string | null = null) {
   pendingDoorzo = text;
+  pendingDrop = dropId;
   window.dispatchEvent(new CustomEvent('jarvis-quick', { detail: 'doorzo' }));
 }
 
@@ -288,9 +291,18 @@ function TaskSheet({ onClose }: { onClose: () => void }) {
 export function DropSheet({ onClose, doorzo = false }: { onClose: () => void; doorzo?: boolean }) {
   const ds = useData();
   const today = todayISO();
-  const openDrops = useMemo(() => live(ds.drops).filter((d) => d.status !== 'hemma').sort((a, b) => (a.date < b.date ? 1 : -1)), [ds.drops]);
+  // Från droppens sida: den droppen är förvald och visas även om den är hemma
+  const [fixedDrop] = useState(() => {
+    const d = pendingDrop;
+    pendingDrop = null;
+    return d;
+  });
+  const openDrops = useMemo(
+    () => live(ds.drops).filter((d) => d.status !== 'hemma' || d.id === fixedDrop).sort((a, b) => (a.id === fixedDrop ? -1 : b.id === fixedDrop ? 1 : a.date < b.date ? 1 : -1)),
+    [ds.drops, fixedDrop],
+  );
   // Doorzo: lägg i veckans beställda drop som standard (man handlar ofta en drop över flera dagar)
-  const [target, setTarget] = useState<string>(() => (doorzo ? (openDoorzoDrop(live(ds.drops), today)?.id ?? 'ny') : 'ny'));
+  const [target, setTarget] = useState<string>(() => fixedDrop ?? (doorzo ? (openDoorzoDrop(live(ds.drops), today)?.id ?? 'ny') : 'ny'));
   const [initial] = useState(() => {
     const t = pendingDoorzo;
     pendingDoorzo = '';
@@ -327,7 +339,7 @@ export function DropSheet({ onClose, doorzo = false }: { onClose: () => void; do
   };
   const saveLabel = existing ? `Lägg ${rows.length} plagg i ${existing.name}` : `Skapa drop med ${rows.length} plagg`;
   return (
-    <Sheet open onClose={onClose} title={doorzo ? 'Inköp från Doorzo' : 'Nytt inköp'} footer={<button type="button" className="btn btn-primary mb-1 w-full" disabled={!rows.length} onClick={save}>{saveLabel}</button>}>
+    <Sheet open onClose={onClose} title={fixedDrop && existing ? `Lägg till i ${existing.name}` : doorzo ? 'Inköp från Doorzo' : 'Nytt inköp'} footer={<button type="button" className="btn btn-primary mb-1 w-full" disabled={!rows.length} onClick={save}>{saveLabel}</button>}>
       <div className="flex flex-col gap-3">
         {doorzo && <DoorzoLinks items={linked} setItems={setLinked} yenPerSek={ds.settings.yenPerSek} autoFocus />}
         {openDrops.length > 0 && (

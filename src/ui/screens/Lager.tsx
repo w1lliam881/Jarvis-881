@@ -11,7 +11,7 @@ import { CATEGORIES, PLATFORMS, type CheckStatus, type Dataset, type Drop, type 
 import { go } from '../router';
 import type { Route } from '../router';
 import { Bar, Card, Chips, ConfirmButton, Empty, Field, Money, MoneyInput, Page, Pill, RoiPill, Section, Select, Stat, TextInput, TopBand, cx } from '../components/ui';
-import { SaleSheet, DropSheet, CostSheet } from '../Quick';
+import { SaleSheet, DropSheet, CostSheet, openDoorzo } from '../Quick';
 import { Attachments } from './Attachments';
 import { DropPlanCard } from './DropPlan';
 import { OwnerChip } from '../components/OwnerChip';
@@ -257,6 +257,15 @@ function DropView({ id }: { id: string }) {
         </div>
       </TopBand>
       <Page>
+        <button type="button" onClick={() => openDoorzo('', drop.id)} className="btn btn-sun min-h-[56px] w-full justify-start gap-3 px-4 text-left" aria-label={`Lägg till plagg i ${drop.name}`}>
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/50">
+            <Plus size={20} strokeWidth={2.4} aria-hidden />
+          </span>
+          <span className="flex flex-col">
+            <span className="text-[16px] font-semibold">Lägg till</span>
+            <span className="text-[12px] font-normal opacity-80">Klistra in Doorzo-länkar, plaggen hamnar i {drop.name}</span>
+          </span>
+        </button>
         <div className="desk-cols desk-xl">
         <div className="desk-col xl:order-2">
         <Card>
