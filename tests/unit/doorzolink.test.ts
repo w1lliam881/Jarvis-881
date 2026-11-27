@@ -51,3 +51,21 @@ describe('Doorzo-länk till plagg', () => {
     expect(findLinks(`${LINK}\nhttps://jp.mercari.com/item/m123456789 och text`)).toHaveLength(2);
   });
 });
+
+import { openDoorzoDrop, sharedLinks } from '../../src/domain/doorzolink';
+describe('genvägar för Doorzo', () => {
+  it('väljer senaste beställda droppen från veckan, annars ny drop', () => {
+    const drops = [
+      { id: 'a', date: '2026-11-10', status: 'beställd' },
+      { id: 'b', date: '2026-11-24', status: 'beställd' },
+      { id: 'c', date: '2026-11-26', status: 'hemma' },
+      { id: 'd', date: '2026-11-25', status: 'beställd', deletedAt: '2026-11-25' },
+    ];
+    expect(openDoorzoDrop(drops, '2026-11-27')?.id).toBe('b');
+    expect(openDoorzoDrop(drops, '2026-12-10')).toBeNull();
+  });
+  it('plockar länken ur det som delats till appen', () => {
+    expect(sharedLinks('?text=Kolla%20https%3A%2F%2Fwww.doorzo.com%2Fitem%3FAsin%3Dm1234567890')).toBe('https://www.doorzo.com/item?Asin=m1234567890');
+    expect(sharedLinks('?url=https%3A%2F%2Fexample.com')).toBe('');
+  });
+});

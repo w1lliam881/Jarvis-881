@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, Copy, Flame, Plus, Sparkles, Trash2 } from 'lucide-react';
+import { DoorzoBar } from '../components/DoorzoBar';
 import { SiteLinks } from '../components/SiteLinks';
 import { OwnerChip } from '../components/OwnerChip';
 import { useData, useStore } from '../../data/store';
@@ -116,6 +117,7 @@ function Overview({ ds, o }: { ds: Dataset; o: ReturnType<typeof overview> }) {
         <span className="text-[13px] text-muted">Dina sajter</span>
         <SiteLinks size={34} />
       </div>
+      <DoorzoBar />
       <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4 lg:gap-4">
         <a href="#/lager" className="card p-3 lg:p-4">
           <span className="block text-[12px] text-muted">Lagervärde</span>
