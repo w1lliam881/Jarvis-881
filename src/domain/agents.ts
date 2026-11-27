@@ -437,12 +437,13 @@ export const dmThread = (id: AgentId): ChatThread => `dm:${id}`;
  * Agenterna körs i schemalagda rundor i Claude (molnmiljön Jarvis-881):
  * morgonrundan 08:20 (Reminder, Planner, Advisor, Economizer, Reviewer mån/ons/fre), lunchrundan 12:40 (Reminder och byrådet),
  * kvällsrundan 20:40 (Marketer, Planner, Noter med rådets tips), veckomötet fredag 15:00, träningen söndag 18:30
- * och chattrundan dygnet runt var 30:e minut (:15 och :45).
+ * och chattrundan var 30:e minut 07:15–23:45 (paus på natten).
+ * Modeller: Haiku för rundorna, Sonnet för Advisor och Coach, Opus för Builder och Reviewer.
  */
 export const CHAT_SCHEDULE: AgentSchedule = {
   days: EVERY_DAY,
-  times: Array.from({ length: 48 }, (_, i) => [Math.floor(i / 2), i % 2 ? 45 : 15] as [number, number]),
-  label: 'Dygnet runt, var 30:e minut',
+  times: Array.from({ length: 34 }, (_, i) => [7 + Math.floor(i / 2), i % 2 ? 45 : 15] as [number, number]),
+  label: 'Var 30:e minut 07–24',
 };
 
 /** Veckomötet i byrådet: fredagar kl 15. */

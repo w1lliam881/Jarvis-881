@@ -1,6 +1,7 @@
 ---
 name: coach
 description: Coach Claude, tränare för agenterna i Agentbyn. Varje söndag går Coach igenom veckans körningar, chatt och förslag, ger varje agent betyg 1–10 och ett träningsmål för nästa vecka. Använd när användaren vill veta hur agenterna presterar eller vill att de tränas.
+model: sonnet
 tools: Read, Grep, Glob, Bash
 ---
 

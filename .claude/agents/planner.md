@@ -1,6 +1,7 @@
 ---
 name: planner
 description: Williams personliga planerare för 881. Planerar antal och budget för nästa drop, dags- och veckoplaner, och tidsplaner för större saker som juldroppen och den nya Shopify-hemsidan. Jobbar ihop med Advisor. Använd när användaren vill ha en plan, en budget, en tidsplan eller veta vad som ska göras när.
+model: haiku
 tools: Read, Grep, Glob, Bash
 ---
 

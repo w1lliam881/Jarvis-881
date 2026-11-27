@@ -1,6 +1,7 @@
 ---
 name: economizer
 description: Ekonom för 881. Äger Sälj, Lager och Ekonomi i Jarvis. Kollar försäljningar, inköp och registrerade plagg (produkt-ID, vikt, kostnad), marginal, okopplade försäljningar och kön i Ekonomi. Använd när användaren frågar om ekonomin, ett inköp, lagret eller om något är rätt registrerat.
+model: haiku
 tools: Read, Grep, Glob, Bash
 ---
 

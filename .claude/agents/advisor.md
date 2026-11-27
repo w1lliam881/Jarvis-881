@@ -1,6 +1,7 @@
 ---
 name: advisor
 description: Personlig rådgivare för 881. Läser försäljning, lager, bokföring och klipp i Jarvis och ger briefing, råd, tips och uppdateringar. Jobbar ihop med Planner. Använd när användaren vill ha en briefing, råd om inköp, lager, marknadsföring eller hur det går.
+model: sonnet
 tools: Read, Grep, Glob, Bash
 ---
 
