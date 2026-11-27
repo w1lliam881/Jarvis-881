@@ -69,3 +69,47 @@ describe('genvägar för Doorzo', () => {
     expect(sharedLinks('?url=https%3A%2F%2Fexample.com')).toBe('');
   });
 });
+
+import { parseDoorzoText } from '../../src/domain/doorzolink';
+describe('alla sorters Doorzo-länkar läggs in', () => {
+  const t = (s: string) => parseDoorzoText(s, 14);
+  it('länk utan titel och pris läggs ändå in, med sajt och id', () => {
+    const [d] = t('https://www.doorzo.com/en/mall/mercari/detail/m27864058974');
+    expect(d.store).toBe('Mercari');
+    expect(d.itemId).toBe('m27864058974');
+    expect(d.name).toBe('Mercari m27864058974');
+    expect(d.priceYen).toBeNull();
+    expect(d.imageUrl).toContain('m27864058974_1.jpg');
+  });
+  it('andra sajter via Doorzo: Yahoo, Rakuma, Surugaya, PayPay', () => {
+    const items = t(
+      [
+        'https://www.doorzo.com/zh-hk/mall/yahoo/detail/x1234567890?Price=5000&Title=Levis%20501%20W32',
+        'https://www.doorzo.com/en/mall/rakuma/detail/abc123def',
+        'https://www.doorzo.com/en/mall/surugaya/detail/123456',
+        'https://www.doorzo.com/en/mall/paypay/detail/z12345678',
+      ].join('\n'),
+    );
+    expect(items.map((d) => d.store)).toEqual(['Yahoo Auktioner', 'Rakuma', 'Surugaya', 'PayPay Flea']);
+    expect(items[0]).toMatchObject({ name: "Levi's 501 W32", priceYen: 5000, category: 'Jeans', itemId: 'x1234567890' });
+  });
+  it('utan https, korta delningslänkar och direktlänkar till sajterna', () => {
+    expect(t('www.doorzo.com/en/mall/mercari/detail/m22222222222?price=2,800')[0]).toMatchObject({ itemId: 'm22222222222', priceYen: 2800 });
+    expect(t('https://doorzo.app.link/AbCdEf123')[0]).toMatchObject({ store: 'Doorzo', sourceUrl: 'https://doorzo.app.link/AbCdEf123' });
+    expect(t('https://page.auctions.yahoo.co.jp/jp/auction/x1234567890')[0].store).toBe('Yahoo Auktioner');
+    expect(t('https://jp.mercari.com/item/m27864058974')[0].itemId).toBe('m27864058974');
+  });
+  it('titeln i Doorzos delningstext används, och okodade mellanslag i länken klipper inte av den', () => {
+    expect(t('【Doorzo】Nudie Jeans Grim Tim W31 https://www.doorzo.com/en/mall/mercari/detail/m11111111111')[0].name).toBe('Nudie Jeans Grim Tim W31');
+    const [d] = t("https://www.doorzo.com/en/mall/mercari/detail/m33333333333?Price=3000&Title=Levi's 511 USA製W29 L32&Image=https://static.mercdn.net/x.jpg");
+    expect(d).toMatchObject({ name: "Levi's 511 W29 L32", priceYen: 3000, imageUrl: 'https://static.mercdn.net/x.jpg' });
+  });
+  it('samma plagg två gånger blir ett, med den länk som har mest uppgifter', () => {
+    const items = t('https://www.doorzo.com/en/mall/mercari/detail/m27864058974\nhttps://www.doorzo.com/en/mall/mercari/detail/m27864058974?Price=3000');
+    expect(items).toHaveLength(1);
+    expect(items[0].priceYen).toBe(3000);
+  });
+  it('vanlig text och andra sajter ger inget', () => {
+    expect(t('hej https://www.vinted.se/items/1 och google.com')).toHaveLength(0);
+  });
+});

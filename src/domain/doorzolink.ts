@@ -23,7 +23,13 @@ export interface DoorzoItem {
   titleSv: string;
   /** Detaljer som hittats, t.ex. "Made in USA", "Selvedge (röd kant)". */
   details: string[];
+  /** Sajten plagget ligger på, t.ex. Mercari, Rakuma, Yahoo Auktioner. */
+  store: string;
+  /** Plaggets id på sajten (Mercari m123…, Yahoo x123…). */
+  itemId: string;
+  /** Samma som itemId (äldre namn). */
   mercariId: string;
+  /** Länk direkt till plagget på sajten. */
   mercariUrl: string;
   imageUrl: string;
   sourceUrl: string;
@@ -134,33 +140,127 @@ function hexDecode(h: string): string {
   }
 }
 
-/** Hittar alla Doorzo- eller Mercari-länkar i en text (en eller flera inklistrade). */
+/** Sajter Doorzo köper från (och Doorzo själv). Används för att känna igen länkar och visa var plagget kommer ifrån. */
+const STORES: { re: RegExp; name: string }[] = [
+  { re: /mercari/i, name: 'Mercari' },
+  { re: /rakuma|fril\.jp/i, name: 'Rakuma' },
+  { re: /paypayfleamarket|paypay/i, name: 'PayPay Flea' },
+  { re: /yahoo|auctions/i, name: 'Yahoo Auktioner' },
+  { re: /rakuten/i, name: 'Rakuten' },
+  { re: /amazon/i, name: 'Amazon JP' },
+  { re: /surugaya|suruga-ya/i, name: 'Surugaya' },
+  { re: /2ndstreet/i, name: '2nd Street' },
+  { re: /zozo/i, name: 'Zozotown' },
+];
+const HOSTS = /(?:[\w-]+\.)*(?:doorzo\.[a-z.]+|doorzo\.app\.link|mercari\.com|fril\.jp|rakuma\.rakuten\.co\.jp|paypayfleamarket\.yahoo\.co\.jp|(?:page\.)?auctions\.yahoo\.co\.jp|item\.rakuten\.co\.jp|amazon\.co\.jp|suruga-ya\.jp|2ndstreet\.jp|zozo\.jp)/i;
+const LINK_RE = new RegExp(String.raw`(?:https?:\/\/)?${HOSTS.source}\/[^\s<>"'）】]*`, 'gi');
+
+function normalizeUrl(raw: string): string {
+  const t = raw.trim().replace(/[.,;:!?)\]]+$/, '');
+  return /^https?:\/\//i.test(t) ? t : `https://${t}`;
+}
+
+/** Hittar alla Doorzo-länkar (och länkar till sajterna Doorzo köper från) i en text, även utan https://. */
 export function findLinks(text: string): string[] {
-  return text.match(/https?:\/\/(?:www\.)?(?:doorzo\.com|jp\.mercari\.com|mercari\.com)\/\S+/gi) ?? [];
+  return findLinksWithHint(text).map((x) => x.url);
 }
 
 /**
- * Tolka en Doorzo-länk (eller Mercari-länk) till ett plagg.
- * yenPerSek: kursen i inställningarna (ungefärlig). Returnerar null om länken inte går att läsa.
+ * Hittar länkarna och texten som står före varje länk på samma rad (t.ex. titeln i Doorzos delningstext).
+ * En länk vars parametrar har okodade mellanslag ("&Title=Levi's 511&Price=3000") läses till radens slut.
  */
-export function parseDoorzoLink(link: string, yenPerSek: number): DoorzoItem | null {
+function findLinksWithHint(text: string): { url: string; hint: string }[] {
+  const out: { url: string; hint: string }[] = [];
+  for (const line of text.split(/\r?\n/)) {
+    const ms = [...line.matchAll(LINK_RE)];
+    let last = 0;
+    ms.forEach((m, i) => {
+      const at = m.index ?? 0;
+      let end = at + m[0].length;
+      const next = i + 1 < ms.length ? (ms[i + 1].index ?? line.length) : line.length;
+      if (m[0].includes('?') && /[&?][A-Za-z_]+=/.test(line.slice(end, next))) end = next;
+      const raw = line.slice(at, end).trim().replace(/ /g, '%20');
+      const hint = line
+        .slice(last, at)
+        .replace(/[【\[]?\s*doorzo\s*[】\]]?/gi, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      out.push({ url: normalizeUrl(raw), hint });
+      last = end;
+    });
+  }
+  return out;
+}
+
+/** Läser en parameter oavsett stor/liten bokstav, och provar flera namn. */
+function param(p: URLSearchParams, ...names: string[]): string {
+  const want = names.map((n) => n.toLowerCase());
+  for (const [k, v] of p) if (want.includes(k.toLowerCase()) && v.trim()) return v.trim();
+  return '';
+}
+
+function decodeSegment(seg: string): string {
+  const hex = hexDecode(seg);
+  if (/^https?:\/\//i.test(hex)) return hex;
+  try {
+    const d = decodeURIComponent(seg);
+    if (/^https?:\/\//i.test(d)) return d;
+  } catch {
+    /* inte kodad */
+  }
+  return '';
+}
+
+/** Plaggets id i butiken: Mercari m123…, Yahoo x123…, annars sista delen av adressen. */
+function itemIdFrom(...urls: string[]): string {
+  const all = urls.filter(Boolean).join(' ');
+  const mer = all.match(/\b(m\d{8,})\b/i);
+  if (mer) return mer[1];
+  const yah = all.match(/\b([a-z]\d{9,11})\b/i);
+  if (yah) return yah[1];
+  for (const u of urls) {
+    if (!u) continue;
+    try {
+      const segs = new URL(u).pathname.split('/').filter((x) => x && !/^(item|items|detail|goods|product|jp|en|zh-hk|zh-tw|ko|auction|mall|shop|shops|dp|gp)$/i.test(x));
+      const last = segs[segs.length - 1];
+      if (last && last.length <= 40 && !/^[0-9a-f]{40,}$/i.test(last)) return last;
+    } catch {
+      /* ogiltig */
+    }
+  }
+  return '';
+}
+
+function priceFrom(raw: string): number | null {
+  if (!raw) return null;
+  const n = Number(raw.replace(/[¥￥円,\s]/g, '').replace(/\.\d+$/, ''));
+  return Number.isFinite(n) && n > 0 ? Math.round(n) : null;
+}
+
+/**
+ * Tolka en Doorzo-länk (eller länk till Mercari, Rakuma, Yahoo m.fl.) till ett plagg.
+ * Returnerar null bara om texten inte är en sådan länk. Saknas uppgifter i länken
+ * läggs plagget ändå in med länken sparad, och det som saknas fylls i för hand.
+ * hint: text som stod före länken (t.ex. titeln i Doorzos delningstext).
+ */
+export function parseDoorzoLink(link: string, yenPerSek: number, hint = ''): DoorzoItem | null {
   let u: URL;
   try {
-    u = new URL(link.trim());
+    u = new URL(normalizeUrl(link));
   } catch {
     return null;
   }
-  if (!/(^|\.)(doorzo\.com|mercari\.com)$/i.test(u.hostname)) return null;
+  if (!HOSTS.test(u.hostname) || !new RegExp(`^${HOSTS.source}$`, 'i').test(u.hostname)) return null;
   const p = u.searchParams;
-  const hex = u.pathname.split('/').find((seg) => seg.length > 20 && /^[0-9a-f]+$/i.test(seg)) ?? '';
-  const inner = hexDecode(hex);
-  const asin = p.get('Asin') ?? '';
-  const mercariId = /^m\d+$/i.test(asin) ? asin : (`${inner} ${u.pathname}`.match(/\b(m\d{8,})\b/i)?.[1] ?? '');
-  const title = (p.get('Title') ?? '').replace(/\s+/g, ' ').trim();
-  const priceRaw = p.get('Price');
-  const priceYen = priceRaw && /^\d+$/.test(priceRaw) ? Number(priceRaw) : null;
-  const imageUrl = (p.get('Image') ?? '').startsWith('https://') ? (p.get('Image') as string) : '';
-  if (!mercariId && !title) return null;
+  const inner = u.pathname.split('/').map(decodeSegment).find(Boolean) ?? param(p, 'url', 'link', 'href');
+  const storeSrc = `${inner} ${u.pathname} ${u.hostname}`;
+  const store = STORES.find((x) => x.re.test(storeSrc))?.name ?? (/doorzo/i.test(u.hostname) ? 'Doorzo' : '');
+  const asin = param(p, 'Asin', 'itemId', 'item_id', 'id', 'goodsId', 'code');
+  const itemId = (asin && asin.length <= 40 ? asin : '') || itemIdFrom(inner, u.toString());
+  const title = (param(p, 'Title', 'name', 'goodsName', 'keyword') || hint).replace(/\s+/g, ' ').trim();
+  const priceYen = priceFrom(param(p, 'Price', 'price', 'jpy', 'yen'));
+  const img = param(p, 'Image', 'img', 'imageUrl', 'pic');
+  const imageUrl = img.startsWith('https://') ? img : itemId && /^m\d+$/i.test(itemId) ? `https://static.mercdn.net/item/detail/orig/photos/${itemId}_1.jpg` : '';
 
   const titleSv = translate(title);
   const brand = brandFrom(title, titleSv);
@@ -168,8 +268,9 @@ export function parseDoorzoLink(link: string, yenPerSek: number): DoorzoItem | n
   const model = modelFrom(titleSv, brand);
   const category = guessCategory(`${titleSv} ${brand}`);
   const details = [...new Set(JA.filter(([ja, , d]) => d && title.includes(ja)).map(([, , d]) => d as string))];
-  const name = [brand, model, size].filter(Boolean).join(' ') || titleSv.slice(0, 60) || `Mercari ${mercariId}`;
+  const name = [brand, model, size].filter(Boolean).join(' ') || titleSv.slice(0, 60) || [store || 'Doorzo', itemId].filter(Boolean).join(' ');
   const cost = priceYen != null && yenPerSek > 0 ? Math.round((priceYen * 100) / yenPerSek) : 0;
+  const itemUrl = /^m\d+$/i.test(itemId) ? `https://jp.mercari.com/item/${itemId}` : inner || u.toString();
   return {
     name,
     brand,
@@ -182,16 +283,40 @@ export function parseDoorzoLink(link: string, yenPerSek: number): DoorzoItem | n
     title,
     titleSv,
     details,
-    mercariId,
-    mercariUrl: mercariId ? `https://jp.mercari.com/item/${mercariId}` : inner,
+    store,
+    itemId,
+    mercariId: itemId,
+    mercariUrl: itemUrl,
     imageUrl,
     sourceUrl: u.toString(),
   };
 }
 
+/** Alla plagg i en inklistrad text: en per länk. Samma plagg (samma id eller länk) tas bara med en gång. */
+export function parseDoorzoText(text: string, yenPerSek: number): DoorzoItem[] {
+  const byKey = new Map<string, DoorzoItem>();
+  const info = (d: DoorzoItem) => (d.title ? 2 : 0) + (d.priceYen != null ? 2 : 0) + (d.imageUrl ? 1 : 0);
+  for (const { url, hint } of findLinksWithHint(text)) {
+    const d = parseDoorzoLink(url, yenPerSek, hint);
+    if (!d) continue;
+    const key = d.itemId || d.sourceUrl;
+    const had = byKey.get(key);
+    // Samma plagg två gånger: behåll den länk som har mest uppgifter
+    if (!had || info(d) > info(had)) byKey.set(key, d);
+  }
+  return [...byKey.values()];
+}
+
 /** Kommentaren som sparas på plagget. */
 export function doorzoComment(d: DoorzoItem): string {
-  return [d.details.join(', '), d.priceYen != null ? `${d.priceYen.toLocaleString('sv-SE')} yen` : '', d.mercariId ? `Mercari ${d.mercariId}` : '', d.title ? `Titel: ${d.title}` : ''].filter(Boolean).join(' · ');
+  return [
+    d.details.join(', '),
+    d.priceYen != null ? `${d.priceYen.toLocaleString('sv-SE')} yen` : 'pris saknades i länken',
+    d.itemId ? `${d.store || 'Doorzo'} ${d.itemId}` : d.store,
+    d.title ? `Titel: ${d.title}` : '',
+  ]
+    .filter(Boolean)
+    .join(' · ');
 }
 
 /**
