@@ -12,6 +12,7 @@ import { go } from '../router';
 import type { Route } from '../router';
 import { Bar, Card, Chips, ConfirmButton, Empty, Field, Money, MoneyInput, Page, Pill, RoiPill, Section, Select, Stat, TextInput, TopBand, cx } from '../components/ui';
 import { SaleSheet, DropSheet, CostSheet, openDoorzo } from '../Quick';
+import { findLinks } from '../../domain/doorzolink';
 import { Attachments } from './Attachments';
 import { DropPlanCard } from './DropPlan';
 import { OwnerChip } from '../components/OwnerChip';
@@ -356,7 +357,7 @@ function DropView({ id }: { id: string }) {
 
         <Section title="Lägg till plagg">
           <Card>
-            <textarea className="field" value={paste} onChange={(e) => setPaste(e.target.value)} placeholder={'Ett per rad, pris sist\n3x Levi\'s 501 150\nBarbour jacka 224,90'} aria-label="Klistra in plagg" />
+            <textarea className="field" value={paste} onChange={(e) => (findLinks(e.target.value).length ? openDoorzo(e.target.value, drop.id) : setPaste(e.target.value))} placeholder={'Ett per rad, pris sist\n3x Levi\'s 501 150\nBarbour jacka 224,90'} aria-label="Klistra in plagg" />
             <button
               className="btn btn-primary mt-2 w-full"
               disabled={!rows.length}

@@ -26,7 +26,7 @@ npm run migrate:report -- fil.json   # skriver docs/MIGRERINGSRAPPORT.md
 - `npm run build` bygger med Supabase-nycklar (inloggningsskärm). För skärmbilder: `VITE_SUPABASE_URL= VITE_SUPABASE_ANON_KEY= npx vite preview --port 4174 --outDir dist-e2e` efter `npm run e2e`.
 - e2e-hjälpare: `importV14(page)` (namn → importera fixtures/v14-audit.json → rubrik /^Hej/), `openFab(page, 'Sålt något' | 'Nytt inköp')`.
 - Supabase-SQL: curl mot Management API (`docs/agenter/DATA.md`), nyckeln läggs på av proxyn. Skriv aldrig ut nycklar.
-- Doorzo, Mercari och andra externa sajter nås inte från containern (proxyn stoppar). Doorzo-länkar tolkas ur själva länken (`src/domain/doorzolink.ts`).
+- Doorzo, Mercari och andra externa sajter nås inte från containern (proxyn stoppar). Doorzo-länkar tolkas ur själva länken (`parseDoorzoText` i `src/domain/doorzolink.ts`): alla länkar från Doorzo och sajterna den köper från läggs alltid in, även utan namn eller pris.
 - Pixeltypsnittet (`font-pixel`) saknar Å. Använd det inte på text med å.
 - Agenternas modeller: Haiku för rundorna, Sonnet för Advisor och Coach, Opus för Builder och Reviewer (`model:` i `.claude/agents/*.md` och på de schemalagda uppgifterna). Chattrundan 07:15–23:45.
 - `AgentSchedule.days`: 0 = söndag. Tider i svensk tid. Schemalagda rundor = scheduled tasks i Claude (se `src/domain/agents.ts`).

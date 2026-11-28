@@ -120,6 +120,27 @@ test('Lägg till på droppens sida öppnar samma Doorzo-ruta för den droppen', 
   await expect(page.getByText('Nudie Jeans Grim Tim W31').first()).toBeVisible();
 });
 
+test('alla sorters Doorzo-länkar läggs in, även utan namn och pris', async ({ page }) => {
+  await importV14(page);
+  await page.getByLabel('Klistra in Doorzo-länk', { exact: true }).fill(
+    'www.doorzo.com/en/mall/rakuma/detail/abc123def https://www.doorzo.com/en/mall/mercari/detail/m27864058974 https://doorzo.app.link/AbCdEf123',
+  );
+  await expect(page.getByRole('heading', { name: 'Inköp från Doorzo' })).toBeVisible();
+  await expect(page.getByLabel('Från Doorzo: Rakuma abc123def')).toBeVisible();
+  await expect(page.getByLabel('Från Doorzo: Mercari m27864058974')).toBeVisible();
+  await expect(page.getByLabel('Från Doorzo: Doorzo AbCdEf123')).toBeVisible();
+  await expect(page.getByText('Länken har inget namn eller pris. Fyll i dem här.').first()).toBeVisible();
+  await page.getByRole('button', { name: 'Skapa drop med 3 plagg' }).click();
+  await expect(page.getByText(/Sparat · Ny drop/)).toBeVisible();
+  // Länk inklistrad i droppens ruta för plagg öppnar Doorzo-rutan för den droppen
+  await page.goto('/#/lager/drops');
+  await page.locator('a[href^="#/lager/drop/"]').first().click();
+  await page.waitForURL(/lager\/drop\//);
+  await page.getByLabel('Klistra in plagg').fill('https://www.doorzo.com/en/mall/surugaya/detail/123456');
+  await expect(page.getByRole('heading', { name: /^Lägg till i / })).toBeVisible();
+  await expect(page.getByLabel('Från Doorzo: Surugaya 123456')).toBeVisible();
+});
+
 test('delad länk till appen öppnar inköpet', async ({ page }) => {
   await importV14(page);
   await page.goto('/?text=' + encodeURIComponent('https://www.doorzo.com/item?Asin=m27864058974&Price=3000&Title=Nudie+Grim+Tim+W31') + '#/idag');
